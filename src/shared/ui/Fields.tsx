@@ -263,6 +263,26 @@ function GenderCard({
   )
 }
 
+const CONSENT_TEXT_MAX_PX = 16
+const CONSENT_TEXT_MIN_PX = 10
+const CONSENT_TEXT_STEP_PX = 0.25
+const CONSENT_MAX_LINES = 2
+
+function countTextLines(el: HTMLElement) {
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  return range.getClientRects().length
+}
+
+function fitConsentText(el: HTMLElement) {
+  el.style.fontSize = `${CONSENT_TEXT_MAX_PX}px`
+  let size = CONSENT_TEXT_MAX_PX
+  while (size > CONSENT_TEXT_MIN_PX && countTextLines(el) > CONSENT_MAX_LINES) {
+    size = Math.max(CONSENT_TEXT_MIN_PX, size - CONSENT_TEXT_STEP_PX)
+    el.style.fontSize = `${size}px`
+  }
+}
+
 export function ConsentField({
   checked,
   error,
@@ -273,9 +293,51 @@ export function ConsentField({
   onChange: (checked: boolean) => void
 }) {
   const id = useId()
+  const rootRef = useRef<HTMLLabelElement>(null)
+  const textRef = useRef<HTMLSpanElement>(null)
   const invalid = Boolean(error) && !checked
+
+  useEffect(() => {
+    const root = rootRef.current
+    const text = textRef.current
+    if (!root || !text) return
+
+    const fit = () => fitConsentText(text)
+    fit()
+
+    const resizeObserver = new ResizeObserver(fit)
+    resizeObserver.observe(root)
+    resizeObserver.observe(text)
+
+    const box = root.querySelector('.consent-box')
+    let frame = 0
+    let stopAt = 0
+    const tick = (now: number) => {
+      fit()
+      if (now < stopAt) frame = window.requestAnimationFrame(tick)
+      else frame = 0
+    }
+    const onTransitionRun = (event: Event) => {
+      if (!(event instanceof TransitionEvent)) return
+      if (event.target !== box || event.propertyName !== 'width') return
+      stopAt = performance.now() + 360
+      if (!frame) frame = window.requestAnimationFrame(tick)
+    }
+    root.addEventListener('transitionrun', onTransitionRun)
+
+    return () => {
+      resizeObserver.disconnect()
+      root.removeEventListener('transitionrun', onTransitionRun)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [invalid])
+
   return (
-    <label className={invalid ? 'consent is-invalid' : 'consent'} htmlFor={id}>
+    <label
+      ref={rootRef}
+      className={invalid ? 'consent is-invalid' : 'consent'}
+      htmlFor={id}
+    >
       <input
         id={id}
         type="checkbox"
@@ -287,7 +349,9 @@ export function ConsentField({
           Согласитесь
         </span>
       </span>
-      <span className="consent-text">Согласен на обработку персональных данных</span>
+      <span ref={textRef} className="consent-text">
+        Согласен на обработку персональных данных
+      </span>
     </label>
   )
 }

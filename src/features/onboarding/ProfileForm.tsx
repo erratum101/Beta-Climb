@@ -52,12 +52,12 @@ function useFormChrome() {
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]')
     const previous = meta?.getAttribute('content') ?? null
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
-    const apply = () => meta?.setAttribute('content', media.matches ? '#1e1e1e' : '#fd7115')
+    const apply = () => {
+      const nightOn = document.documentElement.classList.contains('is-night')
+      meta?.setAttribute('content', nightOn ? '#1e1e1e' : '#fd7115')
+    }
     apply()
-    media.addEventListener('change', apply)
     return () => {
-      media.removeEventListener('change', apply)
       if (previous) meta?.setAttribute('content', previous)
     }
   }, [])

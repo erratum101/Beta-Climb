@@ -39,11 +39,10 @@ function withUnit(value: number | null, unit: string): string {
 
 export function ProfilePage() {
   const navigate = useNavigate()
-  const { profile, attempts, saveProfile, resetLocal } = useSession()
+  const { profile, attempts, saveProfile, resetLocal, night, setNight } = useSession()
   const [editing, setEditing] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [soundOn, setSoundOn] = useState(true)
-  const [night, setNight] = useState(false)
 
   if (!profile || editing) {
     return (

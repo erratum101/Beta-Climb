@@ -28,8 +28,10 @@ body,
 }
 
 html {
-  background: var(--orange);
+  background: var(--boot-bg, var(--orange));
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior-x: none;
 }
 
 html:has(.app-shell),
@@ -40,15 +42,17 @@ body:has(.app-shell),
 
 body {
   margin: 0;
-  background: var(--orange);
+  background: var(--boot-bg, var(--orange));
   color: white;
   overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  touch-action: manipulation;
 }
 
 #root {
   width: 100%;
   margin: 0;
-  background: var(--orange);
+  background: var(--boot-bg, var(--orange));
   position: relative;
 }
 
@@ -95,6 +99,7 @@ ol {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  overscroll-behavior-x: none;
   padding:
     calc(12px + env(safe-area-inset-top))
     20px
@@ -123,7 +128,7 @@ ol {
 }
 
 .app-shell:has(.bottom-nav.is-pair) {
-  padding-bottom: 100px;
+  padding-bottom: 93px;
 }
 
 .app-field {
@@ -152,8 +157,23 @@ ol {
   justify-content: center;
 }
 
-.splash-hit {
+.splash-screen {
+  background: var(--orange);
   color: white;
+}
+
+.splash-screen.is-dark,
+html.is-night .splash-screen {
+  background: #1e1e1e;
+  color: var(--orange);
+}
+
+.splash-hit {
+  color: inherit;
+}
+
+.splash-hit .svg-icon {
+  animation: rise 0.45s ease both;
 }
 
 .logo-splash {
@@ -362,8 +382,23 @@ ol {
   text-transform: uppercase;
 }
 
-.profile-view.is-night h1 {
-  color: #fd7115;
+.profile-view.is-night h1,
+.profile-view.is-night .profile-bubble,
+.profile-view.is-night .profile-avatar {
+  color: var(--orange);
+}
+
+.profile-view.is-night .profile-bubble {
+  background: #343434;
+}
+
+.profile-view.is-night .profile-avatar {
+  border-color: #343434;
+  background: #343434;
+}
+
+.profile-view.is-night .profile-sound.is-muted {
+  color: #8a8a8a;
 }
 
 .profile-cluster {
@@ -600,7 +635,16 @@ ol {
   font-weight: 700;
   cursor: pointer;
   container-type: inline-size;
+  transition: color 0.28s ease;
   -webkit-tap-highlight-color: transparent;
+}
+
+.profile-form .consent:has(input:checked) {
+  color: #343434;
+}
+
+.profile-form .consent.is-invalid {
+  color: var(--orange);
 }
 
 .profile-form .consent.is-invalid .consent-prompt {
@@ -640,15 +684,10 @@ ol {
 }
 
 .profile-form .consent-text {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 16px;
   line-height: 1.25;
-  transition: font-size 0s linear 0.32s;
-}
-
-.profile-form .consent.is-invalid .consent-text {
-  font-size: clamp(11.5px, 3.38cqi, 16px);
-  line-height: 1.25;
-  transition: none;
 }
 
 .profile-form .consent.is-invalid .consent-box::after {
@@ -1007,7 +1046,7 @@ input.field-control {
   align-items: end;
   gap: 96px;
   min-height: 0;
-  padding: 30px 16px;
+  padding: 12px 16px 30px;
 }
 
 .nav-btn,
@@ -1675,96 +1714,159 @@ input.field-control {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  html:has(.profile-screen),
-  body:has(.profile-screen),
-  #root:has(.profile-screen),
-  .app-field:has(.profile-screen) {
-    background: #1e1e1e;
-  }
+html.is-night,
+html.is-night body,
+html.is-night #root,
+html.is-night .app-shell,
+html.is-night .app-field,
+html.is-night .screen,
+html.is-night .profile-view,
+html.is-night .profile-screen,
+html.is-night .welcome {
+  background: #1e1e1e;
+  color: #cecece;
+}
 
-  .profile-screen {
-    background: #1e1e1e;
-    color-scheme: dark;
-  }
+html.is-night .topbar h1,
+html.is-night .climbs-head h1,
+html.is-night .page-title,
+html.is-night .hello,
+html.is-night .summary,
+html.is-night .welcome-title,
+html.is-night .empty-mark,
+html.is-night .splash-screen,
+html.is-night .splash-hit,
+html.is-night .profile-title,
+html.is-night .profile-screen .topbar h1,
+html.is-night .profile-view h1,
+html.is-night .profile-bubble,
+html.is-night .profile-avatar,
+html.is-night .btn-text,
+html.is-night .btn-ghost,
+html.is-night .consent,
+html.is-night .chip,
+html.is-night .hint {
+  color: var(--orange);
+}
 
-  .profile-title,
-  .profile-screen .topbar h1 {
-    color: #fd7115;
-  }
+html.is-night .profile-bubble {
+  background: #343434;
+}
 
-  .profile-form .field-control,
-  .profile-form .field:has(.field-menu-clip) .field-control,
-  .profile-form .field.is-open:has(.field-menu-clip) .field-control,
-  .profile-form .field:has(.field-menu-clip) .field-control.is-filled,
-  .profile-form .field-control:focus,
-  .profile-form .field.is-open .field-control,
-  .profile-form .field-control.is-filled,
-  .profile-form input.field-control:not(:placeholder-shown) {
-    background: #343434;
-    color: #fd7115;
-    caret-color: #fd7115;
-  }
+html.is-night .profile-avatar {
+  border-color: #343434;
+  background: #343434;
+}
 
-  .profile-form .field-control::placeholder,
-  .profile-form .is-placeholder {
-    color: #1e1e1e;
-  }
+html.is-night .profile-sound.is-muted {
+  color: #8a8a8a;
+}
 
-  .profile-form .field-control.is-invalid::placeholder,
-  .profile-form .is-placeholder.is-invalid {
-    color: #fd7115;
-  }
+html.is-night .chip.is-on,
+html.is-night .btn-light,
+html.is-night .welcome > .btn,
+html.is-night .profile-form > .btn.is-ready {
+  background: var(--orange);
+  color: #1e1e1e;
+}
 
-  .profile-form .field-menu-clip {
-    background: #343434;
-  }
+html.is-night .nav-btn.is-active,
+html.is-night .nav-add {
+  color: var(--orange);
+}
 
-  .profile-form .field-option {
-    color: #ececec;
-  }
+html.is-night .bottom-nav {
+  background: #2a2a2a;
+}
 
-  .profile-form .field-option.is-selected {
-    background: transparent;
-    color: #fd7115;
-  }
+html.is-night .nav-btn {
+  color: #1e1e1e;
+}
 
-  .profile-form .gender-card {
-    background: #343434;
-    color: #1e1e1e;
-  }
+html.is-night .nav-plus {
+  background: var(--orange);
+  color: white;
+}
 
-  .profile-form .gender-card.is-on,
-  .profile-form .gender-card.is-invalid {
-    background: #343434;
-    color: #fd7115;
-  }
+html.is-night .app-shell {
+  background: #2a2a2a;
+}
 
-  .profile-form .consent {
-    color: #343434;
-  }
+html.is-night .profile-form .field-control,
+html.is-night .profile-form .field:has(.field-menu-clip) .field-control,
+html.is-night .profile-form .field.is-open:has(.field-menu-clip) .field-control,
+html.is-night .profile-form .field:has(.field-menu-clip) .field-control.is-filled,
+html.is-night .profile-form .gender-card,
+html.is-night .profile-form .field-menu-clip,
+html.is-night .profile-form .consent-box,
+html.is-night .profile-form .consent input:checked + .consent-box,
+html.is-night .profile-form > .btn {
+  background: #343434;
+  color: #1e1e1e;
+}
 
-  .profile-form .consent-box,
-  .profile-form .consent input:checked + .consent-box {
-    background: #343434;
-  }
+html.is-night .profile-form .field-control::placeholder,
+html.is-night .profile-form .is-placeholder {
+  color: #1e1e1e;
+}
 
-  .profile-form .consent-box::after {
-    border-color: #1e1e1e;
-  }
+html.is-night .profile-form .field-control:focus,
+html.is-night .profile-form .field.is-open .field-control,
+html.is-night .profile-form .field.is-open:has(.field-menu-clip) .field-control,
+html.is-night .profile-form .field-control.is-filled,
+html.is-night .profile-form .field:has(.field-menu-clip) .field-control.is-filled,
+html.is-night .profile-form input.field-control:not(:placeholder-shown) {
+  background: #343434;
+  color: var(--orange);
+  caret-color: var(--orange);
+}
 
-  .profile-form .consent input:checked + .consent-box::after,
-  .profile-form .consent.is-invalid .consent-box::after {
-    border-color: #fd7115;
-  }
+html.is-night .profile-form .chevron {
+  color: var(--orange);
+}
 
-  .profile-form > .btn {
-    background: #343434;
-    color: #1e1e1e;
-  }
+html.is-night .profile-form .field-option {
+  color: #1e1e1e;
+}
 
-  .profile-form > .btn.is-ready {
-    background: #fd7115;
-    color: #1e1e1e;
-  }
+html.is-night .profile-form .field.is-open .is-placeholder:not(.is-invalid) {
+  color: #ececec;
+}
+
+html.is-night .profile-form .field-option.is-selected {
+  background: transparent;
+  color: var(--orange);
+}
+
+html.is-night .profile-form .gender-card {
+  color: #1e1e1e;
+}
+
+html.is-night .profile-form .gender-card.is-on,
+html.is-night .profile-form .consent:has(input:checked) {
+  color: var(--orange);
+}
+
+html.is-night .profile-form .consent {
+  color: #343434;
+}
+
+html.is-night .profile-form .consent-box::after {
+  border-color: #1e1e1e;
+}
+
+html.is-night .profile-form .consent input:checked + .consent-box::after {
+  border-color: var(--orange);
+}
+
+html.is-night .profile-form .field-control.is-invalid::placeholder,
+html.is-night .profile-form .is-placeholder.is-invalid,
+html.is-night .profile-form .gender-card.is-invalid,
+html.is-night .profile-form .consent.is-invalid,
+html.is-night .profile-form .consent.is-invalid .consent-prompt {
+  color: #ececec;
+}
+
+html.is-night .profile-form .consent.is-invalid .consent-box::after {
+  border-color: #ececec;
 }

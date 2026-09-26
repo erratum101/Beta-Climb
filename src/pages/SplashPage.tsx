@@ -5,7 +5,7 @@ import { SvgIcon } from '../shared/ui/SvgIcon'
 
 export function SplashPage() {
   const navigate = useNavigate()
-  const { profile, ready } = useSession()
+  const { profile, ready, night } = useSession()
 
   useEffect(() => {
     if (!ready) return
@@ -16,7 +16,7 @@ export function SplashPage() {
   }, [navigate, profile, ready])
 
   return (
-    <div className="screen screen-center">
+    <div className={night ? 'screen screen-center splash-screen is-dark' : 'screen screen-center splash-screen'}>
       <h1 className="visually-hidden">Beta Climb</h1>
       <button
         type="button"
