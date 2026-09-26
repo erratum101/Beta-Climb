@@ -106,9 +106,38 @@ ol {
     calc(28px + env(safe-area-inset-bottom));
 }
 
-#root > .screen {
+#root > .screen,
+.route-transition > .screen {
   height: 100%;
   min-height: 0;
+}
+
+.route-transition {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: route-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.route-transition.is-static {
+  animation: none;
+}
+
+.app-field > .route-transition {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+@keyframes route-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .screen.with-nav {
@@ -125,6 +154,63 @@ ol {
   overflow: hidden;
   background: #dfdfdf;
   padding-bottom: 105px;
+}
+
+.app-shell.is-splash-enter .app-field {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  border-radius: 0;
+  background: #1e1e1e;
+  animation: splash-field-shrink 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.app-shell.is-splash-enter:has(.bottom-nav.is-pair) .app-field {
+  animation-name: splash-field-shrink-pair;
+}
+
+.app-shell.is-splash-enter .app-field > .route-transition {
+  opacity: 0;
+  animation: splash-content-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+}
+
+@keyframes splash-field-shrink {
+  from {
+    inset: 0;
+    border-radius: 0;
+  }
+  to {
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 105px;
+    border-radius: 0 0 30px 30px;
+  }
+}
+
+@keyframes splash-field-shrink-pair {
+  from {
+    inset: 0;
+    border-radius: 0;
+  }
+  to {
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 93px;
+    border-radius: 0 0 30px 30px;
+  }
+}
+
+@keyframes splash-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .app-shell:has(.bottom-nav.is-pair) {
@@ -170,10 +256,28 @@ html.is-night .splash-screen {
 
 .splash-hit {
   color: inherit;
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease;
 }
 
 .splash-hit .svg-icon {
   animation: rise 0.45s ease both;
+}
+
+.splash-screen.is-exiting {
+  background: #1e1e1e;
+  transition: background-color 0.28s ease;
+}
+
+.splash-screen.is-exiting .splash-hit {
+  opacity: 0;
+  transform: scale(0.88);
+  pointer-events: none;
+}
+
+.splash-screen.is-exiting.is-dark {
+  background: #1e1e1e;
 }
 
 .logo-splash {
@@ -185,7 +289,8 @@ html.is-night .splash-screen {
   flex-direction: column;
 }
 
-#root > .welcome {
+#root > .welcome,
+.route-transition > .welcome {
   padding:
     calc(16px + env(safe-area-inset-top))
     25px
@@ -211,8 +316,8 @@ html.is-night .splash-screen {
 }
 
 .welcome-photo {
-  width: min(220px, 58%);
-  max-height: 38vh;
+  width: min(380px, 94%);
+  max-height: 64vh;
   object-fit: contain;
 }
 
@@ -231,6 +336,7 @@ html.is-night .splash-screen {
 
 .welcome > .btn {
   margin: 0;
+  margin-top: auto;
   background: #ececec;
   color: var(--orange);
 }
@@ -311,45 +417,52 @@ html.is-night .splash-screen {
   padding: 36px 25px 24px;
 }
 
-#root > .profile-screen {
+#root > .profile-screen,
+.route-transition > .profile-screen {
   height: 100%;
   max-height: 100%;
   overflow: hidden;
   padding:
     calc(16px + env(safe-area-inset-top))
     25px
-    calc(12px + env(safe-area-inset-bottom));
+    env(safe-area-inset-bottom);
 }
 
-#root > .profile-screen .profile-title {
+#root > .profile-screen .profile-title,
+.route-transition > .profile-screen .profile-title {
   margin-bottom: 24px;
   margin-top: 12px;
   flex: none;
 }
 
-#root > .profile-screen .profile-form {
+#root > .profile-screen .profile-form,
+.route-transition > .profile-screen .profile-form {
   flex: 1 1 auto;
   min-height: 0;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
 }
 
-#root > .profile-screen .profile-form .field-row {
+#root > .profile-screen .profile-form .field-row,
+.route-transition > .profile-screen .profile-form .field-row {
   gap: 12px;
 }
 
-#root > .profile-screen .profile-form .consent {
+#root > .profile-screen .profile-form .consent,
+.route-transition > .profile-screen .profile-form .consent {
   margin-top: 0;
 }
 
-#root > .profile-screen .profile-form .gender-card {
+#root > .profile-screen .profile-form .gender-card,
+.route-transition > .profile-screen .profile-form .gender-card {
   aspect-ratio: 1;
   height: auto;
   max-height: 22vh;
 }
 
-#root > .profile-screen .profile-form > .btn {
-  margin-top: 0;
+#root > .profile-screen .profile-form > .btn,
+.route-transition > .profile-screen .profile-form > .btn {
+  margin-top: auto;
   margin-bottom: 0;
   flex: none;
 }
