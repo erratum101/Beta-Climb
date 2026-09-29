@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useSession } from './session'
+import { CAPTURE_GUIDE_STEPS, CaptureGuideBody, HomeGuideContext } from '../features/capture/CaptureGuide'
 import { BottomNav } from '../shared/ui/BottomNav'
 import { RouteTransition } from '../shared/ui/RouteTransition'
 import { SplashPage, SPLASH_ENTER_KEY } from '../pages/SplashPage'
@@ -26,6 +27,8 @@ function RequireProfile() {
 function TabsLayout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const [guideOpen, setGuideOpen] = useState(false)
+  const [guideStep, setGuideStep] = useState(0)
   const [fromSplash] = useState(() => {
     const flagged = sessionStorage.getItem(SPLASH_ENTER_KEY) === '1'
     if (flagged) sessionStorage.removeItem(SPLASH_ENTER_KEY)
@@ -40,15 +43,62 @@ function TabsLayout() {
     return () => window.clearTimeout(timer)
   }, [fromSplash, location.pathname, navigate])
 
+  useEffect(() => {
+    setGuideOpen(false)
+    setGuideStep(0)
+  }, [location.pathname])
+
+  const guide = useMemo(
+    () => ({
+      open: guideOpen,
+      step: guideStep,
+      start() {
+        setGuideStep(0)
+        setGuideOpen(true)
+      },
+      back() {
+        if (guideStep === 0) {
+          setGuideOpen(false)
+          return
+        }
+        setGuideStep(guideStep - 1)
+      },
+      next() {
+        if (guideStep >= CAPTURE_GUIDE_STEPS.length - 1) {
+          setGuideOpen(false)
+          setGuideStep(0)
+          return
+        }
+        setGuideStep(guideStep + 1)
+      },
+    }),
+    [guideOpen, guideStep],
+  )
+
+  const shellClass = [
+    'app-shell',
+    splashEnter ? 'is-splash-enter' : '',
+    guide.open ? 'is-guide' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <div className={splashEnter ? 'app-shell is-splash-enter' : 'app-shell'}>
-      <div className="app-field">
-        <RouteTransition transitionKey={location.pathname} animate={!fromSplash}>
-          <Outlet />
-        </RouteTransition>
+    <HomeGuideContext.Provider value={guide}>
+      <div className={shellClass}>
+        <div className="app-field">
+          <div className={guide.open ? 'field-stage is-guide' : 'field-stage'}>
+            <RouteTransition transitionKey={location.pathname} animate={!fromSplash}>
+              <Outlet />
+            </RouteTransition>
+            <div className="home-guide" aria-hidden={!guide.open} inert={!guide.open}>
+              <CaptureGuideBody step={guide.step} />
+            </div>
+          </div>
+        </div>
+        <BottomNav guide={guide} />
       </div>
-      <BottomNav />
-    </div>
+    </HomeGuideContext.Provider>
   )
 }
 
