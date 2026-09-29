@@ -1,4 +1,5 @@
 :root {
+  --screen-corner: 47px;
   --orange: #fd7115;
   --ink: #1c1c1e;
   --muted: #6d6d75;
@@ -28,8 +29,11 @@ body,
 }
 
 html {
-  background: var(--orange);
+  background: var(--boot-bg, var(--orange));
+  color-scheme: only light;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior-x: none;
 }
 
 html:has(.app-shell),
@@ -38,17 +42,25 @@ body:has(.app-shell),
   background: #dfdfdf;
 }
 
+html.is-night:has(.app-shell),
+html.is-night body:has(.app-shell),
+html.is-night #root:has(.app-shell) {
+  background: #1e1e1e;
+}
+
 body {
   margin: 0;
-  background: var(--orange);
+  background: var(--boot-bg, var(--orange));
   color: white;
   overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  touch-action: manipulation;
 }
 
 #root {
   width: 100%;
   margin: 0;
-  background: var(--orange);
+  background: var(--boot-bg, var(--orange));
   position: relative;
 }
 
@@ -95,15 +107,45 @@ ol {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  overscroll-behavior-x: none;
   padding:
     calc(12px + env(safe-area-inset-top))
     20px
     calc(28px + env(safe-area-inset-bottom));
 }
 
-#root > .screen {
+#root > .screen,
+.route-transition > .screen {
   height: 100%;
   min-height: 0;
+}
+
+.route-transition {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: route-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.route-transition.is-static {
+  animation: none;
+}
+
+.app-field > .route-transition {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+@keyframes route-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .screen.with-nav {
@@ -120,10 +162,104 @@ ol {
   overflow: hidden;
   background: #dfdfdf;
   padding-bottom: 105px;
+  transition: background-color 0.45s ease;
+}
+
+.app-shell.is-splash-enter .app-field {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  border-radius: 0;
+  background: var(--orange);
+  animation: splash-field-shrink 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+html.is-night .app-shell.is-splash-enter .app-field {
+  background: #1e1e1e;
+}
+
+.app-shell.is-splash-enter:has(.bottom-nav.is-pair) .app-field {
+  animation-name: splash-field-shrink-pair;
+}
+
+.app-shell.is-splash-enter .app-field .route-transition {
+  opacity: 0;
+  animation: splash-content-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+}
+
+.app-shell.is-splash-enter .bottom-nav .nav-face > * {
+  opacity: 0;
+  animation: splash-nav-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.72s both;
+}
+
+@keyframes splash-field-shrink {
+  from {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 0;
+  }
+  to {
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 105px;
+    border-radius: 0 0 var(--screen-corner) var(--screen-corner);
+  }
+}
+
+@keyframes splash-field-shrink-pair {
+  from {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 0;
+  }
+  to {
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 93px;
+    border-radius: 0 0 var(--screen-corner) var(--screen-corner);
+  }
+}
+
+@keyframes splash-nav-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes splash-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .app-shell:has(.bottom-nav.is-pair) {
-  padding-bottom: 100px;
+  padding-bottom: 93px;
+}
+
+.app-shell:has(.bottom-nav.capture-guide-nav) {
+  background: #dfdfdf;
+  padding: 20px 20px 96px;
+}
+
+.app-shell:has(.bottom-nav.capture-guide-nav) .app-field {
+  background: #fd7115;
+  border-radius: var(--screen-corner);
 }
 
 .app-field {
@@ -132,8 +268,19 @@ ol {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 0 0 30px 30px;
+  border-radius: 0 0 var(--screen-corner) var(--screen-corner);
+  corner-shape: squircle;
   background: var(--orange);
+  transition: background-color 0.45s ease;
+}
+
+.app-shell.is-guide,
+.app-shell.is-guide .bottom-nav {
+  background: #dfdfdf;
+}
+
+.app-shell.is-guide .app-field {
+  background: #fd7115;
 }
 
 .app-shell .screen {
@@ -152,8 +299,41 @@ ol {
   justify-content: center;
 }
 
-.splash-hit {
+.splash-screen {
+  background: var(--orange);
   color: white;
+}
+
+.splash-screen.is-dark,
+html.is-night .splash-screen {
+  background: #1e1e1e;
+  color: var(--orange);
+}
+
+.splash-hit {
+  color: inherit;
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease;
+}
+
+.splash-hit .svg-icon {
+  animation: rise 0.45s ease both;
+}
+
+.splash-screen.is-exiting {
+  transition: background-color 0.28s ease;
+}
+
+.splash-screen.is-exiting.is-dark,
+html.is-night .splash-screen.is-exiting {
+  background: #1e1e1e;
+}
+
+.splash-screen.is-exiting .splash-hit {
+  opacity: 0;
+  transform: scale(0.88);
+  pointer-events: none;
 }
 
 .logo-splash {
@@ -165,7 +345,8 @@ ol {
   flex-direction: column;
 }
 
-#root > .welcome {
+#root > .welcome,
+.route-transition > .welcome {
   padding:
     calc(16px + env(safe-area-inset-top))
     25px
@@ -191,8 +372,8 @@ ol {
 }
 
 .welcome-photo {
-  width: min(220px, 58%);
-  max-height: 38vh;
+  width: min(380px, 94%);
+  max-height: 64vh;
   object-fit: contain;
 }
 
@@ -211,6 +392,7 @@ ol {
 
 .welcome > .btn {
   margin: 0;
+  margin-top: auto;
   background: #ececec;
   color: var(--orange);
 }
@@ -291,45 +473,52 @@ ol {
   padding: 36px 25px 24px;
 }
 
-#root > .profile-screen {
+#root > .profile-screen,
+.route-transition > .profile-screen {
   height: 100%;
   max-height: 100%;
   overflow: hidden;
   padding:
     calc(16px + env(safe-area-inset-top))
     25px
-    calc(12px + env(safe-area-inset-bottom));
+    env(safe-area-inset-bottom);
 }
 
-#root > .profile-screen .profile-title {
+#root > .profile-screen .profile-title,
+.route-transition > .profile-screen .profile-title {
   margin-bottom: 24px;
   margin-top: 12px;
   flex: none;
 }
 
-#root > .profile-screen .profile-form {
+#root > .profile-screen .profile-form,
+.route-transition > .profile-screen .profile-form {
   flex: 1 1 auto;
   min-height: 0;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
 }
 
-#root > .profile-screen .profile-form .field-row {
+#root > .profile-screen .profile-form .field-row,
+.route-transition > .profile-screen .profile-form .field-row {
   gap: 12px;
 }
 
-#root > .profile-screen .profile-form .consent {
+#root > .profile-screen .profile-form .consent,
+.route-transition > .profile-screen .profile-form .consent {
   margin-top: 0;
 }
 
-#root > .profile-screen .profile-form .gender-card {
+#root > .profile-screen .profile-form .gender-card,
+.route-transition > .profile-screen .profile-form .gender-card {
   aspect-ratio: 1;
   height: auto;
   max-height: 22vh;
 }
 
-#root > .profile-screen .profile-form > .btn {
-  margin-top: 0;
+#root > .profile-screen .profile-form > .btn,
+.route-transition > .profile-screen .profile-form > .btn {
+  margin-top: auto;
   margin-bottom: 0;
   flex: none;
 }
@@ -342,10 +531,14 @@ ol {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 32px 0 12px;
+  padding:
+    calc(16px + env(safe-area-inset-top))
+    0
+    12px;
   background: #fd7115;
   color: #fd7115;
   container-type: size;
+  transition: background-color 0.35s ease;
 }
 
 .profile-view.is-night {
@@ -353,17 +546,33 @@ ol {
 }
 
 .profile-view h1 {
-  margin: 0;
+  margin: 12px 0 0;
+  flex: none;
   text-align: center;
-  color: #dfdfdf;
+  color: #fff;
   font-size: 28px;
   font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  transition: color 0.35s ease;
 }
 
-.profile-view.is-night h1 {
-  color: #fd7115;
+.profile-view.is-night h1,
+.profile-view.is-night .profile-bubble,
+.profile-view.is-night .profile-avatar {
+  color: var(--orange);
+}
+
+.profile-view.is-night .profile-bubble {
+  background: #343434;
+}
+
+.profile-view.is-night .profile-avatar {
+  border-color: #343434;
+  background: #343434;
+}
+
+.profile-view.is-night .profile-sound.is-muted {
+  color: #8a8a8a;
 }
 
 .profile-cluster {
@@ -386,6 +595,9 @@ ol {
   line-height: 1;
   white-space: nowrap;
   z-index: 3;
+  transition:
+    background-color 0.35s ease,
+    color 0.35s ease;
 }
 
 .profile-rate {
@@ -448,6 +660,10 @@ ol {
   color: #fd7115;
   z-index: 1;
   overflow: hidden;
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease;
 }
 
 .profile-avatar svg {
@@ -479,6 +695,27 @@ ol {
   height: 18.53%;
 }
 
+.icon-swap {
+  display: grid;
+  place-items: center;
+}
+
+.icon-swap-layer {
+  grid-area: 1 / 1;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.82);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.icon-swap-layer.is-shown {
+  opacity: 1;
+  transform: none;
+}
+
 .profile-experience {
   left: 71.2%;
   top: 57.94%;
@@ -502,9 +739,13 @@ ol {
   width: 32%;
   height: 17.35%;
   border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0 10%;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center;
   font-size: 5.4cqw;
   z-index: 4;
 }
@@ -600,7 +841,16 @@ ol {
   font-weight: 700;
   cursor: pointer;
   container-type: inline-size;
+  transition: color 0.28s ease;
   -webkit-tap-highlight-color: transparent;
+}
+
+.profile-form .consent:has(input:checked) {
+  color: #343434;
+}
+
+.profile-form .consent.is-invalid {
+  color: var(--orange);
 }
 
 .profile-form .consent.is-invalid .consent-prompt {
@@ -640,15 +890,10 @@ ol {
 }
 
 .profile-form .consent-text {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 16px;
   line-height: 1.25;
-  transition: font-size 0s linear 0.32s;
-}
-
-.profile-form .consent.is-invalid .consent-text {
-  font-size: clamp(11.5px, 3.38cqi, 16px);
-  line-height: 1.25;
-  transition: none;
 }
 
 .profile-form .consent.is-invalid .consent-box::after {
@@ -948,7 +1193,9 @@ input.field-control {
 }
 
 .empty-home.screen {
+  width: 100%;
   padding: 0;
+  border-radius: inherit;
 }
 
 .empty-mark {
@@ -957,6 +1204,99 @@ input.field-control {
   align-items: center;
   gap: 34px;
   color: #dfdfdf;
+}
+
+.screen.home-stage {
+  display: grid;
+  padding: 0;
+  overflow: hidden;
+}
+
+.home-stage > .empty-mark,
+.home-stage > .home-guide {
+  grid-area: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.home-stage > .empty-mark {
+  place-self: center;
+  z-index: 1;
+  transition:
+    opacity 0.34s ease 0.1s,
+    transform 0.46s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+}
+
+.home-stage.is-guide > .empty-mark {
+  opacity: 0;
+  transform: scale(0.82);
+  pointer-events: none;
+  transition-delay: 0s;
+}
+
+.home-guide {
+  display: flex;
+  height: 100%;
+  opacity: 0;
+  transform: translateY(24px);
+  pointer-events: none;
+  transition:
+    opacity 0.4s ease,
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.home-stage.is-guide > .home-guide,
+.field-stage.is-guide > .home-guide {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-delay: 0.1s;
+}
+
+.field-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+}
+
+.field-stage > .route-transition,
+.field-stage > .home-guide {
+  grid-area: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.field-stage > .route-transition {
+  transition:
+    opacity 0.34s ease,
+    transform 0.46s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.field-stage.is-guide > .route-transition {
+  opacity: 0;
+  transform: scale(0.92);
+  pointer-events: none;
+}
+
+.field-stage .capture-guide-lead,
+.field-stage .capture-guide-title {
+  width: auto;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.home-guide > .capture-guide {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+}
+
+.home-stage .capture-guide-lead,
+.home-stage .capture-guide-title {
+  width: auto;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .empty-plus-icon {
@@ -991,14 +1331,14 @@ input.field-control {
   left: 0;
   right: 0;
   bottom: 0;
- 
-  z-index: 20;
+  z-index: 40;
   width: 100%;
   padding: 10px 12px;
   background: #dfdfdf;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: end;
+  transition: background-color 0.35s ease;
 }
 
 .bottom-nav.is-pair {
@@ -1007,7 +1347,7 @@ input.field-control {
   align-items: end;
   gap: 96px;
   min-height: 0;
-  padding: 30px 16px;
+  padding: 12px 16px 30px;
 }
 
 .nav-btn,
@@ -1020,12 +1360,71 @@ input.field-control {
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
+  transition: color 0.35s ease;
 }
 
 .bottom-nav.is-pair .nav-btn {
   gap: 2px;
   font-size: 12px;
   line-height: 1.1;
+}
+
+.bottom-nav.can-guide.is-pair .nav-face {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 96px;
+  width: 100%;
+}
+
+.bottom-nav.can-guide:not(.is-pair) .nav-face {
+  display: contents;
+}
+
+.bottom-nav.can-guide .nav-face > * {
+  transition:
+    opacity 0.32s ease,
+    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bottom-nav.can-guide.is-guide .nav-face > :first-child {
+  opacity: 0;
+  transform: translateX(-36px);
+}
+
+.bottom-nav.can-guide.is-guide .nav-face > :last-child {
+  opacity: 0;
+  transform: translateX(36px);
+}
+
+.bottom-nav.can-guide.is-guide .nav-face > :nth-child(2):not(:last-child) {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.bottom-nav.can-guide .nav-actions {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 12px;
+  bottom: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(18px);
+  pointer-events: none;
+  transition:
+    opacity 0.34s ease,
+    transform 0.46s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bottom-nav.can-guide.is-guide .nav-actions {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition-delay: 0.08s;
 }
 
 .nav-btn.is-active {
@@ -1234,6 +1633,108 @@ input.field-control {
 
 .empty-copy .btn {
   max-width: 260px;
+}
+
+.screen.capture-guide {
+  gap: 0;
+  padding: 24px 18px 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+.capture-guide-dots {
+  margin-top: 50px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.capture-guide-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dfdfdf;
+}
+
+.capture-guide-dots span.is-on {
+  background: #1e1e1e;
+}
+
+.capture-guide-lead,
+.capture-guide-title {
+  color: #dadada;
+  width: calc(100% + 29px);
+  margin-right: -18px;
+  margin-bottom: 0;
+  margin-left: -11px;
+}
+
+.capture-guide-lead {
+  margin-top: 25px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+  text-align:center;
+}
+
+.capture-guide-title {
+  margin-top: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 22px;
+  letter-spacing: -0.02em;
+  text-align: center;
+  animation: rise 0.35s ease both;
+}
+
+.capture-guide-art {
+  position: relative;
+  flex: 1 1 auto;
+  align-self: stretch;
+  width: auto;
+  min-height: 220px;
+  margin: 0 -18px 0;
+  border-radius: 0 0 var(--screen-corner) var(--screen-corner);
+  corner-shape: squircle;
+  overflow: hidden;
+}
+
+.capture-guide-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.bottom-nav.capture-guide-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  align-items: center;
+  background: #dfdfdf;
+  padding: 20px 20px calc(15px + env(safe-area-inset-bottom));
+}
+
+.capture-guide-nav .btn,
+.nav-actions .btn {
+  height: 61px;
+  border-radius: 30.5px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.capture-guide-back {
+  background: #b5b5b5;
+  color: #dfdfdf;
+}
+
+.capture-guide-next {
+  background: #fd7115;
+  color: #dadada;
 }
 
 .rules {
@@ -1675,96 +2176,210 @@ input.field-control {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  html:has(.profile-screen),
-  body:has(.profile-screen),
-  #root:has(.profile-screen),
-  .app-field:has(.profile-screen) {
-    background: #1e1e1e;
-  }
+html.is-night {
+  color-scheme: dark;
+}
 
-  .profile-screen {
-    background: #1e1e1e;
-    color-scheme: dark;
-  }
+html.is-night,
+html.is-night body,
+html.is-night #root,
+html.is-night .app-shell,
+html.is-night .app-field,
+html.is-night .screen,
+html.is-night .profile-view,
+html.is-night .profile-screen,
+html.is-night .welcome {
+  background: #1e1e1e;
+  color: #cecece;
+}
 
-  .profile-title,
-  .profile-screen .topbar h1 {
-    color: #fd7115;
-  }
+html.is-night .topbar h1,
+html.is-night .climbs-head h1,
+html.is-night .page-title,
+html.is-night .hello,
+html.is-night .summary,
+html.is-night .welcome-title,
+html.is-night .empty-mark,
+html.is-night .splash-screen,
+html.is-night .splash-hit,
+html.is-night .profile-title,
+html.is-night .profile-screen .topbar h1,
+html.is-night .profile-view h1,
+html.is-night .profile-bubble,
+html.is-night .profile-avatar,
+html.is-night .btn-text,
+html.is-night .btn-ghost,
+html.is-night .consent,
+html.is-night .chip,
+html.is-night .hint {
+  color: var(--orange);
+}
 
-  .profile-form .field-control,
-  .profile-form .field:has(.field-menu-clip) .field-control,
-  .profile-form .field.is-open:has(.field-menu-clip) .field-control,
-  .profile-form .field:has(.field-menu-clip) .field-control.is-filled,
-  .profile-form .field-control:focus,
-  .profile-form .field.is-open .field-control,
-  .profile-form .field-control.is-filled,
-  .profile-form input.field-control:not(:placeholder-shown) {
-    background: #343434;
-    color: #fd7115;
-    caret-color: #fd7115;
-  }
+html.is-night .profile-bubble {
+  background: #343434;
+}
 
-  .profile-form .field-control::placeholder,
-  .profile-form .is-placeholder {
-    color: #1e1e1e;
-  }
+html.is-night .profile-avatar {
+  border-color: #343434;
+  background: #343434;
+}
 
-  .profile-form .field-control.is-invalid::placeholder,
-  .profile-form .is-placeholder.is-invalid {
-    color: #fd7115;
-  }
+html.is-night .profile-sound.is-muted {
+  color: #8a8a8a;
+}
 
-  .profile-form .field-menu-clip {
-    background: #343434;
-  }
+html.is-night .chip.is-on,
+html.is-night .btn-light,
+html.is-night .welcome > .btn,
+html.is-night .profile-form > .btn.is-ready {
+  background: var(--orange);
+  color: #1e1e1e;
+}
 
-  .profile-form .field-option {
-    color: #ececec;
-  }
+html.is-night .nav-btn.is-active,
+html.is-night .nav-add {
+  color: var(--orange);
+}
 
-  .profile-form .field-option.is-selected {
-    background: transparent;
-    color: #fd7115;
-  }
+html.is-night .bottom-nav {
+  background: #2a2a2a;
+}
 
-  .profile-form .gender-card {
-    background: #343434;
-    color: #1e1e1e;
-  }
+html.is-night .nav-btn {
+  color: #1e1e1e;
+}
 
-  .profile-form .gender-card.is-on,
-  .profile-form .gender-card.is-invalid {
-    background: #343434;
-    color: #fd7115;
-  }
+html.is-night .app-shell:has(.bottom-nav.capture-guide-nav),
+html.is-night .bottom-nav.capture-guide-nav {
+  background: #2a2a2a;
+}
 
-  .profile-form .consent {
-    color: #343434;
-  }
+html.is-night .app-shell:has(.bottom-nav.capture-guide-nav) .app-field {
+  background: #1e1e1e;
+}
 
-  .profile-form .consent-box,
-  .profile-form .consent input:checked + .consent-box {
-    background: #343434;
-  }
+html.is-night .capture-guide-dots span {
+  background: #8a8a8a;
+}
 
-  .profile-form .consent-box::after {
-    border-color: #1e1e1e;
-  }
+html.is-night .capture-guide-dots span.is-on {
+  background: var(--orange);
+}
 
-  .profile-form .consent input:checked + .consent-box::after,
-  .profile-form .consent.is-invalid .consent-box::after {
-    border-color: #fd7115;
-  }
+html.is-night .capture-guide-lead,
+html.is-night .capture-guide-title {
+  color: var(--orange);
+}
 
-  .profile-form > .btn {
-    background: #343434;
-    color: #1e1e1e;
-  }
+html.is-night .capture-guide-back {
+  background: #343434;
+  color: #cecece;
+}
 
-  .profile-form > .btn.is-ready {
-    background: #fd7115;
-    color: #1e1e1e;
-  }
+html.is-night .capture-guide-next {
+  background: var(--orange);
+  color: #1e1e1e;
+}
+
+html.is-night .nav-plus {
+  background: var(--orange);
+  color: white;
+}
+
+html.is-night .app-shell {
+  background: #2a2a2a;
+}
+
+html.is-night .app-shell.is-guide,
+html.is-night .app-shell.is-guide .bottom-nav {
+  background: #2a2a2a;
+}
+
+html.is-night .app-shell.is-guide .app-field {
+  background: #1e1e1e;
+}
+
+html.is-night .screen.capture-guide,
+html.is-night .app-shell:has(.bottom-nav.capture-guide-nav) .screen {
+  background: transparent;
+  color: var(--orange);
+}
+
+html.is-night .profile-form .field-control,
+html.is-night .profile-form .field:has(.field-menu-clip) .field-control,
+html.is-night .profile-form .field.is-open:has(.field-menu-clip) .field-control,
+html.is-night .profile-form .field:has(.field-menu-clip) .field-control.is-filled,
+html.is-night .profile-form .gender-card,
+html.is-night .profile-form .field-menu-clip,
+html.is-night .profile-form .consent-box,
+html.is-night .profile-form .consent input:checked + .consent-box,
+html.is-night .profile-form > .btn {
+  background: #343434;
+  color: #1e1e1e;
+}
+
+html.is-night .profile-form .field-control::placeholder,
+html.is-night .profile-form .is-placeholder {
+  color: #1e1e1e;
+}
+
+html.is-night .profile-form .field-control:focus,
+html.is-night .profile-form .field.is-open .field-control,
+html.is-night .profile-form .field.is-open:has(.field-menu-clip) .field-control,
+html.is-night .profile-form .field-control.is-filled,
+html.is-night .profile-form .field:has(.field-menu-clip) .field-control.is-filled,
+html.is-night .profile-form input.field-control:not(:placeholder-shown) {
+  background: #343434;
+  color: var(--orange);
+  caret-color: var(--orange);
+}
+
+html.is-night .profile-form .chevron {
+  color: var(--orange);
+}
+
+html.is-night .profile-form .field-option {
+  color: #1e1e1e;
+}
+
+html.is-night .profile-form .field.is-open .is-placeholder:not(.is-invalid) {
+  color: #ececec;
+}
+
+html.is-night .profile-form .field-option.is-selected {
+  background: transparent;
+  color: var(--orange);
+}
+
+html.is-night .profile-form .gender-card {
+  color: #1e1e1e;
+}
+
+html.is-night .profile-form .gender-card.is-on,
+html.is-night .profile-form .consent:has(input:checked) {
+  color: var(--orange);
+}
+
+html.is-night .profile-form .consent {
+  color: #343434;
+}
+
+html.is-night .profile-form .consent-box::after {
+  border-color: #1e1e1e;
+}
+
+html.is-night .profile-form .consent input:checked + .consent-box::after {
+  border-color: var(--orange);
+}
+
+html.is-night .profile-form .field-control.is-invalid::placeholder,
+html.is-night .profile-form .is-placeholder.is-invalid,
+html.is-night .profile-form .gender-card.is-invalid,
+html.is-night .profile-form .consent.is-invalid,
+html.is-night .profile-form .consent.is-invalid .consent-prompt {
+  color: #ececec;
+}
+
+html.is-night .profile-form .consent.is-invalid .consent-box::after {
+  border-color: #ececec;
 }

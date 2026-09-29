@@ -1,6 +1,8 @@
+import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
 import { attemptHref, attemptStatusLabel, dayKey, formatSeconds, plural } from '../entities/attempt'
+import { HomeGuideContext } from '../features/capture/CaptureGuide'
 import { WallThumb } from '../shared/ui/WallThumb'
 import { Wordmark } from '../shared/ui/Wordmark'
 
@@ -13,17 +15,19 @@ export function HomePage() {
   const followed = today.filter((attempt) => attempt.change?.improved).length
   const routes = new Set(today.map((attempt) => attempt.gradeLabel)).size
 
+  const guide = useContext(HomeGuideContext)
+
   if (attempts.length === 0) {
     return (
-      <div className="screen screen-center empty-home">
-        <button type="button" className="empty-mark" onClick={() => navigate('/attempt/new')}>
+      <button type="button" className="screen screen-center empty-home" onClick={() => guide?.start()}>
+        <span className="empty-mark">
           <svg className="empty-plus-icon" viewBox="0 0 55 55" fill="none" aria-hidden="true">
             <path d="M27.5 5V50M5 27.5H50" stroke="currentColor" strokeWidth="10" strokeLinecap="round" />
           </svg>
           <Wordmark />
           <span className="visually-hidden">Добавить запись</span>
-        </button>
-      </div>
+        </span>
+      </button>
     )
   }
 

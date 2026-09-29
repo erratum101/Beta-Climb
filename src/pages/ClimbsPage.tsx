@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
+import { HomeGuideContext } from '../features/capture/CaptureGuide'
 import { attemptHref, gradeGroup } from '../entities/attempt'
 import { IconFilter } from '../shared/ui/icons'
 import { WallThumb } from '../shared/ui/WallThumb'
@@ -26,6 +27,7 @@ function gradeTone(label: string): string {
 
 export function ClimbsPage() {
   const navigate = useNavigate()
+  const guide = useContext(HomeGuideContext)
   const { attempts } = useSession()
   const [filter, setFilter] = useState<FilterId>('all')
   const [open, setOpen] = useState(false)
@@ -37,15 +39,15 @@ export function ClimbsPage() {
 
   if (attempts.length === 0) {
     return (
-      <div className="screen screen-center empty-home">
-        <button type="button" className="empty-mark" onClick={() => navigate('/attempt/new')}>
+      <button type="button" className="screen screen-center empty-home" onClick={() => guide?.start()}>
+        <span className="empty-mark">
           <svg className="empty-plus-icon" viewBox="0 0 55 55" fill="none" aria-hidden="true">
             <path d="M27.5 5V50M5 27.5H50" stroke="currentColor" strokeWidth="10" strokeLinecap="round" />
           </svg>
           <Wordmark />
           <span className="visually-hidden">Добавить запись</span>
-        </button>
-      </div>
+        </span>
+      </button>
     )
   }
 

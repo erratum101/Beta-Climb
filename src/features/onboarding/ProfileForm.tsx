@@ -48,17 +48,17 @@ function isComplete(profile: AthleteProfile): boolean {
   return Object.keys(collectErrors(profile)).length === 0
 }
 
+function themeMeta(): HTMLMetaElement | null {
+  return document.querySelector('meta[name="theme-color"]')
+}
+
 function useFormChrome() {
   useEffect(() => {
-    const meta = document.querySelector('meta[name="theme-color"]')
-    const previous = meta?.getAttribute('content') ?? null
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
-    const apply = () => meta?.setAttribute('content', media.matches ? '#1e1e1e' : '#fd7115')
-    apply()
-    media.addEventListener('change', apply)
+    const previous = themeMeta()?.getAttribute('content') ?? null
+    const nightOn = document.documentElement.classList.contains('is-night')
+    themeMeta()?.setAttribute('content', nightOn ? '#1e1e1e' : '#fd7115')
     return () => {
-      media.removeEventListener('change', apply)
-      if (previous) meta?.setAttribute('content', previous)
+      if (previous) themeMeta()?.setAttribute('content', previous)
     }
   }, [])
 }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
 import { experienceLabel, experienceShort, gradeLabelFromBand } from '../entities/profile'
 import type { Attempt } from '../shared/api'
+import { clearCaptureGuide } from '../features/capture/CaptureGuide'
 import { ProfileForm } from '../features/onboarding/ProfileForm'
 import { ScreenHeader } from '../shared/ui/ScreenHeader'
 import { IconPlus } from '../shared/ui/icons'
@@ -39,11 +40,10 @@ function withUnit(value: number | null, unit: string): string {
 
 export function ProfilePage() {
   const navigate = useNavigate()
-  const { profile, attempts, saveProfile, resetLocal } = useSession()
+  const { profile, attempts, saveProfile, resetLocal, night, setNight } = useSession()
   const [editing, setEditing] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [soundOn, setSoundOn] = useState(true)
-  const [night, setNight] = useState(false)
 
   if (!profile || editing) {
     return (
@@ -64,6 +64,7 @@ export function ProfilePage() {
               setConfirmReset(true)
               return
             }
+            clearCaptureGuide()
             void resetLocal().then(() => navigate('/onboarding', { replace: true }))
           }}
         >
@@ -100,10 +101,17 @@ export function ProfilePage() {
           type="button"
           className={soundOn ? 'profile-bubble profile-sound' : 'profile-bubble profile-sound is-muted'}
           aria-pressed={soundOn}
-          aria-label={soundOn ? 'Выключить звук' : 'Включить звук'}
+          aria-label={soundOn ? 'Выключить вибрацию' : 'Включить вибрацию'}
           onClick={() => setSoundOn((current) => !current)}
         >
-          <SoundIcon muted={!soundOn} />
+          <span className="icon-swap">
+            <span className={soundOn ? 'icon-swap-layer is-shown' : 'icon-swap-layer'}>
+              <SvgIcon src="/vibro.svg" size={28} />
+            </span>
+            <span className={soundOn ? 'icon-swap-layer' : 'icon-swap-layer is-shown'}>
+              <SvgIcon src="/vibro-off.svg" size={28} />
+            </span>
+          </span>
         </button>
         <button
           type="button"
@@ -112,7 +120,14 @@ export function ProfilePage() {
           aria-label={night ? 'Светлая тема' : 'Тёмная тема'}
           onClick={() => setNight((current) => !current)}
         >
-          {night ? <SvgIcon src="/light-mode.svg" size={28} /> : <MoonIcon />}
+          <span className="icon-swap">
+            <span className={night ? 'icon-swap-layer' : 'icon-swap-layer is-shown'}>
+              <MoonIcon />
+            </span>
+            <span className={night ? 'icon-swap-layer is-shown' : 'icon-swap-layer'}>
+              <SvgIcon src="/light-mode.svg" size={28} />
+            </span>
+          </span>
         </button>
         <div className="profile-bubble profile-experience" aria-label={`Опыт ${experienceLabel(profile.experience)}`}>
           {experienceShort(profile.experience)}
@@ -139,23 +154,8 @@ function InfoMark() {
 
 function MoonIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+    <svg viewBox="5.6 2 17 17" width="40" height="40" aria-hidden="true">
       <path fill="currentColor" d="M14.4 3.1a7.4 7.4 0 1 0 6.7 10.8A5.7 5.7 0 0 1 14.4 3.1z" />
-    </svg>
-  )
-}
-
-function SoundIcon({ muted }: { muted: boolean }) {
-  return (
-    <svg viewBox="0 0 36 24" width="30" height="20" aria-hidden="true">
-      <rect x="14.2" y="4" width="4.2" height="16" rx="0.6" fill="currentColor" />
-      <rect x="20.2" y="6.2" width="1.7" height="11.6" fill="currentColor" />
-      <rect x="23.2" y="8" width="1.7" height="8" fill="currentColor" />
-      <rect x="26.2" y="10.2" width="1.7" height="3.6" fill="currentColor" />
-      <rect x="10.6" y="6.2" width="1.7" height="11.6" fill="currentColor" />
-      <rect x="7.6" y="8" width="1.7" height="8" fill="currentColor" />
-      <rect x="4.6" y="10.2" width="1.7" height="3.6" fill="currentColor" />
-      {muted ? <path d="M3 3.5 L33 20.5" stroke="#fd7115" strokeWidth="2.4" strokeLinecap="round" /> : null}
     </svg>
   )
 }
