@@ -6,7 +6,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#fd7115" />
-    <meta name="color-scheme" content="only light" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -15,21 +15,27 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Beta Climb</title>
     <style>
+      /* Первый кадр. Те же значения, что --bg в src/shared/theme.css */
+      :root { --bg: #fd7115; }
+      @media (prefers-color-scheme: dark) {
+        html:not(.is-light) { --bg: #1e1e1e; }
+      }
+      html.is-night { --bg: #1e1e1e; }
+      html.is-light { --bg: #fd7115; }
       html, body, #root {
         margin: 0;
         height: 100%;
-        background: var(--boot-bg, #fd7115);
+        background: var(--bg);
       }
     </style>
     <script>
       (function () {
         var choice = localStorage.getItem('beta-climb.theme')
-        var night = choice === 'dark' || (choice !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-        var bg = night ? '#1e1e1e' : '#fd7115'
         var root = document.documentElement
-        root.style.setProperty('--boot-bg', bg)
-        root.style.colorScheme = night ? 'dark' : 'only light'
-        if (night) root.classList.add('is-night')
+        root.classList.toggle('is-night', choice === 'dark')
+        root.classList.toggle('is-light', choice === 'light')
+        var bg = getComputedStyle(root).getPropertyValue('--bg').trim()
+        root.style.colorScheme = choice === 'dark' ? 'dark' : choice === 'light' ? 'light' : 'light dark'
         var screenW = Math.min(screen.width, screen.height)
         var screenH = Math.max(screen.width, screen.height)
         var screenCorners = {
@@ -51,7 +57,7 @@
         var theme = document.querySelector('meta[name="theme-color"]')
         if (theme) theme.setAttribute('content', bg)
         var scheme = document.querySelector('meta[name="color-scheme"]')
-        if (scheme) scheme.setAttribute('content', night ? 'dark' : 'only light')
+        if (scheme) scheme.setAttribute('content', choice === 'dark' ? 'dark' : choice === 'light' ? 'light' : 'light dark')
       })()
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

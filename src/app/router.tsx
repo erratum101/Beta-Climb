@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useSession } from './session'
-import { CAPTURE_GUIDE_STEPS, CaptureGuideBody, HomeGuideContext } from '../features/capture/CaptureGuide'
+import { CAPTURE_GUIDE_STEPS, CaptureGuideBody, CaptureSource, HomeGuideContext, useSourceHandoff } from '../features/capture/CaptureGuide'
 import { BottomNav } from '../shared/ui/BottomNav'
 import { RouteTransition } from '../shared/ui/RouteTransition'
 import { SplashPage, SPLASH_ENTER_KEY } from '../pages/SplashPage'
@@ -29,6 +29,7 @@ function TabsLayout() {
   const navigate = useNavigate()
   const [guideOpen, setGuideOpen] = useState(false)
   const [guideStep, setGuideStep] = useState(0)
+  const sourceHandoff = useSourceHandoff()
   const [fromSplash] = useState(() => {
     const flagged = sessionStorage.getItem(SPLASH_ENTER_KEY) === '1'
     if (flagged) sessionStorage.removeItem(SPLASH_ENTER_KEY)
@@ -46,6 +47,7 @@ function TabsLayout() {
   useEffect(() => {
     setGuideOpen(false)
     setGuideStep(0)
+    sourceHandoff.reset()
   }, [location.pathname])
 
   const guide = useMemo(
@@ -53,6 +55,7 @@ function TabsLayout() {
       open: guideOpen,
       step: guideStep,
       start() {
+        sourceHandoff.reset()
         setGuideStep(0)
         setGuideOpen(true)
       },
@@ -65,20 +68,20 @@ function TabsLayout() {
       },
       next() {
         if (guideStep >= CAPTURE_GUIDE_STEPS.length - 1) {
-          setGuideOpen(false)
-          setGuideStep(0)
+          sourceHandoff.openSource()
           return
         }
         setGuideStep(guideStep + 1)
       },
     }),
-    [guideOpen, guideStep],
+    [guideOpen, guideStep, sourceHandoff.openSource],
   )
 
   const shellClass = [
     'app-shell',
     splashEnter ? 'is-splash-enter' : '',
     guide.open ? 'is-guide' : '',
+    sourceHandoff.leaving ? 'is-leaving' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -86,7 +89,7 @@ function TabsLayout() {
   return (
     <HomeGuideContext.Provider value={guide}>
       <div className={shellClass}>
-        <div className="app-field">
+        <div className="app-field" inert={sourceHandoff.leaving}>
           <div className={guide.open ? 'field-stage is-guide' : 'field-stage'}>
             <RouteTransition transitionKey={location.pathname} animate={!fromSplash}>
               <Outlet />
@@ -96,7 +99,10 @@ function TabsLayout() {
             </div>
           </div>
         </div>
-        <BottomNav guide={guide} />
+        <div inert={sourceHandoff.leaving}>
+          <BottomNav guide={guide} />
+        </div>
+        {sourceHandoff.source ? <CaptureSource /> : null}
       </div>
     </HomeGuideContext.Provider>
   )

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
 import { experienceLabel, experienceShort, gradeLabelFromBand } from '../entities/profile'
@@ -38,12 +39,73 @@ function withUnit(value: number | null, unit: string): string {
   return `${value}${unit}`
 }
 
+const AVATAR_KEY = 'beta-climb.avatar'
+
+function readAvatar(): string | null {
+  try {
+    return localStorage.getItem(AVATAR_KEY)
+  } catch {
+    return null
+  }
+}
+
+function storeAvatar(value: string | null) {
+  try {
+    if (value) localStorage.setItem(AVATAR_KEY, value)
+    else localStorage.removeItem(AVATAR_KEY)
+  } catch {
+    /* private mode or quota */
+  }
+}
+
+function cropAvatar(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const image = new Image()
+    image.onload = () => {
+      const size = 512
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        URL.revokeObjectURL(url)
+        reject(new Error('canvas'))
+        return
+      }
+      const scale = Math.max(size / image.width, size / image.height)
+      const width = image.width * scale
+      const height = image.height * scale
+      ctx.drawImage(image, (size - width) / 2, (size - height) / 2, width, height)
+      URL.revokeObjectURL(url)
+      resolve(canvas.toDataURL('image/jpeg', 0.86))
+    }
+    image.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('image'))
+    }
+    image.src = url
+  })
+}
+
 export function ProfilePage() {
   const navigate = useNavigate()
   const { profile, attempts, saveProfile, resetLocal, night, setNight } = useSession()
   const [editing, setEditing] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [soundOn, setSoundOn] = useState(true)
+  const [avatar, setAvatar] = useState(readAvatar)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  function onAvatarPick(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    void cropAvatar(file).then((next) => {
+      setAvatar(next)
+      storeAvatar(next)
+    })
+  }
 
   if (!profile || editing) {
     return (
@@ -65,6 +127,8 @@ export function ProfilePage() {
               return
             }
             clearCaptureGuide()
+            storeAvatar(null)
+            setAvatar(null)
             void resetLocal().then(() => navigate('/onboarding', { replace: true }))
           }}
         >
@@ -94,9 +158,26 @@ export function ProfilePage() {
         <div className="profile-bubble profile-height" aria-label={`Рост ${profile.heightCm ?? 'не указан'} сантиметров`}>
           {withUnit(profile.heightCm, 'см.')}
         </div>
-        <div className="profile-avatar" aria-label="Аватар не добавлен">
-          <IconPlus />
-        </div>
+        <button
+          type="button"
+          className={avatar ? 'profile-avatar has-photo' : 'profile-avatar'}
+          aria-label={avatar ? 'Сменить фото профиля' : 'Добавить фото профиля'}
+          onClick={() => fileRef.current?.click()}
+        >
+          {avatar ? <img src={avatar} alt="" /> : <IconPlus />}
+        </button>
+        {createPortal(
+          <input
+            ref={fileRef}
+            className="profile-avatar-input"
+            type="file"
+            accept="image/*"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={onAvatarPick}
+          />,
+          document.body,
+        )}
         <button
           type="button"
           className={soundOn ? 'profile-bubble profile-sound' : 'profile-bubble profile-sound is-muted'}
@@ -122,7 +203,7 @@ export function ProfilePage() {
         >
           <span className="icon-swap">
             <span className={night ? 'icon-swap-layer' : 'icon-swap-layer is-shown'}>
-              <MoonIcon />
+              <SvgIcon src="/dark-mode.svg" size={28} />
             </span>
             <span className={night ? 'icon-swap-layer is-shown' : 'icon-swap-layer'}>
               <SvgIcon src="/light-mode.svg" size={28} />
@@ -152,10 +233,3 @@ function InfoMark() {
   )
 }
 
-function MoonIcon() {
-  return (
-    <svg viewBox="5.6 2 17 17" width="40" height="40" aria-hidden="true">
-      <path fill="currentColor" d="M14.4 3.1a7.4 7.4 0 1 0 6.7 10.8A5.7 5.7 0 0 1 14.4 3.1z" />
-    </svg>
-  )
-}

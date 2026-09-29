@@ -55,8 +55,8 @@ function themeMeta(): HTMLMetaElement | null {
 function useFormChrome() {
   useEffect(() => {
     const previous = themeMeta()?.getAttribute('content') ?? null
-    const nightOn = document.documentElement.classList.contains('is-night')
-    themeMeta()?.setAttribute('content', nightOn ? '#1e1e1e' : '#fd7115')
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
+    if (bg) themeMeta()?.setAttribute('content', bg)
     return () => {
       if (previous) themeMeta()?.setAttribute('content', previous)
     }
