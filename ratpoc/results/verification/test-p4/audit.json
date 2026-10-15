@@ -1,0 +1,82 @@
+{
+  "sample": "p4_green",
+  "role": "test-p4",
+  "video_duration_s": 60.0,
+  "processing_s": 39.01141912501771,
+  "process_wall_s": 39.431767042027786,
+  "speed_pass": true,
+  "quality_pass": false,
+  "required_contact_and_time_gate": false,
+  "structure": {
+    "structure_pass": true,
+    "frames": 600,
+    "pose_coverage": 1.0,
+    "confident_limb_coverage": {
+      "lh": 0.2633333333333333,
+      "rh": 0.225,
+      "lf": 0.935,
+      "rf": 0.8916666666666667
+    },
+    "pose_accuracy": "not_measurable_without_independent_joint_coordinates",
+    "mask_accuracy": "not_measurable_without_independent_pixel_masks"
+  },
+  "event_scores": {
+    "all": {
+      "tp": 9,
+      "fp": 27,
+      "fn": 23,
+      "precision": 0.25,
+      "recall": 0.28125,
+      "f1": 0.2647058823529412,
+      "passes_quality": false
+    },
+    "hands": {
+      "tp": 1,
+      "fp": 8,
+      "fn": 18,
+      "precision": 0.1111111111111111,
+      "recall": 0.05263157894736842,
+      "f1": 0.07142857142857142,
+      "passes_quality": false
+    },
+    "feet": {
+      "tp": 8,
+      "fp": 19,
+      "fn": 5,
+      "precision": 0.2962962962962963,
+      "recall": 0.6153846153846154,
+      "f1": 0.4,
+      "passes_quality": false
+    }
+  },
+  "frame_scores": {
+    "all": {
+      "tp": 700,
+      "fp": 336,
+      "fn": 1173,
+      "tn": 293,
+      "excluded": 20,
+      "precision": 0.6756756756756757,
+      "recall": 0.37373198077949815
+    },
+    "hands": {
+      "tp": 205,
+      "fp": 51,
+      "fn": 829,
+      "tn": 139,
+      "excluded": 0,
+      "precision": 0.80078125,
+      "recall": 0.19825918762088976
+    },
+    "feet": {
+      "tp": 495,
+      "fp": 285,
+      "fn": 344,
+      "tn": 154,
+      "excluded": 20,
+      "precision": 0.6346153846153846,
+      "recall": 0.5899880810488677
+    }
+  },
+  "predictions_identical_to_first_run": true
+}

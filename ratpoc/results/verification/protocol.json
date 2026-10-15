@@ -1,0 +1,72 @@
+{
+  "created_at_utc": "2026-10-15T20:33:41.624045+00:00",
+  "code_sha256": {
+    "prototype.py": "6bf8d76f52eb2cd4c861f1ee232ce8f048df919723ca9383bbb55eb2d0473bd8",
+    "evaluate.py": "d769fc48b9dee69bde617a55a82b2596ad0c096d96b673c1c9f0f8f45d598504",
+    "verify_poc.py": "825944339468b4265fd017379f91331b44bf83adde742a566b769dfd523d0396"
+  },
+  "resources_sha256": {
+    "assets/videos/p2a_orange.mp4": "407a84bb7ff9f43f4c5e821bcc0ceb01c003ce842c0b17a54b0c282e8f45e534",
+    "assets/annotations/p2a_orange_routeAnnotation.json": "f9bc889d86ffa901dac241fcf410e76a624f7a9832d27750b25388790ed0bd99",
+    "assets/annotations/p2a_orange_holdUsage.csv": "dfed839c801db846f3c5b0627f15b97eaa48b4f0f2f02d7f19fdb86209b09884",
+    "assets/videos/p3_orange.mp4": "e26c583af063660661f45df1d8f6b0929c12f402549e94a5f6b0b793baf140cb",
+    "assets/annotations/p3_orange_routeAnnotation.json": "a79a5d4ed9d07dc5149e967e4eafcb6683105fb561bbb3d08e17828cc0347f10",
+    "assets/annotations/p3_orange_holdUsage.csv": "769a5ddf6fbcb3c9187be0ba25df7944059b1d98f3ad9768e6d5ddb892e5ba84",
+    "assets/videos/p4_green.mp4": "3e8fbe31fb06376a151ebbea5e010f0316758ecce1290fbc1a50fa315428bb6e",
+    "assets/annotations/p4_green_routeAnnotation.json": "bfe6059b298c8e2dec98ca0b5c9aa49d12fbf91afbe8d92157bc1ac95dede35b",
+    "assets/annotations/p4_green_holdUsage.csv": "408a9e9b3814bab29c0f090322b9a21eae4d121ddd3d4e6cd80144f79ed44c70",
+    "assets/clips/p2a_orange.mp4": "407a84bb7ff9f43f4c5e821bcc0ceb01c003ce842c0b17a54b0c282e8f45e534",
+    "assets/clips/p3_orange.mp4": "e26c583af063660661f45df1d8f6b0929c12f402549e94a5f6b0b793baf140cb",
+    "assets/clips/p4_green.mp4": "42026a4530e52150cbc960fcf57fc2700f026c44cbe7d9a37e9246cc40624c76",
+    "assets/models/holds.pt": "79199357232266bf6ceb248a83058b6f115188debc1e368a1d3801ad1c47d9ac",
+    "assets/models/mobile_sam.pt": "6dbb90523a35330fedd7f1d3dfc66f995213d81b29a5ca8108dbcdd4e37d6c2f",
+    "assets/models/pose_landmarker_heavy.task": "64437af838a65d18e5ba7a0d39b465540069bc8aae8308de3e318aad31fcbc7b"
+  },
+  "samples": [
+    {
+      "name": "p2a_orange",
+      "role": "development",
+      "clip": "assets/clips/p2a_orange.mp4"
+    },
+    {
+      "name": "p3_orange",
+      "role": "control",
+      "clip": "assets/clips/p3_orange.mp4"
+    },
+    {
+      "name": "p4_green",
+      "role": "control",
+      "clip": "assets/clips/p4_green.mp4"
+    }
+  ],
+  "criteria": {
+    "max_duration_s": 60,
+    "max_processing_s": 300,
+    "target_processing_s": 180,
+    "event_precision_min": 0.85,
+    "event_recall_min": 0.8,
+    "temporal_iou_min": 0.5,
+    "box_iou_min": 0.3,
+    "required_groups": [
+      "all",
+      "hands",
+      "feet"
+    ],
+    "required_samples": [
+      "p3_orange",
+      "p4_green"
+    ]
+  },
+  "scope": "Reproduction on the same three videos, not a new unseen validation set.",
+  "independence": "Human hold-use labels from The Way Up; no labels supplied to inference.",
+  "pose_ground_truth_available": false,
+  "mask_ground_truth_available": false,
+  "input_note": "Published stabilized 720x1280 videos; p4 is clipped to 60s. Not raw 4K capture.",
+  "not_measured": [
+    "upload",
+    "queue",
+    "asset download",
+    "rendering",
+    "other hardware"
+  ]
+}
