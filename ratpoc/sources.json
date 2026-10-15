@@ -1,0 +1,95 @@
+{
+  "dataset": "https://zenodo.org/api/records/15196867/files/dataset.zip/content",
+  "license": "CC-BY-4.0",
+  "files": [
+    {
+      "path": "assets/videos/p2a_orange.mp4",
+      "member": "p2a/orange.mp4",
+      "split": "development",
+      "sha256": "407a84bb7ff9f43f4c5e821bcc0ceb01c003ce842c0b17a54b0c282e8f45e534"
+    },
+    {
+      "path": "assets/annotations/p2a_orange_routeAnnotation.json",
+      "member": "p2a/orange_routeAnnotation.json",
+      "split": "development",
+      "sha256": "f9bc889d86ffa901dac241fcf410e76a624f7a9832d27750b25388790ed0bd99"
+    },
+    {
+      "path": "assets/annotations/p2a_orange_holdUsage.csv",
+      "member": "p2a/orange_holdUsage.csv",
+      "split": "development",
+      "sha256": "dfed839c801db846f3c5b0627f15b97eaa48b4f0f2f02d7f19fdb86209b09884"
+    },
+    {
+      "path": "assets/videos/p3_orange.mp4",
+      "member": "p3/orange.mp4",
+      "split": "test",
+      "sha256": "e26c583af063660661f45df1d8f6b0929c12f402549e94a5f6b0b793baf140cb"
+    },
+    {
+      "path": "assets/annotations/p3_orange_routeAnnotation.json",
+      "member": "p3/orange_routeAnnotation.json",
+      "split": "test",
+      "sha256": "a79a5d4ed9d07dc5149e967e4eafcb6683105fb561bbb3d08e17828cc0347f10"
+    },
+    {
+      "path": "assets/annotations/p3_orange_holdUsage.csv",
+      "member": "p3/orange_holdUsage.csv",
+      "split": "test",
+      "sha256": "769a5ddf6fbcb3c9187be0ba25df7944059b1d98f3ad9768e6d5ddb892e5ba84"
+    },
+    {
+      "path": "assets/videos/p4_green.mp4",
+      "member": "p4/green.mp4",
+      "split": "test",
+      "sha256": "3e8fbe31fb06376a151ebbea5e010f0316758ecce1290fbc1a50fa315428bb6e"
+    },
+    {
+      "path": "assets/annotations/p4_green_routeAnnotation.json",
+      "member": "p4/green_routeAnnotation.json",
+      "split": "test",
+      "sha256": "bfe6059b298c8e2dec98ca0b5c9aa49d12fbf91afbe8d92157bc1ac95dede35b"
+    },
+    {
+      "path": "assets/annotations/p4_green_holdUsage.csv",
+      "member": "p4/green_holdUsage.csv",
+      "split": "test",
+      "sha256": "408a9e9b3814bab29c0f090322b9a21eae4d121ddd3d4e6cd80144f79ed44c70"
+    },
+    {
+      "path": "assets/clips/p2a_orange.mp4",
+      "split": "development",
+      "preparation": "unchanged copy",
+      "sha256": "407a84bb7ff9f43f4c5e821bcc0ceb01c003ce842c0b17a54b0c282e8f45e534"
+    },
+    {
+      "path": "assets/clips/p3_orange.mp4",
+      "split": "test",
+      "preparation": "unchanged copy",
+      "sha256": "e26c583af063660661f45df1d8f6b0929c12f402549e94a5f6b0b793baf140cb"
+    },
+    {
+      "path": "assets/clips/p4_green.mp4",
+      "split": "test",
+      "preparation": "first 60 seconds, H.264 CRF18",
+      "sha256": "42026a4530e52150cbc960fcf57fc2700f026c44cbe7d9a37e9246cc40624c76"
+    }
+  ],
+  "models": [
+    {
+      "path": "assets/models/holds.pt",
+      "url": "https://huggingface.co/samolego/yolo-holds/resolve/d8783875ee4012c4c2813aa335abeb716cc53eb0/model.pt",
+      "sha256": "79199357232266bf6ceb248a83058b6f115188debc1e368a1d3801ad1c47d9ac"
+    },
+    {
+      "path": "assets/models/mobile_sam.pt",
+      "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/mobile_sam.pt",
+      "sha256": "6dbb90523a35330fedd7f1d3dfc66f995213d81b29a5ca8108dbcdd4e37d6c2f"
+    },
+    {
+      "path": "assets/models/pose_landmarker_heavy.task",
+      "url": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task",
+      "sha256": "64437af838a65d18e5ba7a0d39b465540069bc8aae8308de3e318aad31fcbc7b"
+    }
+  ]
+}

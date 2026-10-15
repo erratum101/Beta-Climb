@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.cache/
+assets/*
+!assets/annotations/
+*.pyc
+*.[mM][pP]4
+*.[mM][oO][vV]
+*.[aA][vV][iI]
+*.[mM][kK][vV]
+*.[wW][eE][bB][mM]

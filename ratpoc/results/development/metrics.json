@@ -1,0 +1,35 @@
+{
+  "mode": "automatic",
+  "timings": {
+    "startup_s": 2.0133103750413284,
+    "hold_map_s": 4.416293749993201,
+    "pose_and_matching_s": 26.760124790947884,
+    "total_to_json_s": 33.207818916998804
+  },
+  "video_duration_s": 48.56,
+  "sampled_frames": 486,
+  "pose_frames": 486,
+  "holds": 359,
+  "contact_events": 39,
+  "unknown_fraction": {
+    "lh": 0.7901234567901234,
+    "rh": 0.7510288065843621,
+    "lf": 0.06584362139917696,
+    "rf": 0.19547325102880658
+  },
+  "within_300s": true,
+  "environment": {
+    "platform": "macOS-26.5-arm64-arm-64bit",
+    "python": "3.12.14",
+    "torch_threads": 8,
+    "device": "cpu",
+    "pose_device": "cpu",
+    "packages": {
+      "mediapipe": "0.10.21",
+      "ultralytics": "8.4.177",
+      "torch": "2.14.1",
+      "numpy": "1.26.4",
+      "opencv-python": "4.11.0.86"
+    }
+  }
+}

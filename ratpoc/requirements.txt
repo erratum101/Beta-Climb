@@ -1,0 +1,9 @@
+mediapipe==0.10.21
+ultralytics==8.4.177
+torch==2.14.1
+torchvision==0.29.1
+opencv-python==4.11.0.86
+numpy==1.26.4
+scipy==1.17.1
+requests==2.34.2
+remotezip==0.12.6

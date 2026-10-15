@@ -1,0 +1,2 @@
+# Preserve upstream CSV bytes so sources.json checksums stay valid.
+assets/annotations/*.csv -text whitespace=cr-at-eol

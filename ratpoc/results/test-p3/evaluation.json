@@ -1,0 +1,666 @@
+{
+  "mode": "automatic",
+  "matching": {
+    "box_iou_min": 0.3,
+    "temporal_iou_min": 0.5,
+    "one_to_one": true,
+    "annotation_end_frames": "inclusive; clipped to video duration"
+  },
+  "quality_pass": false,
+  "scores": {
+    "all": {
+      "tp": 7,
+      "fp": 20,
+      "fn": 28,
+      "precision": 0.25925925925925924,
+      "recall": 0.2,
+      "f1": 0.22580645161290322,
+      "passes_quality": false,
+      "matched_events": [
+        [
+          5,
+          9
+        ],
+        [
+          8,
+          11
+        ],
+        [
+          10,
+          13
+        ],
+        [
+          11,
+          16
+        ],
+        [
+          15,
+          20
+        ],
+        [
+          18,
+          22
+        ],
+        [
+          20,
+          23
+        ]
+      ]
+    },
+    "hands": {
+      "tp": 1,
+      "fp": 4,
+      "fn": 17,
+      "precision": 0.2,
+      "recall": 0.05555555555555555,
+      "f1": 0.08695652173913045,
+      "passes_quality": false,
+      "matched_events": [
+        [
+          3,
+          7
+        ]
+      ]
+    },
+    "feet": {
+      "tp": 6,
+      "fp": 16,
+      "fn": 11,
+      "precision": 0.2727272727272727,
+      "recall": 0.35294117647058826,
+      "f1": 0.30769230769230765,
+      "passes_quality": false,
+      "matched_events": [
+        [
+          2,
+          3
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          7,
+          7
+        ],
+        [
+          11,
+          9
+        ],
+        [
+          14,
+          10
+        ],
+        [
+          15,
+          11
+        ]
+      ]
+    },
+    "lf": {
+      "tp": 5,
+      "fp": 5,
+      "fn": 3,
+      "precision": 0.5,
+      "recall": 0.625,
+      "f1": 0.5555555555555556,
+      "passes_quality": false,
+      "matched_events": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          6,
+          5
+        ]
+      ]
+    },
+    "rh": {
+      "tp": 1,
+      "fp": 3,
+      "fn": 8,
+      "precision": 0.25,
+      "recall": 0.1111111111111111,
+      "f1": 0.15384615384615383,
+      "passes_quality": false,
+      "matched_events": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    "lh": {
+      "tp": 0,
+      "fp": 1,
+      "fn": 9,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0,
+      "passes_quality": false,
+      "matched_events": []
+    },
+    "rf": {
+      "tp": 1,
+      "fp": 11,
+      "fn": 8,
+      "precision": 0.08333333333333333,
+      "recall": 0.1111111111111111,
+      "f1": 0.09523809523809525,
+      "passes_quality": false,
+      "matched_events": [
+        [
+          8,
+          5
+        ]
+      ]
+    }
+  },
+  "used_hold_map_recall": 0.9130434782608695,
+  "reference_events": [
+    {
+      "limb": "rh",
+      "hold_id": 4,
+      "start_s": 3.36,
+      "end_s": 5.8
+    },
+    {
+      "limb": "lh",
+      "hold_id": 4,
+      "start_s": 3.76,
+      "end_s": 5.36
+    },
+    {
+      "limb": "rf",
+      "hold_id": 1,
+      "start_s": 4.08,
+      "end_s": 7.92
+    },
+    {
+      "limb": "lf",
+      "hold_id": 2,
+      "start_s": 5.04,
+      "end_s": 9.0
+    },
+    {
+      "limb": "lh",
+      "hold_id": 6,
+      "start_s": 5.56,
+      "end_s": 6.44
+    },
+    {
+      "limb": "rh",
+      "hold_id": 8,
+      "start_s": 6.36,
+      "end_s": 7.16
+    },
+    {
+      "limb": "lh",
+      "hold_id": 9,
+      "start_s": 7.0,
+      "end_s": 10.12
+    },
+    {
+      "limb": "rh",
+      "hold_id": 10,
+      "start_s": 7.68,
+      "end_s": 11.08
+    },
+    {
+      "limb": "rf",
+      "hold_id": 4,
+      "start_s": 8.64,
+      "end_s": 10.96
+    },
+    {
+      "limb": "lf",
+      "hold_id": 6,
+      "start_s": 10.08,
+      "end_s": 12.92
+    },
+    {
+      "limb": "lh",
+      "hold_id": 14,
+      "start_s": 10.72,
+      "end_s": 16.56
+    },
+    {
+      "limb": "rh",
+      "hold_id": 16,
+      "start_s": 11.92,
+      "end_s": 14.0
+    },
+    {
+      "limb": "rf",
+      "hold_id": 8,
+      "start_s": 12.64,
+      "end_s": 14.6
+    },
+    {
+      "limb": "lf",
+      "hold_id": 9,
+      "start_s": 13.76,
+      "end_s": 15.88
+    },
+    {
+      "limb": "rh",
+      "hold_id": 18,
+      "start_s": 14.4,
+      "end_s": 18.8
+    },
+    {
+      "limb": "rf",
+      "hold_id": 10,
+      "start_s": 15.52,
+      "end_s": 18.04
+    },
+    {
+      "limb": "lf",
+      "hold_id": 11,
+      "start_s": 16.72,
+      "end_s": 19.2
+    },
+    {
+      "limb": "lh",
+      "hold_id": 19,
+      "start_s": 17.28,
+      "end_s": 21.48
+    },
+    {
+      "limb": "rf",
+      "hold_id": 13,
+      "start_s": 18.68,
+      "end_s": 22.56
+    },
+    {
+      "limb": "rh",
+      "hold_id": 21,
+      "start_s": 19.72,
+      "end_s": 25.76
+    },
+    {
+      "limb": "lf",
+      "hold_id": 14,
+      "start_s": 20.64,
+      "end_s": 23.64
+    },
+    {
+      "limb": "lh",
+      "hold_id": 24,
+      "start_s": 22.56,
+      "end_s": 26.64
+    },
+    {
+      "limb": "rf",
+      "hold_id": 16,
+      "start_s": 23.48,
+      "end_s": 24.88
+    },
+    {
+      "limb": "lf",
+      "hold_id": 18,
+      "start_s": 24.44,
+      "end_s": 28.6
+    },
+    {
+      "limb": "rf",
+      "hold_id": 17,
+      "start_s": 25.64,
+      "end_s": 27.24
+    },
+    {
+      "limb": "rh",
+      "hold_id": 25,
+      "start_s": 26.48,
+      "end_s": 30.68
+    },
+    {
+      "limb": "lh",
+      "hold_id": 27,
+      "start_s": 27.28,
+      "end_s": 32.4
+    },
+    {
+      "limb": "rf",
+      "hold_id": 19,
+      "start_s": 28.32,
+      "end_s": 31.48
+    },
+    {
+      "limb": "lf",
+      "hold_id": 22,
+      "start_s": 29.6,
+      "end_s": 32.76
+    },
+    {
+      "limb": "rh",
+      "hold_id": 28,
+      "start_s": 31.24,
+      "end_s": 33.72
+    },
+    {
+      "limb": "rf",
+      "hold_id": 24,
+      "start_s": 32.28,
+      "end_s": 34.8
+    },
+    {
+      "limb": "lh",
+      "hold_id": 29,
+      "start_s": 32.96,
+      "end_s": 36.76
+    },
+    {
+      "limb": "lf",
+      "hold_id": 26,
+      "start_s": 33.76,
+      "end_s": 38.68
+    },
+    {
+      "limb": "rh",
+      "hold_id": 30,
+      "start_s": 34.48,
+      "end_s": 38.68
+    },
+    {
+      "limb": "lh",
+      "hold_id": 30,
+      "start_s": 37.32,
+      "end_s": 37.84
+    }
+  ],
+  "unsupported_reference_events": [
+    {
+      "limb": "rf",
+      "label": "w",
+      "start_s": 36.72,
+      "end_s": 38.68
+    }
+  ],
+  "hold_id_mapping": {
+    "6": 30,
+    "11": 29,
+    "38": 11,
+    "45": 21,
+    "49": 24,
+    "57": 26,
+    "85": 19,
+    "97": 14,
+    "107": 16,
+    "109": 6,
+    "137": 5,
+    "144": 8,
+    "148": 12,
+    "150": 7,
+    "153": 20,
+    "161": 25,
+    "228": 27,
+    "238": 9,
+    "240": 10,
+    "245": 4,
+    "261": 28,
+    "262": 2,
+    "296": 18,
+    "307": 13,
+    "323": 1
+  },
+  "predicted_events": [
+    {
+      "hold_id": 340,
+      "start_s": 0.0,
+      "end_s": 1.72,
+      "observed_s": 1.72,
+      "limb": "lh",
+      "state": "tentative_contact",
+      "reference_hold_id": null
+    },
+    {
+      "hold_id": 323,
+      "start_s": 0.0,
+      "end_s": 1.8,
+      "observed_s": 1.8,
+      "limb": "rh",
+      "state": "tentative_contact",
+      "reference_hold_id": 1
+    },
+    {
+      "hold_id": 323,
+      "start_s": 7.2,
+      "end_s": 8.0,
+      "observed_s": 0.8,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": 1
+    },
+    {
+      "hold_id": 240,
+      "start_s": 7.92,
+      "end_s": 8.92,
+      "observed_s": 1.0,
+      "limb": "rh",
+      "state": "tentative_contact",
+      "reference_hold_id": 10
+    },
+    {
+      "hold_id": 262,
+      "start_s": 8.4,
+      "end_s": 9.12,
+      "observed_s": 0.72,
+      "limb": "lf",
+      "state": "tentative_contact",
+      "reference_hold_id": 2
+    },
+    {
+      "hold_id": 109,
+      "start_s": 9.4,
+      "end_s": 12.92,
+      "observed_s": 3.44,
+      "limb": "lf",
+      "state": "tentative_contact",
+      "reference_hold_id": 6
+    },
+    {
+      "hold_id": 245,
+      "start_s": 10.0,
+      "end_s": 10.72,
+      "observed_s": 0.72,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": 4
+    },
+    {
+      "hold_id": 113,
+      "start_s": 11.12,
+      "end_s": 11.72,
+      "observed_s": 0.6,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": null
+    },
+    {
+      "hold_id": 107,
+      "start_s": 12.0,
+      "end_s": 13.6,
+      "observed_s": 1.6,
+      "limb": "rh",
+      "state": "tentative_contact",
+      "reference_hold_id": 16
+    },
+    {
+      "hold_id": 144,
+      "start_s": 12.6,
+      "end_s": 13.4,
+      "observed_s": 0.8,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": 8
+    },
+    {
+      "hold_id": 238,
+      "start_s": 13.72,
+      "end_s": 15.92,
+      "observed_s": 2.2,
+      "limb": "lf",
+      "state": "tentative_contact",
+      "reference_hold_id": 9
+    },
+    {
+      "hold_id": 38,
+      "start_s": 16.52,
+      "end_s": 18.2,
+      "observed_s": 1.68,
+      "limb": "lf",
+      "state": "tentative_contact",
+      "reference_hold_id": 11
+    },
+    {
+      "hold_id": 19,
+      "start_s": 18.52,
+      "end_s": 19.4,
+      "observed_s": 0.8,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": null
+    },
+    {
+      "hold_id": 38,
+      "start_s": 18.72,
+      "end_s": 19.32,
+      "observed_s": 0.6,
+      "limb": "lf",
+      "state": "tentative_contact",
+      "reference_hold_id": 11
+    },
+    {
+      "hold_id": 307,
+      "start_s": 19.4,
+      "end_s": 20.12,
+      "observed_s": 0.72,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": 13
+    },
+    {
+      "hold_id": 97,
+      "start_s": 20.12,
+      "end_s": 23.72,
+      "observed_s": 3.4,
+      "limb": "lf",
+      "state": "tentative_contact",
+      "reference_hold_id": 14
+    },
+    {
+      "hold_id": 127,
+      "start_s": 20.32,
+      "end_s": 22.0,
+      "observed_s": 1.68,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": null
+    },
+    {
+      "hold_id": 19,
+      "start_s": 22.2,
+      "end_s": 22.72,
+      "observed_s": 0.52,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": null
+    },
+    {
+      "hold_id": 107,
+      "start_s": 23.72,
+      "end_s": 24.92,
+      "observed_s": 1.2,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": 16
+    },
+    {
+      "hold_id": 45,
+      "start_s": 25.0,
+      "end_s": 25.72,
+      "observed_s": 0.52,
+      "limb": "rh",
+      "state": "tentative_contact",
+      "reference_hold_id": 21
+    },
+    {
+      "hold_id": 296,
+      "start_s": 25.32,
+      "end_s": 28.32,
+      "observed_s": 3.0,
+      "limb": "lf",
+      "state": "tentative_contact",
+      "reference_hold_id": 18
+    },
+    {
+      "hold_id": 32,
+      "start_s": 25.32,
+      "end_s": 26.12,
+      "observed_s": 0.72,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": null
+    },
+    {
+      "hold_id": 158,
+      "start_s": 27.12,
+      "end_s": 27.72,
+      "observed_s": 0.6,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": null
+    },
+    {
+      "hold_id": 18,
+      "start_s": 29.72,
+      "end_s": 30.8,
+      "observed_s": 0.96,
+      "limb": "lf",
+      "state": "tentative_contact",
+      "reference_hold_id": null
+    },
+    {
+      "hold_id": 84,
+      "start_s": 30.2,
+      "end_s": 30.92,
+      "observed_s": 0.64,
+      "limb": "rf",
+      "state": "tentative_contact",
+      "reference_hold_id": null
+    },
+    {
+      "hold_id": 284,
+      "start_s": 33.52,
+      "end_s": 34.2,
+      "observed_s": 0.68,
+      "limb": "lf",
+      "state": "tentative_contact",
+      "reference_hold_id": null
+    },
+    {
+      "hold_id": 57,
+      "start_s": 34.32,
+      "end_s": 36.0,
+      "observed_s": 1.68,
+      "limb": "lf",
+      "state": "tentative_contact",
+      "reference_hold_id": 26
+    }
+  ],
+  "note": "Wall contacts and unnamed wrong holds have no scorable hold ID. Predictions on unmapped holds count as false positives. Occluded numeric-hold events remain in recall."
+}
