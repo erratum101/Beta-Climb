@@ -1,0 +1,1700 @@
+{
+  "sample": "p2a_orange",
+  "role": "development",
+  "event_modes": {
+    "all_tiou50_delay0": {
+      "scores": {
+        "all": {
+          "tp": 11,
+          "fp": 28,
+          "fn": 29,
+          "precision": 0.28205128205128205,
+          "recall": 0.275,
+          "f1": 0.27848101265822783,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "hands": {
+          "tp": 4,
+          "fp": 4,
+          "fn": 17,
+          "precision": 0.5,
+          "recall": 0.19047619047619047,
+          "f1": 0.27586206896551724,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "feet": {
+          "tp": 7,
+          "fp": 24,
+          "fn": 12,
+          "precision": 0.22580645161290322,
+          "recall": 0.3684210526315789,
+          "f1": 0.28,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ]
+      ]
+    },
+    "all_tiou50_delay0.25": {
+      "scores": {
+        "all": {
+          "tp": 11,
+          "fp": 28,
+          "fn": 29,
+          "precision": 0.28205128205128205,
+          "recall": 0.275,
+          "f1": 0.27848101265822783,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "hands": {
+          "tp": 4,
+          "fp": 4,
+          "fn": 17,
+          "precision": 0.5,
+          "recall": 0.19047619047619047,
+          "f1": 0.27586206896551724,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "feet": {
+          "tp": 7,
+          "fp": 24,
+          "fn": 12,
+          "precision": 0.22580645161290322,
+          "recall": 0.3684210526315789,
+          "f1": 0.28,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ]
+      ]
+    },
+    "all_tiou50_delay0.5": {
+      "scores": {
+        "all": {
+          "tp": 11,
+          "fp": 28,
+          "fn": 29,
+          "precision": 0.28205128205128205,
+          "recall": 0.275,
+          "f1": 0.27848101265822783,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "hands": {
+          "tp": 4,
+          "fp": 4,
+          "fn": 17,
+          "precision": 0.5,
+          "recall": 0.19047619047619047,
+          "f1": 0.27586206896551724,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "feet": {
+          "tp": 7,
+          "fp": 24,
+          "fn": 12,
+          "precision": 0.22580645161290322,
+          "recall": 0.3684210526315789,
+          "f1": 0.28,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ]
+      ]
+    },
+    "all_tiou50_delay1": {
+      "scores": {
+        "all": {
+          "tp": 11,
+          "fp": 28,
+          "fn": 29,
+          "precision": 0.28205128205128205,
+          "recall": 0.275,
+          "f1": 0.27848101265822783,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "hands": {
+          "tp": 4,
+          "fp": 4,
+          "fn": 17,
+          "precision": 0.5,
+          "recall": 0.19047619047619047,
+          "f1": 0.27586206896551724,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "feet": {
+          "tp": 7,
+          "fp": 24,
+          "fn": 12,
+          "precision": 0.22580645161290322,
+          "recall": 0.3684210526315789,
+          "f1": 0.28,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ]
+      ]
+    },
+    "all_any_overlap": {
+      "scores": {
+        "all": {
+          "tp": 18,
+          "fp": 21,
+          "fn": 22,
+          "precision": 0.46153846153846156,
+          "recall": 0.45,
+          "f1": 0.45569620253164556,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "hands": {
+          "tp": 6,
+          "fp": 2,
+          "fn": 15,
+          "precision": 0.75,
+          "recall": 0.2857142857142857,
+          "f1": 0.4137931034482759,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "feet": {
+          "tp": 12,
+          "fp": 19,
+          "fn": 7,
+          "precision": 0.3870967741935484,
+          "recall": 0.631578947368421,
+          "f1": 0.48000000000000004,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          7,
+          12
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          19,
+          18
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          23,
+          22
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          26,
+          26
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ],
+        [
+          29,
+          30
+        ],
+        [
+          30,
+          31
+        ],
+        [
+          37,
+          37
+        ]
+      ]
+    },
+    "all_identity_only": {
+      "scores": {
+        "all": {
+          "tp": 18,
+          "fp": 21,
+          "fn": 22,
+          "precision": 0.46153846153846156,
+          "recall": 0.45,
+          "f1": 0.45569620253164556,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "hands": {
+          "tp": 6,
+          "fp": 2,
+          "fn": 15,
+          "precision": 0.75,
+          "recall": 0.2857142857142857,
+          "f1": 0.4137931034482759,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        },
+        "feet": {
+          "tp": 12,
+          "fp": 19,
+          "fn": 7,
+          "precision": 0.3870967741935484,
+          "recall": 0.631578947368421,
+          "f1": 0.48000000000000004,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          7,
+          12
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          15,
+          18
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          23,
+          22
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          26,
+          26
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ],
+        [
+          29,
+          30
+        ],
+        [
+          30,
+          31
+        ],
+        [
+          34,
+          37
+        ]
+      ]
+    },
+    "visible_tiou50_delay0": {
+      "scores": {
+        "all": {
+          "tp": 11,
+          "fp": 28,
+          "fn": 27,
+          "precision": 0.28205128205128205,
+          "recall": 0.2894736842105263,
+          "f1": 0.28571428571428575,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "hands": {
+          "tp": 4,
+          "fp": 4,
+          "fn": 15,
+          "precision": 0.5,
+          "recall": 0.21052631578947367,
+          "f1": 0.2962962962962963,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "feet": {
+          "tp": 7,
+          "fp": 24,
+          "fn": 12,
+          "precision": 0.22580645161290322,
+          "recall": 0.3684210526315789,
+          "f1": 0.28,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ]
+      ]
+    },
+    "visible_tiou50_delay0.25": {
+      "scores": {
+        "all": {
+          "tp": 11,
+          "fp": 28,
+          "fn": 27,
+          "precision": 0.28205128205128205,
+          "recall": 0.2894736842105263,
+          "f1": 0.28571428571428575,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "hands": {
+          "tp": 4,
+          "fp": 4,
+          "fn": 15,
+          "precision": 0.5,
+          "recall": 0.21052631578947367,
+          "f1": 0.2962962962962963,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "feet": {
+          "tp": 7,
+          "fp": 24,
+          "fn": 12,
+          "precision": 0.22580645161290322,
+          "recall": 0.3684210526315789,
+          "f1": 0.28,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ]
+      ]
+    },
+    "visible_tiou50_delay0.5": {
+      "scores": {
+        "all": {
+          "tp": 11,
+          "fp": 28,
+          "fn": 27,
+          "precision": 0.28205128205128205,
+          "recall": 0.2894736842105263,
+          "f1": 0.28571428571428575,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "hands": {
+          "tp": 4,
+          "fp": 4,
+          "fn": 15,
+          "precision": 0.5,
+          "recall": 0.21052631578947367,
+          "f1": 0.2962962962962963,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "feet": {
+          "tp": 7,
+          "fp": 24,
+          "fn": 12,
+          "precision": 0.22580645161290322,
+          "recall": 0.3684210526315789,
+          "f1": 0.28,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ]
+      ]
+    },
+    "visible_tiou50_delay1": {
+      "scores": {
+        "all": {
+          "tp": 11,
+          "fp": 28,
+          "fn": 27,
+          "precision": 0.28205128205128205,
+          "recall": 0.2894736842105263,
+          "f1": 0.28571428571428575,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "hands": {
+          "tp": 4,
+          "fp": 4,
+          "fn": 15,
+          "precision": 0.5,
+          "recall": 0.21052631578947367,
+          "f1": 0.2962962962962963,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "feet": {
+          "tp": 7,
+          "fp": 24,
+          "fn": 12,
+          "precision": 0.22580645161290322,
+          "recall": 0.3684210526315789,
+          "f1": 0.28,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ]
+      ]
+    },
+    "visible_any_overlap": {
+      "scores": {
+        "all": {
+          "tp": 18,
+          "fp": 21,
+          "fn": 20,
+          "precision": 0.46153846153846156,
+          "recall": 0.47368421052631576,
+          "f1": 0.4675324675324675,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "hands": {
+          "tp": 6,
+          "fp": 2,
+          "fn": 13,
+          "precision": 0.75,
+          "recall": 0.3157894736842105,
+          "f1": 0.44444444444444436,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "feet": {
+          "tp": 12,
+          "fp": 19,
+          "fn": 7,
+          "precision": 0.3870967741935484,
+          "recall": 0.631578947368421,
+          "f1": 0.48000000000000004,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          5,
+          11
+        ],
+        [
+          7,
+          12
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          19,
+          18
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          23,
+          22
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          26,
+          26
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ],
+        [
+          29,
+          30
+        ],
+        [
+          30,
+          31
+        ],
+        [
+          37,
+          37
+        ]
+      ]
+    },
+    "visible_identity_only": {
+      "scores": {
+        "all": {
+          "tp": 18,
+          "fp": 21,
+          "fn": 20,
+          "precision": 0.46153846153846156,
+          "recall": 0.47368421052631576,
+          "f1": 0.4675324675324675,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "hands": {
+          "tp": 6,
+          "fp": 2,
+          "fn": 13,
+          "precision": 0.75,
+          "recall": 0.3157894736842105,
+          "f1": 0.44444444444444436,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 2
+        },
+        "feet": {
+          "tp": 12,
+          "fp": 19,
+          "fn": 7,
+          "precision": 0.3870967741935484,
+          "recall": 0.631578947368421,
+          "f1": 0.48000000000000004,
+          "both_at_least_70_percent": false,
+          "excluded_predictions": 0,
+          "excluded_reference": 0
+        }
+      },
+      "matched_events": [
+        [
+          2,
+          8
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          4,
+          10
+        ],
+        [
+          7,
+          12
+        ],
+        [
+          9,
+          13
+        ],
+        [
+          10,
+          11
+        ],
+        [
+          12,
+          16
+        ],
+        [
+          14,
+          17
+        ],
+        [
+          17,
+          18
+        ],
+        [
+          22,
+          21
+        ],
+        [
+          23,
+          22
+        ],
+        [
+          25,
+          25
+        ],
+        [
+          26,
+          26
+        ],
+        [
+          27,
+          27
+        ],
+        [
+          28,
+          28
+        ],
+        [
+          29,
+          30
+        ],
+        [
+          30,
+          31
+        ],
+        [
+          37,
+          37
+        ]
+      ]
+    }
+  },
+  "frame_modes": {
+    "all_fixed_delay0": {
+      "all": {
+        "tp": 412,
+        "fp": 307,
+        "fn": 1061,
+        "tn": 323,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 0,
+        "precision": 0.5730180806675939,
+        "recall": 0.27970128988458925,
+        "f1": 0.375912408759124,
+        "both_at_least_70_percent": false
+      },
+      "hands": {
+        "tp": 140,
+        "fp": 46,
+        "fn": 652,
+        "tn": 157,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 0,
+        "precision": 0.7526881720430108,
+        "recall": 0.17676767676767677,
+        "f1": 0.28629856850715746,
+        "both_at_least_70_percent": false
+      },
+      "feet": {
+        "tp": 272,
+        "fp": 261,
+        "fn": 409,
+        "tn": 166,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 0,
+        "precision": 0.5103189493433395,
+        "recall": 0.39941262848751835,
+        "f1": 0.44810543657331137,
+        "both_at_least_70_percent": false
+      }
+    },
+    "all_fixed_delay0.25": {
+      "all": {
+        "tp": 385,
+        "fp": 334,
+        "fn": 1086,
+        "tn": 297,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 12,
+        "precision": 0.5354659248956884,
+        "recall": 0.26172671651937457,
+        "f1": 0.3515981735159817,
+        "both_at_least_70_percent": false
+      },
+      "hands": {
+        "tp": 127,
+        "fp": 59,
+        "fn": 670,
+        "tn": 137,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 6,
+        "precision": 0.6827956989247311,
+        "recall": 0.15934755332496864,
+        "f1": 0.25839267548321465,
+        "both_at_least_70_percent": false
+      },
+      "feet": {
+        "tp": 258,
+        "fp": 275,
+        "fn": 416,
+        "tn": 160,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 6,
+        "precision": 0.48405253283302063,
+        "recall": 0.3827893175074184,
+        "f1": 0.4275062137531069,
+        "both_at_least_70_percent": false
+      }
+    },
+    "all_fixed_delay0.5": {
+      "all": {
+        "tp": 353,
+        "fp": 366,
+        "fn": 1107,
+        "tn": 293,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 20,
+        "precision": 0.4909596662030598,
+        "recall": 0.24178082191780823,
+        "f1": 0.3240018357044516,
+        "both_at_least_70_percent": false
+      },
+      "hands": {
+        "tp": 115,
+        "fp": 71,
+        "fn": 672,
+        "tn": 132,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 10,
+        "precision": 0.6182795698924731,
+        "recall": 0.14612452350698857,
+        "f1": 0.23638232271325796,
+        "both_at_least_70_percent": false
+      },
+      "feet": {
+        "tp": 238,
+        "fp": 295,
+        "fn": 435,
+        "tn": 161,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 10,
+        "precision": 0.44652908067542213,
+        "recall": 0.3536404160475483,
+        "f1": 0.39469320066334995,
+        "both_at_least_70_percent": false
+      }
+    },
+    "all_fixed_delay1": {
+      "all": {
+        "tp": 289,
+        "fp": 430,
+        "fn": 1163,
+        "tn": 270,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 40,
+        "precision": 0.4019471488178025,
+        "recall": 0.19903581267217632,
+        "f1": 0.26623675725472135,
+        "both_at_least_70_percent": false
+      },
+      "hands": {
+        "tp": 91,
+        "fp": 95,
+        "fn": 690,
+        "tn": 120,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 20,
+        "precision": 0.489247311827957,
+        "recall": 0.11651728553137004,
+        "f1": 0.18821096173733196,
+        "both_at_least_70_percent": false
+      },
+      "feet": {
+        "tp": 198,
+        "fp": 335,
+        "fn": 473,
+        "tn": 150,
+        "excluded_occluded": 0,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 20,
+        "precision": 0.3714821763602251,
+        "recall": 0.29508196721311475,
+        "f1": 0.3289036544850499,
+        "both_at_least_70_percent": false
+      }
+    },
+    "visible_fixed_delay0": {
+      "all": {
+        "tp": 402,
+        "fp": 297,
+        "fn": 777,
+        "tn": 323,
+        "excluded_occluded": 294,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 0,
+        "precision": 0.575107296137339,
+        "recall": 0.34096692111959287,
+        "f1": 0.4281150159744409,
+        "both_at_least_70_percent": false
+      },
+      "hands": {
+        "tp": 130,
+        "fp": 37,
+        "fn": 381,
+        "tn": 157,
+        "excluded_occluded": 281,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 0,
+        "precision": 0.7784431137724551,
+        "recall": 0.25440313111545987,
+        "f1": 0.38348082595870203,
+        "both_at_least_70_percent": false
+      },
+      "feet": {
+        "tp": 272,
+        "fp": 260,
+        "fn": 396,
+        "tn": 166,
+        "excluded_occluded": 13,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 0,
+        "precision": 0.5112781954887218,
+        "recall": 0.40718562874251496,
+        "f1": 0.4533333333333333,
+        "both_at_least_70_percent": false
+      }
+    },
+    "visible_fixed_delay0.25": {
+      "all": {
+        "tp": 374,
+        "fp": 318,
+        "fn": 736,
+        "tn": 280,
+        "excluded_occluded": 379,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 12,
+        "precision": 0.5404624277456648,
+        "recall": 0.33693693693693694,
+        "f1": 0.41509433962264153,
+        "both_at_least_70_percent": false
+      },
+      "hands": {
+        "tp": 117,
+        "fp": 44,
+        "fn": 335,
+        "tn": 122,
+        "excluded_occluded": 360,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 6,
+        "precision": 0.7267080745341615,
+        "recall": 0.2588495575221239,
+        "f1": 0.3817292006525286,
+        "both_at_least_70_percent": false
+      },
+      "feet": {
+        "tp": 257,
+        "fp": 274,
+        "fn": 401,
+        "tn": 158,
+        "excluded_occluded": 19,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 6,
+        "precision": 0.4839924670433145,
+        "recall": 0.3905775075987842,
+        "f1": 0.432296047098402,
+        "both_at_least_70_percent": false
+      }
+    },
+    "visible_fixed_delay0.5": {
+      "all": {
+        "tp": 342,
+        "fp": 351,
+        "fn": 726,
+        "tn": 267,
+        "excluded_occluded": 419,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 20,
+        "precision": 0.4935064935064935,
+        "recall": 0.3202247191011236,
+        "f1": 0.38841567291311757,
+        "both_at_least_70_percent": false
+      },
+      "hands": {
+        "tp": 105,
+        "fp": 57,
+        "fn": 308,
+        "tn": 109,
+        "excluded_occluded": 397,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 10,
+        "precision": 0.6481481481481481,
+        "recall": 0.2542372881355932,
+        "f1": 0.3652173913043478,
+        "both_at_least_70_percent": false
+      },
+      "feet": {
+        "tp": 237,
+        "fp": 294,
+        "fn": 418,
+        "tn": 158,
+        "excluded_occluded": 22,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 10,
+        "precision": 0.4463276836158192,
+        "recall": 0.3618320610687023,
+        "f1": 0.39966273187183815,
+        "both_at_least_70_percent": false
+      }
+    },
+    "visible_fixed_delay1": {
+      "all": {
+        "tp": 275,
+        "fp": 404,
+        "fn": 741,
+        "tn": 244,
+        "excluded_occluded": 463,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 40,
+        "precision": 0.4050073637702504,
+        "recall": 0.2706692913385827,
+        "f1": 0.3244837758112094,
+        "both_at_least_70_percent": false
+      },
+      "hands": {
+        "tp": 78,
+        "fp": 72,
+        "fn": 284,
+        "tn": 102,
+        "excluded_occluded": 437,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 20,
+        "precision": 0.52,
+        "recall": 0.2154696132596685,
+        "f1": 0.3046875,
+        "both_at_least_70_percent": false
+      },
+      "feet": {
+        "tp": 197,
+        "fp": 332,
+        "fn": 457,
+        "tn": 142,
+        "excluded_occluded": 26,
+        "excluded_unscorable": 0,
+        "excluded_boundary": 20,
+        "precision": 0.3724007561436673,
+        "recall": 0.3012232415902141,
+        "f1": 0.3330515638207946,
+        "both_at_least_70_percent": false
+      }
+    }
+  },
+  "visibility": {
+    "all": {
+      "reference_contact_seconds": 147.2,
+      "occluded_seconds": 29.600000000000005,
+      "occluded_fraction": 0.2010869565217392
+    },
+    "hands": {
+      "reference_contact_seconds": 79.27999999999999,
+      "occluded_seconds": 28.28,
+      "occluded_fraction": 0.35671039354187695
+    },
+    "feet": {
+      "reference_contact_seconds": 67.92,
+      "occluded_seconds": 1.320000000000002,
+      "occluded_fraction": 0.019434628975265048
+    }
+  },
+  "strict_false_positive_breakdown": {
+    "unmapped_hold": 15,
+    "wrong_limb_hold_pair": 0,
+    "no_time_overlap": 1,
+    "overlap_below_0.5": 12,
+    "duplicate_competing_prediction": 0
+  },
+  "unique_visible_pairs_ignore_timing": {
+    "all": {
+      "tp": 18,
+      "fp": 13,
+      "fn": 20,
+      "precision": 0.5806451612903226,
+      "recall": 0.47368421052631576,
+      "f1": 0.5217391304347826,
+      "both_at_least_70_percent": false
+    },
+    "hands": {
+      "tp": 6,
+      "fp": 1,
+      "fn": 13,
+      "precision": 0.8571428571428571,
+      "recall": 0.3157894736842105,
+      "f1": 0.46153846153846156,
+      "both_at_least_70_percent": false
+    },
+    "feet": {
+      "tp": 12,
+      "fp": 12,
+      "fn": 7,
+      "precision": 0.5,
+      "recall": 0.631578947368421,
+      "f1": 0.5581395348837209,
+      "both_at_least_70_percent": false
+    }
+  },
+  "short_contact_examples": [
+    {
+      "limb": "lh",
+      "reference_hold_id": 9,
+      "prediction": [
+        12.8,
+        14.6
+      ],
+      "reference": [
+        7.72,
+        14.76
+      ],
+      "temporal_iou": 0.255681818181818,
+      "duration_ratio": 0.255681818181818
+    },
+    {
+      "limb": "lh",
+      "reference_hold_id": 11,
+      "prediction": [
+        15.0,
+        15.8
+      ],
+      "reference": [
+        15.2,
+        18.0
+      ],
+      "temporal_iou": 0.20000000000000048,
+      "duration_ratio": 0.2857142857142859
+    },
+    {
+      "limb": "lf",
+      "reference_hold_id": 5,
+      "prediction": [
+        18.4,
+        19.0
+      ],
+      "reference": [
+        13.84,
+        18.92
+      ],
+      "temporal_iou": 0.10077519379845022,
+      "duration_ratio": 0.11811023622047268
+    },
+    {
+      "limb": "rf",
+      "reference_hold_id": 10,
+      "prediction": [
+        21.72,
+        22.32
+      ],
+      "reference": [
+        21.72,
+        25.84
+      ],
+      "temporal_iou": 0.14563106796116534,
+      "duration_ratio": 0.14563106796116534
+    },
+    {
+      "limb": "rf",
+      "reference_hold_id": 10,
+      "prediction": [
+        23.2,
+        23.8
+      ],
+      "reference": [
+        21.72,
+        25.84
+      ],
+      "temporal_iou": 0.14563106796116534,
+      "duration_ratio": 0.14563106796116534
+    },
+    {
+      "limb": "rf",
+      "reference_hold_id": 10,
+      "prediction": [
+        24.52,
+        25.2
+      ],
+      "reference": [
+        21.72,
+        25.84
+      ],
+      "temporal_iou": 0.1650485436893203,
+      "duration_ratio": 0.1650485436893203
+    },
+    {
+      "limb": "rf",
+      "reference_hold_id": 13,
+      "prediction": [
+        27.32,
+        29.32
+      ],
+      "reference": [
+        26.76,
+        31.48
+      ],
+      "temporal_iou": 0.4237288135593221,
+      "duration_ratio": 0.4237288135593221
+    },
+    {
+      "limb": "lh",
+      "reference_hold_id": 24,
+      "prediction": [
+        32.4,
+        32.92
+      ],
+      "reference": [
+        31.92,
+        38.96
+      ],
+      "temporal_iou": 0.07386363636363681,
+      "duration_ratio": 0.07386363636363681
+    },
+    {
+      "limb": "rf",
+      "reference_hold_id": 19,
+      "prediction": [
+        38.6,
+        39.12
+      ],
+      "reference": [
+        37.48,
+        41.44
+      ],
+      "temporal_iou": 0.13131313131313027,
+      "duration_ratio": 0.13131313131313027
+    },
+    {
+      "limb": "lf",
+      "reference_hold_id": 20,
+      "prediction": [
+        38.92,
+        40.52
+      ],
+      "reference": [
+        38.72,
+        42.32
+      ],
+      "temporal_iou": 0.44444444444444464,
+      "duration_ratio": 0.44444444444444464
+    },
+    {
+      "limb": "lf",
+      "reference_hold_id": 20,
+      "prediction": [
+        41.0,
+        41.8
+      ],
+      "reference": [
+        38.72,
+        42.32
+      ],
+      "temporal_iou": 0.22222222222222135,
+      "duration_ratio": 0.22222222222222135
+    },
+    {
+      "limb": "rf",
+      "reference_hold_id": 24,
+      "prediction": [
+        46.32,
+        46.92
+      ],
+      "reference": [
+        45.52,
+        48.56
+      ],
+      "temporal_iou": 0.1973684210526321,
+      "duration_ratio": 0.1973684210526321
+    }
+  ],
+  "visible_reference_contact_diagnostics": {
+    "all": {
+      "correct": 402,
+      "low_confidence": 394,
+      "missing_pose": 0,
+      "ambiguous_holds": 52,
+      "no_hold_near_keypoints": 182,
+      "wrong_hold": 149
+    },
+    "hands": {
+      "correct": 130,
+      "low_confidence": 349,
+      "missing_pose": 0,
+      "ambiguous_holds": 13,
+      "no_hold_near_keypoints": 5,
+      "wrong_hold": 14
+    },
+    "feet": {
+      "correct": 272,
+      "low_confidence": 45,
+      "missing_pose": 0,
+      "ambiguous_holds": 39,
+      "no_hold_near_keypoints": 177,
+      "wrong_hold": 135
+    }
+  },
+  "unmapped_events": 15,
+  "unmapped_with_any_box_iou_ge_0_3": 0,
+  "inputs_sha256": {
+    "results/verification/development/result.json": "8b3aa38a3f81571da96340ea397b8230767ad5a094116dff31020ead126ab2ba",
+    "results/verification/development/evaluation.json": "677122c076ab21e01b93c6aad553b8b26aa5b361338f060d0da3dc81bf3f37d4",
+    "assets/annotations/p2a_orange_holdUsage.csv": "dfed839c801db846f3c5b0627f15b97eaa48b4f0f2f02d7f19fdb86209b09884"
+  }
+}
