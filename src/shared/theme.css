@@ -1,0 +1,111 @@
+/* Светлая тема — :root.
+   Тёмная сама включается по теме телефона (prefers-color-scheme).
+   Ручной выбор: html.is-night или html.is-light — он сильнее системы.
+   @property нужен, чтобы смена темы интерполировала сами цвета. */
+
+@property --accent { syntax: "<color>"; inherits: true; initial-value: #fd7115; }
+@property --bg { syntax: "<color>"; inherits: true; initial-value: #fd7115; }
+@property --bg-secondary { syntax: "<color>"; inherits: true; initial-value: #dfdfdf; }
+@property --bg-elevated { syntax: "<color>"; inherits: true; initial-value: #ececec; }
+@property --bg-muted { syntax: "<color>"; inherits: true; initial-value: #dadada; }
+@property --bg-canvas { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --text { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --heading { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --ink-soft { syntax: "<color>"; inherits: true; initial-value: #343434; }
+@property --accent-soft { syntax: "<color>"; inherits: true; initial-value: #fff1e6; }
+@property --quiet { syntax: "<color>"; inherits: true; initial-value: #8a8a92; }
+
+:root {
+  color-scheme: light dark;
+
+  /* Акцент */
+  --accent: #fd7115;
+  --on-accent: #ffffff;
+  --accent-soft: #fff1e6;
+
+  /* Фоны */
+  --bg: #fd7115;
+  --bg-secondary: #dfdfdf;
+  --bg-elevated: #ececec;
+  --bg-muted: #dadada;
+  --bg-canvas: #ffffff;
+  --bg-input: #f3f3f5;
+  --bg-sunken: #f6f6f7;
+  --nav: #b5b5b5;
+  --nav-accent: #080707;
+  /* Текст */
+  --text: #080707;
+  --heading: #ffffff;
+  --ink: #1c1c1e;
+  --ink-soft: #343434;
+  --muted: #6d6d75;
+  --faint: #b5b5b5;
+  --quiet: #8a8a92;
+
+  /* Линии */
+  --line: #efeff2;
+  
+  /* Зацепы — одинаковые в обеих темах */
+  --hold-red: #ef3d3d;
+  --hold-green: #3caf4a;
+  --hold-pink: #e23d8a;
+
+  /* Экран «галерея / камера» */
+  --source-top: var(--accent);
+  --source-top-ink: #ffffff;
+  --source-bottom: #e6e6e6;
+  --source-bottom-ink: var(--accent);
+}
+
+/* Явный светлый выбор при тёмной теме телефона */
+html.is-light {
+  color-scheme: light;
+  
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.is-light) {
+    color-scheme: dark;
+
+    --bg: #1e1e1e;
+    --bg-secondary: #2a2a2a;
+    --bg-elevated: #343434;
+    --bg-muted: #343434;
+    --bg-canvas: var(--accent);
+    --text: #cecece;
+    --heading: var(--accent);
+    --ink-soft: #cecece;
+    --quiet: #8a8a8a;
+    --nav: #1e1e1e;
+    --nav-accent: #fd7115;
+    --accent-soft: transparent;
+
+    --source-top: #1e1e1e;
+    --source-top-ink: var(--accent);
+    --source-bottom: #343434;
+    --source-bottom-ink: var(--accent);
+  }
+}
+
+html.is-night {
+  color-scheme: dark;
+
+  --bg: #1e1e1e;
+  --bg-secondary: #2a2a2a;
+  --bg-elevated: #343434;
+  --bg-muted: #343434;
+  --bg-canvas: var(--accent);
+  --nav: #1e1e1e;
+  --nav-accent: #fd7115;
+  --text: #cecece;
+  --heading: var(--accent);
+  --ink-soft: #cecece;
+  --quiet: #8a8a8a;
+
+  --accent-soft: transparent;
+
+  --source-top: #1e1e1e;
+  --source-top-ink: var(--accent);
+  --source-bottom: #343434;
+  --source-bottom-ink: var(--accent);
+}
