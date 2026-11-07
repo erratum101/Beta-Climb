@@ -1,0 +1,37 @@
+[project]
+name = "betaclimb-worker"
+version = "0.1.0"
+description = "Фоновая обработка видео скалолазных попыток Beta Climb"
+authors = [
+    {name = "George", email = "gipustovoi@edu.hse.ru"}
+]
+# RatPoC проверен на Python 3.12; MediaPipe 0.10.21 не поддерживает Python 3.13+.
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pydantic-settings>=2.0,<3.0",
+    "sqlalchemy>=2.0,<3.0",
+    "psycopg[binary]>=3.2,<4.0",
+    # Библиотеки обработки видео из RatPoC.
+    "mediapipe==0.10.21",
+    "ultralytics==8.4.177",
+    "torch==2.14.1",
+    "torchvision==0.29.1",
+    "opencv-python==4.11.0.86",
+    # MediaPipe требует contrib-сборку; сохраняем ту же версию OpenCV и NumPy 1.x.
+    "opencv-contrib-python==4.11.0.86",
+    "numpy==1.26.4",
+    "scipy==1.17.1",
+    "requests==2.34.2",
+    "remotezip==0.12.6",
+]
+
+[tool.poetry]
+packages = [
+    {include = "core", from = "src"},
+    {include = "service", from = "src"},
+    {include = "database", from = "src"},
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
