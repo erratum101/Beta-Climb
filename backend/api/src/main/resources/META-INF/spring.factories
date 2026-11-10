@@ -1,0 +1,2 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+ru.betaclimb.RailwayDatabaseEnvironmentPostProcessor
