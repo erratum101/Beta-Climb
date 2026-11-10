@@ -895,7 +895,8 @@ html.is-vt .route-enter-layer {
   font-weight: 600;
   transition:
     scale var(--dur-press) var(--ease-out),
-    background-color 200ms linear;
+    background-color 200ms linear,
+    border-radius var(--dur-drop-out) var(--ease-leave);
 }
 
 .profile-form .field-control::placeholder,
@@ -1135,7 +1136,7 @@ input.field-control {
   background: var(--bg-elevated);
   border-radius: 0 0 27px 27px;
   transform-origin: top center;
-  clip-path: inset(0 0 100% 0);
+  clip-path: inset(0 0 100% 0 round 0 0 27px 27px);
   transition:
     max-height var(--dur-drop-out) var(--ease-leave),
     clip-path var(--dur-drop-out) var(--ease-leave);
@@ -1144,7 +1145,7 @@ input.field-control {
 
 .field.is-open .field-menu-clip {
   max-height: 360px;
-  clip-path: inset(0);
+  clip-path: inset(0 round 0 0 27px 27px);
   pointer-events: auto;
   transition-duration: var(--dur-drop);
   transition-timing-function: var(--ease-out);
@@ -1205,13 +1206,17 @@ input.field-control {
 }
 
 .profile-form .field.is-open:has(.field-menu-clip) .field-control {
-  border-radius: 12;
+  border-radius: 27px 27px 0 0;
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    background-color 200ms linear,
+    border-radius var(--dur-drop) var(--ease-out);
 }
 
 .field-option {
   width: 100%;
   text-align: left;
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 12px;
   color: var(--ink-soft);
   font-weight: 600;
