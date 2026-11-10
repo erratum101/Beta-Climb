@@ -4,6 +4,8 @@ import { useSession } from './session'
 import { CAPTURE_GUIDE_STEPS, CaptureGuideBody, CaptureSource, HomeGuideContext, useSourceHandoff } from '../features/capture/CaptureGuide'
 import { BottomNav } from '../shared/ui/BottomNav'
 import { RouteTransition } from '../shared/ui/RouteTransition'
+import { useClientKind } from '../shared/clientKind'
+import { LandingPage } from '../pages/LandingPage'
 import { SplashPage, SPLASH_ENTER_KEY } from '../pages/SplashPage'
 import { WelcomePage } from '../pages/WelcomePage'
 import { OnboardingPage, ProfilePage } from '../pages/ProfilePage'
@@ -115,9 +117,14 @@ function routeTransitionKey(pathname: string): string {
 
 export function AppRouter() {
   const location = useLocation()
+  const kind = useClientKind()
   const key = routeTransitionKey(location.pathname)
   const fromSplash = Boolean((location.state as { fromSplash?: boolean } | null)?.fromSplash)
   const skipTabsEnter = useRef(false)
+
+  if (kind === 'desktop' || (kind === 'mobile' && location.pathname === '/')) {
+    return <LandingPage mode={kind === 'desktop' ? 'desktop' : 'mobile'} />
+  }
 
   if ((fromSplash || sessionStorage.getItem(SPLASH_ENTER_KEY) === '1') && key === 'tabs') {
     skipTabsEnter.current = true
@@ -128,6 +135,7 @@ export function AppRouter() {
     <RouteTransition transitionKey={key} animate={!(key === 'tabs' && (fromSplash || skipTabsEnter.current))} name="screen">
       <Routes location={location}>
         <Route path="/" element={<SplashPage />} />
+        <Route path="/app" element={<SplashPage />} />
         <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route element={<RequireProfile />}>
@@ -142,7 +150,7 @@ export function AppRouter() {
           <Route path="/attempt/:id" element={<AnalysisPage />} />
           <Route path="/compare/:id" element={<ComparePage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to={kind === 'mobile' ? '/app' : '/'} replace />} />
       </Routes>
     </RouteTransition>
   )

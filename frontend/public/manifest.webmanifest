@@ -1,7 +1,7 @@
 {
   "name": "Beta Climb",
   "short_name": "Beta Climb",
-  "start_url": "/",
+  "start_url": "/?source=home",
   "scope": "/",
   "display": "fullscreen",
   "orientation": "portrait",
