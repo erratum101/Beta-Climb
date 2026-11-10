@@ -115,7 +115,7 @@ export function ProfileForm({
   }
 
   return (
-    <form className="profile-form" onSubmit={handleSubmit}>
+    <form className="profile-form stagger" onSubmit={handleSubmit}>
       <label className="field">
         <span className="visually-hidden">Имя или ник</span>
         <input

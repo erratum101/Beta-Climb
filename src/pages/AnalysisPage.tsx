@@ -37,7 +37,7 @@ export function AnalysisPage() {
         onTime={playback.seek}
         onToggle={playback.toggle}
       />
-      <div className="meta-row">
+      <div className="meta-row stagger">
         <span className="pill">Трасса {attempt.gradeLabel}</span>
         <span className="pill">{RESULT_LABEL[attempt.result]}</span>
         <span className="pill">{formatSeconds(attempt.durationSec)}</span>
@@ -58,7 +58,7 @@ export function AnalysisPage() {
           <p>{attempt.change.note}</p>
         </article>
       ) : null}
-      <div className="stack">
+      <div className="stack stagger">
         {primary ? <MomentCard moment={primary} current={playback.time} open={opened === primary.id} onOpen={() => openMoment(primary)} /> : null}
         {others.length > 0 ? <p className="section-label">Другие наблюдения</p> : null}
         {others.map((moment) => (
@@ -101,7 +101,7 @@ function MomentCard({
 }) {
   const active = current >= moment.startSec && current <= moment.endSec
   return (
-    <article className={active ? 'moment is-current' : 'moment'}>
+    <article className={['moment', active ? 'is-current' : '', open ? 'is-open' : ''].filter(Boolean).join(' ')}>
       <button type="button" className="moment-top" onClick={onOpen}>
         <span>
           <strong>{moment.title}</strong>
@@ -109,14 +109,14 @@ function MomentCard({
         </span>
         <b>{formatSeconds(moment.timeSec)}</b>
       </button>
-      {open ? (
-        <div className="moment-body">
+      <div className="moment-body" inert={open ? undefined : true}>
+        <div className="moment-copy">
           <p><b>Что не так.</b> {moment.problem}</p>
           <p><b>Что произошло.</b> {moment.happened}</p>
           <p><b>Что сделать.</b> {moment.action}</p>
           <p className="moment-window">{formatSeconds(moment.startSec)} – {formatSeconds(moment.endSec)}</p>
         </div>
-      ) : null}
+      </div>
     </article>
   )
 }

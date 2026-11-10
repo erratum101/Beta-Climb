@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
 import { attemptHref, attemptStatusLabel, dayKey, formatSeconds, plural } from '../entities/attempt'
 import { HomeGuideContext } from '../features/capture/CaptureGuide'
+import { sharedNavigate } from '../shared/ui/motion'
 import { WallThumb } from '../shared/ui/WallThumb'
 import { Wordmark } from '../shared/ui/Wordmark'
 
@@ -46,13 +47,13 @@ export function HomePage() {
       ) : (
         <p className="summary">Сними попытку и получи разбор по моментам</p>
       )}
-      <div className="list">
+      <div className="list stagger">
         {recent.map((attempt) => (
           <button
             key={attempt.id}
             type="button"
             className="list-row"
-            onClick={() => navigate(attemptHref(attempt))}
+            onClick={(event) => sharedNavigate(navigate, attemptHref(attempt), event.currentTarget)}
           >
             <span className="thumb-slot">
               <WallThumb variant={attempt.wallVariant} />

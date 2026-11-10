@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
 import { attemptHref, attemptNumber, attemptStatusLabel, groupByDay, groupByGrade, plural } from '../entities/attempt'
+import { sharedNavigate } from '../shared/ui/motion'
 
 export function HistoryPage() {
   const navigate = useNavigate()
@@ -43,13 +44,13 @@ export function HistoryPage() {
             {groupByGrade(group.attempts).map((route) => (
               <div key={route.grade} className="card route-card">
                 <p className="card-kicker">Трасса {route.grade}</p>
-                <div className="route-list">
+                <div className="route-list stagger">
                   {route.attempts.map((attempt) => (
                     <button
                       key={attempt.id}
                       type="button"
                       className="route-item"
-                      onClick={() => navigate(attemptHref(attempt))}
+                      onClick={(event) => sharedNavigate(navigate, attemptHref(attempt), event.currentTarget)}
                     >
                       <span>Попытка {attemptNumber(attempt, attempts)}</span>
                       <em>{attemptStatusLabel(attempt)}</em>

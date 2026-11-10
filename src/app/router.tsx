@@ -91,7 +91,7 @@ function TabsLayout() {
       <div className={shellClass}>
         <div className="app-field" inert={sourceHandoff.leaving}>
           <div className={guide.open ? 'field-stage is-guide' : 'field-stage'}>
-            <RouteTransition transitionKey={location.pathname} animate={!fromSplash}>
+            <RouteTransition transitionKey={location.pathname} animate={!fromSplash} name="pane">
               <Outlet />
             </RouteTransition>
             <div className="home-guide" aria-hidden={!guide.open} inert={!guide.open}>
@@ -125,7 +125,7 @@ export function AppRouter() {
   if (key !== 'tabs') skipTabsEnter.current = false
 
   return (
-    <RouteTransition transitionKey={key} animate={!(key === 'tabs' && (fromSplash || skipTabsEnter.current))}>
+    <RouteTransition transitionKey={key} animate={!(key === 'tabs' && (fromSplash || skipTabsEnter.current))} name="screen">
       <Routes location={location}>
         <Route path="/" element={<SplashPage />} />
         <Route path="/welcome" element={<WelcomePage />} />
