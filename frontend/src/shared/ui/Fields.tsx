@@ -24,7 +24,7 @@ function useRaisedMenu(open: boolean, rootRef: RefObject<HTMLDivElement | null>)
       setRaised(false)
     }
     node.addEventListener('transitionend', clear)
-    const timer = window.setTimeout(clear, 360)
+    const timer = window.setTimeout(clear, 200)
     return () => {
       node.removeEventListener('transitionend', clear)
       window.clearTimeout(timer)

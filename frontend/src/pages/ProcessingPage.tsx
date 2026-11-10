@@ -44,7 +44,7 @@ export function ProcessingPage() {
         title={rejected ? 'Разбор не получился' : 'Разбор'}
         onBack={() => navigate('/climbs')}
       />
-      <ol className="step-list">
+      <ol className="step-list stagger">
         {STEPS.map((step, index) => {
           const state = rejected && index === 0 ? 'failed' : index < current ? 'done' : index === current && !rejected ? 'active' : 'pending'
           return (

@@ -1,7 +1,35 @@
 @import "./theme.css";
 
+@property --aim-x {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+@property --aim-y {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+@property --aim-s {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
 :root {
   --screen-corner: 47px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-leave: cubic-bezier(0.4, 0, 1, 1);
+  --dur-enter: 220ms;
+  --dur-exit: 180ms;
+  --dur-drop: 200ms;
+  --dur-drop-out: 160ms;
+  --dur-press: 120ms;
+  --dur-list: 340ms;
+  --stagger: 30ms;
   color: var(--text);
   font-family: "Montserrat Alternates", "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -119,7 +147,7 @@ ol {
 }
 
 #root > .screen,
-.route-transition > .screen {
+:is(.route-transition, .route-enter-layer) > .screen {
   height: 100%;
   min-height: 0;
 }
@@ -129,10 +157,21 @@ ol {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  animation: route-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  position: relative;
 }
 
-.route-transition.is-static {
+.route-enter-layer {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transform-origin: bottom center;
+  animation: route-enter var(--dur-enter) var(--ease-out) both;
+}
+
+.route-transition.is-static .route-enter-layer,
+html.is-vt .route-enter-layer {
   animation: none;
 }
 
@@ -144,11 +183,26 @@ ol {
 @keyframes route-enter {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(10px) scale(0.97);
+    filter: blur(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes route-leave {
+  from {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+    filter: blur(3px);
   }
 }
 
@@ -166,7 +220,7 @@ ol {
   overflow: hidden;
   background: var(--bg-secondary);
   padding-bottom: 105px;
-  transition: background-color 0.45s ease;
+  transition: background-color 200ms linear;
 }
 
 .app-shell.is-splash-enter .app-field {
@@ -175,7 +229,7 @@ ol {
   z-index: 50;
   border-radius: 0;
   background: var(--bg);
-  animation: splash-field-shrink 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: splash-field-shrink 0.56s var(--ease-in-out) forwards;
 }
 
 .app-shell.is-splash-enter:has(.bottom-nav.is-pair) .app-field {
@@ -184,12 +238,12 @@ ol {
 
 .app-shell.is-splash-enter .app-field .route-transition {
   opacity: 0;
-  animation: splash-content-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+  animation: splash-content-in var(--dur-enter) var(--ease-out) 0.4s both;
 }
 
 .app-shell.is-splash-enter .bottom-nav .nav-face > * {
   opacity: 0;
-  animation: splash-nav-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.72s both;
+  animation: splash-nav-in var(--dur-enter) var(--ease-out) 0.48s both;
 }
 
 @keyframes splash-field-shrink {
@@ -271,7 +325,7 @@ ol {
   border-radius: 0 0 var(--screen-corner) var(--screen-corner);
   corner-shape: squircle;
   background: var(--bg);
-  transition: background-color 0.45s ease;
+  transition: background-color 200ms linear;
 }
 
 .app-shell.is-guide,
@@ -289,7 +343,9 @@ ol {
 .app-shell.is-leaving .bottom-nav.can-guide.is-guide .nav-actions {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.28s ease;
+  transition:
+    opacity var(--dur-exit) var(--ease-leave),
+    filter var(--dur-exit) var(--ease-leave);
 }
 
 .app-shell .screen {
@@ -316,26 +372,29 @@ ol {
 .splash-hit {
   color: inherit;
   transition:
-    opacity 0.28s ease,
-    transform 0.28s ease;
+    opacity var(--dur-exit) var(--ease-leave),
+    transform var(--dur-exit) var(--ease-leave),
+    filter var(--dur-exit) var(--ease-leave),
+    scale var(--dur-press) var(--ease-out);
 }
 
 .splash-hit .svg-icon {
-  animation: rise 0.45s ease both;
+  animation: rise var(--dur-enter) var(--ease-out) both;
 }
 
 .splash-screen.is-exiting {
-  transition: background-color 0.28s ease;
+  transition: background-color 200ms linear;
 }
 
 .splash-screen.is-exiting .splash-hit {
   opacity: 0;
-  transform: scale(0.88);
+  transform: translateY(-6px) scale(0.98);
+  filter: blur(3px);
   pointer-events: none;
 }
 
 .logo-splash {
-  animation: rise 0.45s ease both;
+  animation: rise var(--dur-enter) var(--ease-out) both;
 }
 
 .welcome {
@@ -344,7 +403,7 @@ ol {
 }
 
 #root > .welcome,
-.route-transition > .welcome {
+:is(.route-transition, .route-enter-layer) > .welcome {
   padding:
     calc(16px + env(safe-area-inset-top))
     25px
@@ -472,7 +531,7 @@ ol {
 }
 
 #root > .profile-screen,
-.route-transition > .profile-screen {
+:is(.route-transition, .route-enter-layer) > .profile-screen {
   height: 100%;
   max-height: 100%;
   overflow-x: hidden;
@@ -484,14 +543,14 @@ ol {
 }
 
 #root > .profile-screen .profile-title,
-.route-transition > .profile-screen .profile-title {
+:is(.route-transition, .route-enter-layer) > .profile-screen .profile-title {
   margin-bottom: 24px;
   margin-top: 12px;
   flex: none;
 }
 
 #root > .profile-screen .profile-form,
-.route-transition > .profile-screen .profile-form {
+:is(.route-transition, .route-enter-layer) > .profile-screen .profile-form {
   flex: 1 1 auto;
   min-height: 0;
   justify-content: flex-start;
@@ -499,24 +558,24 @@ ol {
 }
 
 #root > .profile-screen .profile-form .field-row,
-.route-transition > .profile-screen .profile-form .field-row {
+:is(.route-transition, .route-enter-layer) > .profile-screen .profile-form .field-row {
   gap: 12px;
 }
 
 #root > .profile-screen .profile-form .consent,
-.route-transition > .profile-screen .profile-form .consent {
+:is(.route-transition, .route-enter-layer) > .profile-screen .profile-form .consent {
   margin-top: 0;
 }
 
 #root > .profile-screen .profile-form .gender-card,
-.route-transition > .profile-screen .profile-form .gender-card {
+:is(.route-transition, .route-enter-layer) > .profile-screen .profile-form .gender-card {
   aspect-ratio: 1;
   height: auto;
   max-height: 22vh;
 }
 
 #root > .profile-screen .profile-form > .btn,
-.route-transition > .profile-screen .profile-form > .btn {
+:is(.route-transition, .route-enter-layer) > .profile-screen .profile-form > .btn {
   margin-top: auto;
   margin-bottom: 0;
   flex: none;
@@ -537,7 +596,7 @@ ol {
   background: var(--bg);
   color: var(--accent);
   container-type: size;
-  transition: background-color 0.35s ease;
+  transition: background-color 200ms linear;
 }
 
 .profile-view h1 {
@@ -548,7 +607,7 @@ ol {
   font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  transition: color 0.35s ease;
+  transition: color 200ms linear;
 }
 
 .profile-cluster {
@@ -572,8 +631,9 @@ ol {
   white-space: nowrap;
   z-index: 3;
   transition:
-    background-color 0.35s ease,
-    color 0.35s ease;
+    scale var(--dur-press) var(--ease-out),
+    background-color 200ms linear,
+    color 200ms linear;
 }
 
 .profile-rate {
@@ -735,15 +795,20 @@ ol {
   display: grid;
   place-items: center;
   opacity: 0;
-  transform: scale(0.82);
+  scale: 0.92;
+  filter: blur(4px);
   transition:
-    opacity 0.35s ease,
-    transform 0.35s ease;
+    opacity var(--dur-exit) var(--ease-leave),
+    scale var(--dur-exit) var(--ease-leave),
+    filter var(--dur-exit) var(--ease-leave);
 }
 
 .icon-swap-layer.is-shown {
   opacity: 1;
-  transform: none;
+  scale: 1;
+  filter: blur(0);
+  transition-duration: var(--dur-enter);
+  transition-timing-function: var(--ease-out);
 }
 
 .profile-experience {
@@ -818,6 +883,7 @@ ol {
 .profile-form > .btn.is-ready {
   background: var(--bg-canvas);
   color: var(--bg);
+  animation: success-pulse 320ms var(--ease-out);
 }
 
 .profile-form .field-control {
@@ -827,7 +893,9 @@ ol {
   color: var(--ink-soft);
   padding: 0 20px;
   font-weight: 600;
-  transition: background-color 0.28s ease;
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    background-color 200ms linear;
 }
 
 .profile-form .field-control::placeholder,
@@ -868,7 +936,10 @@ ol {
   font-size: 16px;
   font-weight: 700;
   gap: 10px;
-  transition: background-color 0.28s ease, color 0.28s ease;
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    background-color 200ms linear,
+    color 200ms linear;
 }
 
 .profile-form .gender-card.is-on {
@@ -891,7 +962,7 @@ ol {
   font-weight: 700;
   cursor: pointer;
   container-type: inline-size;
-  transition: color 0.28s ease;
+  transition: color 200ms linear;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -915,7 +986,7 @@ ol {
   display: block;
   overflow: hidden;
   background: var(--bg-muted);
-  transition: width 0.32s ease, background-color 0.28s ease;
+  transition: width var(--dur-enter) var(--ease-out), background-color 200ms linear;
 }
 
 .profile-form .consent.is-invalid .consent-box {
@@ -932,7 +1003,7 @@ ol {
   font-weight: 700;
   white-space: nowrap;
   transform: translateY(-50%);
-  transition: opacity 0.32s ease;
+  transition: opacity 160ms linear;
 }
 
 .profile-form .consent.is-invalid .consent-prompt {
@@ -964,7 +1035,7 @@ ol {
   border: solid var(--faint);
   border-width: 0 4px 4px 0;
   transform: translate(-4.3px, -10.8px) rotate(45deg);
-  transition: border-color 0.28s ease;
+  transition: border-color 150ms linear;
 }
 
 .profile-form .consent input:checked + .consent-box::after {
@@ -1046,7 +1117,7 @@ input.field-control {
   display: flex;
   color: var(--accent);
   flex: none;
-  transition: transform 0.32s ease;
+  transition: transform 200ms var(--ease-in-out);
 }
 
 .field.is-open .chevron {
@@ -1063,13 +1134,20 @@ input.field-control {
   overflow: hidden;
   background: var(--bg-elevated);
   border-radius: 0 0 27px 27px;
-  transition: max-height 0.32s ease;
+  transform-origin: top center;
+  clip-path: inset(0 0 100% 0);
+  transition:
+    max-height var(--dur-drop-out) var(--ease-leave),
+    clip-path var(--dur-drop-out) var(--ease-leave);
   pointer-events: none;
 }
 
 .field.is-open .field-menu-clip {
   max-height: 360px;
+  clip-path: inset(0);
   pointer-events: auto;
+  transition-duration: var(--dur-drop);
+  transition-timing-function: var(--ease-out);
 }
 
 .field-menu {
@@ -1083,7 +1161,33 @@ input.field-control {
   background: transparent;
   border-radius: 0;
   box-shadow: none;
+  transform-origin: top center;
+  transform: scale(0.95);
+  opacity: 0;
+  filter: blur(3px);
+  transition:
+    transform var(--dur-drop-out) var(--ease-leave),
+    opacity 120ms linear,
+    filter var(--dur-drop-out) var(--ease-leave);
 }
+
+.field.is-open .field-menu {
+  transform: none;
+  opacity: 1;
+  filter: none;
+  transition-duration: var(--dur-drop);
+  transition-timing-function: var(--ease-out);
+}
+
+.field.is-open .field-menu > li {
+  animation: settle-in var(--dur-enter) var(--ease-out) both;
+}
+
+.field.is-open .field-menu > li:nth-child(2) { animation-delay: 30ms; }
+.field.is-open .field-menu > li:nth-child(3) { animation-delay: 60ms; }
+.field.is-open .field-menu > li:nth-child(4) { animation-delay: 90ms; }
+.field.is-open .field-menu > li:nth-child(5) { animation-delay: 120ms; }
+.field.is-open .field-menu > li:nth-child(n + 6) { animation-delay: 150ms; }
 
 .profile-form .field:has(.field-menu-clip) {
   background: transparent;
@@ -1206,7 +1310,10 @@ input.field-control {
   border-radius: 999px;
   font-size: 18px;
   font-weight: 700;
-  transition: background-color 0.28s ease, opacity 0.28s ease;
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    background-color 200ms linear,
+    opacity var(--dur-exit) var(--ease-out);
 }
 
 .btn:disabled {
@@ -1257,14 +1364,18 @@ input.field-control {
   gap: 34px;
   color: var(--heading);
   transition:
-    opacity 0.34s ease,
-    transform 0.46s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity var(--dur-enter) var(--ease-out),
+    transform var(--dur-enter) var(--ease-out),
+    filter var(--dur-enter) var(--ease-out);
 }
 
 .field-stage.is-guide .empty-mark {
   opacity: 0;
-  transform: scale(0.82);
+  transform: translateY(-6px) scale(0.98);
+  filter: blur(3px);
   pointer-events: none;
+  transition-duration: var(--dur-exit);
+  transition-timing-function: var(--ease-leave);
 }
 
 .screen.home-stage {
@@ -1283,35 +1394,39 @@ input.field-control {
 .home-stage > .empty-mark {
   place-self: center;
   z-index: 1;
-  transition:
-    opacity 0.34s ease 0.1s,
-    transform 0.46s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
 }
 
 .home-stage.is-guide > .empty-mark {
   opacity: 0;
-  transform: scale(0.82);
+  transform: translateY(-6px) scale(0.98);
+  filter: blur(3px);
   pointer-events: none;
-  transition-delay: 0s;
+  transition-duration: var(--dur-exit);
+  transition-timing-function: var(--ease-leave);
 }
 
 .home-guide {
   display: flex;
   height: 100%;
   opacity: 0;
-  transform: translateY(24px);
+  transform: translateY(10px) scale(0.97);
+  filter: blur(6px);
+  transform-origin: bottom center;
   pointer-events: none;
   transition:
-    opacity 0.4s ease,
-    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity var(--dur-exit) var(--ease-leave),
+    transform var(--dur-exit) var(--ease-leave),
+    filter var(--dur-exit) var(--ease-leave);
 }
 
 .home-stage.is-guide > .home-guide,
 .field-stage.is-guide > .home-guide {
   opacity: 1;
   transform: none;
+  filter: none;
   pointer-events: auto;
-  transition-delay: 0.1s;
+  transition-duration: var(--dur-enter);
+  transition-timing-function: var(--ease-out);
 }
 
 .field-stage {
@@ -1330,15 +1445,19 @@ input.field-control {
 
 .field-stage > .route-transition {
   transition:
-    opacity 0.34s ease,
-    transform 0.46s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity var(--dur-enter) var(--ease-out),
+    transform var(--dur-enter) var(--ease-out),
+    filter var(--dur-enter) var(--ease-out);
 }
 
 .field-stage.is-guide > .route-transition {
   opacity: 0;
-  transform: scale(0.92);
+  transform: translateY(-6px) scale(0.98);
+  filter: blur(3px);
   pointer-events: none;
   animation: none;
+  transition-duration: var(--dur-exit);
+  transition-timing-function: var(--ease-leave);
 }
 
 .field-stage .capture-guide-lead,
@@ -1400,7 +1519,7 @@ input.field-control {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: end;
-  transition: background-color 0.35s ease;
+  transition: background-color 200ms linear;
 }
 
 .bottom-nav.is-pair {
@@ -1422,7 +1541,9 @@ input.field-control {
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
-  transition: color 0.35s ease;
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    color 150ms linear;
 }
 
 .bottom-nav.is-pair .nav-btn {
@@ -1445,8 +1566,13 @@ input.field-control {
 
 .bottom-nav.can-guide .nav-face > * {
   transition:
-    opacity 0.32s ease,
-    transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity var(--dur-exit) var(--ease-leave),
+    transform var(--dur-exit) var(--ease-in-out);
+}
+
+.bottom-nav.can-guide:not(.is-guide) .nav-face > * {
+  transition-duration: var(--dur-enter);
+  transition-timing-function: var(--ease-out);
 }
 
 .bottom-nav.can-guide.is-guide .nav-face > :first-child {
@@ -1475,18 +1601,23 @@ input.field-control {
   gap: 11px;
   align-items: center;
   opacity: 0;
-  transform: translateY(18px);
+  transform: translateY(10px) scale(0.97);
+  filter: blur(4px);
+  transform-origin: bottom center;
   pointer-events: none;
   transition:
-    opacity 0.34s ease,
-    transform 0.46s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity var(--dur-exit) var(--ease-leave),
+    transform var(--dur-exit) var(--ease-leave),
+    filter var(--dur-exit) var(--ease-leave);
 }
 
 .bottom-nav.can-guide.is-guide .nav-actions {
   opacity: 1;
   transform: none;
+  filter: none;
   pointer-events: auto;
-  transition-delay: 0.08s;
+  transition-duration: var(--dur-enter);
+  transition-timing-function: var(--ease-out);
 }
 
 .nav-btn.is-active {
@@ -1582,20 +1713,67 @@ input.field-control {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  max-height: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  transform: scale(0.95);
+  transform-origin: top right;
+  opacity: 0;
+  filter: blur(3px);
+  clip-path: inset(0 0 100% 0);
+  pointer-events: none;
+  transition:
+    transform var(--dur-drop-out) var(--ease-leave),
+    opacity 120ms linear,
+    filter var(--dur-drop-out) var(--ease-leave),
+    clip-path var(--dur-drop-out) var(--ease-leave),
+    max-height var(--dur-drop-out) var(--ease-leave),
+    margin-bottom var(--dur-drop-out) var(--ease-leave);
+}
+
+.chip-row.is-open {
+  max-height: 88px;
   margin-bottom: 12px;
+  transform: none;
+  opacity: 1;
+  filter: none;
+  clip-path: inset(0);
+  pointer-events: auto;
+  transition-duration: var(--dur-drop);
+  transition-timing-function: var(--ease-out);
 }
 
 .chip {
+  position: relative;
+  isolation: isolate;
   padding: 8px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
   color: var(--heading);
   font-weight: 700;
+  transition: color 200ms linear;
+}
+
+.chip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--bg-canvas);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path var(--dur-drop-out) var(--ease-leave);
 }
 
 .chip.is-on {
-  background: var(--bg-canvas);
+  background: transparent;
   color: var(--bg);
+}
+
+.chip.is-on::before {
+  clip-path: inset(0);
+  transition-duration: var(--dur-drop);
+  transition-timing-function: var(--ease-out);
 }
 
 .climbs-grid {
@@ -1747,7 +1925,7 @@ input.field-control {
   line-height: 22px;
   letter-spacing: -0.02em;
   text-align: center;
-  animation: rise 0.35s ease both;
+  animation: rise var(--dur-enter) var(--ease-out) both;
 }
 
 .capture-guide-art {
@@ -1773,7 +1951,11 @@ input.field-control {
   height: auto;
   container-type: inline-size;
   transform-origin: center;
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translate(var(--aim-x, 0%), var(--aim-y, 0%)) scale(var(--aim-s, 1));
+  transition:
+    --aim-x 420ms var(--ease-in-out),
+    --aim-y 520ms var(--ease-in-out),
+    --aim-s 420ms var(--ease-in-out);
 }
 
 .capture-guide-frame img {
@@ -1801,17 +1983,19 @@ input.field-control {
 }
 
 .capture-guide-badge.is-on {
-  animation: guide-badge-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: guide-badge-in var(--dur-enter) var(--ease-out) both;
 }
 
 @keyframes guide-badge-in {
   from {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.2);
+    transform: translate(-50%, -50%) scale(0.9);
+    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
+    filter: none;
   }
 }
 
@@ -1878,10 +2062,10 @@ input.field-control {
   color: var(--source-top-ink);
   border-radius: 0;
   transition:
-    height 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-    border-radius 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 0.45s ease,
-    color 0.45s ease;
+    height 480ms var(--ease-in-out),
+    border-radius 480ms var(--ease-in-out),
+    background-color 200ms linear,
+    color 200ms linear;
 }
 
 .capture-source.is-in .capture-source-gallery {
@@ -1898,12 +2082,14 @@ input.field-control {
 .capture-source-gallery .svg-icon,
 .capture-source-camera .svg-icon {
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(10px) scale(0.97);
+  filter: blur(6px);
 }
 
 .capture-source-gallery span,
 .capture-source-camera span {
   opacity: 0;
+  filter: blur(4px);
 }
 
 .capture-source.is-in .capture-source-gallery .svg-icon,
@@ -1912,14 +2098,16 @@ input.field-control {
 .capture-source.is-in .capture-source-camera span {
   opacity: 1;
   transform: none;
+  filter: none;
   transition:
-    opacity 0.4s ease 0.4s,
-    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.4s;
+    opacity var(--dur-enter) var(--ease-out),
+    transform var(--dur-enter) var(--ease-out),
+    filter var(--dur-enter) var(--ease-out);
 }
 
-.capture-source-gallery:active,
-.capture-source-camera:active {
-  opacity: 0.72;
+.capture-source.is-in .capture-source-camera .svg-icon,
+.capture-source.is-in .capture-source-camera span {
+  transition-delay: var(--stagger);
 }
 
 .rules {
@@ -2024,6 +2212,7 @@ input.field-control {
 .step.is-done .step-mark {
   background: var(--accent);
   color: white;
+  animation: success-pulse 320ms var(--ease-out);
 }
 
 .step.is-failed .step-mark {
@@ -2153,28 +2342,44 @@ input.field-control {
 }
 
 .scrub {
+  position: relative;
   width: 100%;
-  height: 4px;
+  height: 28px;
   margin-top: 6px;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.scrub-fill {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  height: 4px;
   border-radius: 99px;
-  appearance: none;
+  background: white;
+  pointer-events: none;
+}
+
+.scrub::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 12px;
+  height: 4px;
+  border-radius: 99px;
   background: rgba(255, 255, 255, 0.35);
 }
 
-.scrub::-webkit-slider-thumb {
-  appearance: none;
+.scrub-thumb {
+  position: absolute;
+  top: 6px;
   width: 16px;
   height: 16px;
+  margin-left: -8px;
   border-radius: 50%;
   background: white;
-}
-
-.scrub::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border: 0;
-  border-radius: 50%;
-  background: white;
+  pointer-events: none;
 }
 
 .player-caption {
@@ -2240,10 +2445,45 @@ input.field-control {
 }
 
 .moment-body {
-  padding: 0 16px 14px;
+  display: grid;
+  grid-template-rows: 0fr;
   font-size: 14px;
   line-height: 1.45;
+  transition: grid-template-rows var(--dur-drop-out) var(--ease-leave);
 }
+
+.moment.is-open .moment-body {
+  grid-template-rows: 1fr;
+  transition-duration: var(--dur-drop);
+  transition-timing-function: var(--ease-out);
+}
+
+.moment-copy {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 16px 14px;
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  transition:
+    opacity 120ms linear,
+    clip-path var(--dur-drop-out) var(--ease-leave);
+}
+
+.moment.is-open .moment-copy {
+  opacity: 1;
+  clip-path: inset(0);
+  transition:
+    opacity 160ms linear 40ms,
+    clip-path var(--dur-drop) var(--ease-out);
+}
+
+.moment.is-open .moment-copy > p {
+  animation: settle-in var(--dur-enter) var(--ease-out) both;
+}
+
+.moment.is-open .moment-copy > p:nth-child(2) { animation-delay: 30ms; }
+.moment.is-open .moment-copy > p:nth-child(3) { animation-delay: 60ms; }
+.moment.is-open .moment-copy > p:nth-child(4) { animation-delay: 90ms; }
 
 .moment-body p {
   margin-bottom: 8px;
@@ -2333,11 +2573,97 @@ input.field-control {
 
 @keyframes rise {
   from {
-    transform: translateY(8px);
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(4px);
   }
   to {
+    opacity: 1;
     transform: none;
+    filter: none;
   }
+}
+
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes success-pulse {
+  0% { scale: 1; }
+  40% { scale: 1.06; }
+  100% { scale: 1; }
+}
+
+.stagger > * {
+  animation: settle-in var(--dur-list) var(--ease-out) both;
+}
+
+.stagger > *:nth-child(2) { animation-delay: 30ms; }
+.stagger > *:nth-child(3) { animation-delay: 60ms; }
+.stagger > *:nth-child(4) { animation-delay: 90ms; }
+.stagger > *:nth-child(5) { animation-delay: 120ms; }
+.stagger > *:nth-child(6) { animation-delay: 150ms; }
+.stagger > *:nth-child(7) { animation-delay: 180ms; }
+.stagger > *:nth-child(8) { animation-delay: 210ms; }
+.stagger > *:nth-child(n + 9) { animation-delay: 240ms; }
+
+.chip-row.is-open > .chip:nth-child(1) { animation-delay: 0ms; }
+.chip-row.is-open > .chip:nth-child(2) { animation-delay: 30ms; }
+.chip-row.is-open > .chip:nth-child(3) { animation-delay: 60ms; }
+.chip-row.is-open > .chip:nth-child(4) { animation-delay: 90ms; }
+.chip-row.is-open > .chip:nth-child(5) { animation-delay: 120ms; }
+
+.chip-row.is-open > .chip {
+  animation: settle-in var(--dur-enter) var(--ease-out) both;
+}
+
+.consent input:checked + .consent-box {
+  animation: success-pulse 320ms var(--ease-out);
+}
+
+button:not(:disabled):active,
+.nav-btn:active,
+.nav-add:active {
+  scale: 0.97;
+}
+
+html.is-vt::view-transition-group(root),
+html.is-vt::view-transition-old(root),
+html.is-vt::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.is-vt::view-transition-old(pane),
+html.is-vt::view-transition-old(screen) {
+  animation: route-leave var(--dur-exit) var(--ease-leave) both;
+}
+
+html.is-vt::view-transition-new(pane),
+html.is-vt::view-transition-new(screen) {
+  animation: route-enter var(--dur-enter) var(--ease-out) both;
+}
+
+html.is-vt::view-transition-group(shared-attempt) {
+  animation-duration: 340ms;
+  animation-timing-function: var(--ease-in-out);
+}
+
+html.is-vt::view-transition-old(shared-attempt) {
+  display: none;
+}
+
+html.is-vt::view-transition-new(shared-attempt) {
+  animation: none;
 }
 
 @keyframes spin {
@@ -2351,16 +2677,16 @@ input.field-control {
     transition-property:
       --accent, --bg, --bg-secondary, --bg-elevated, --bg-muted, --bg-canvas,
       --text, --heading, --ink-soft, --accent-soft, --quiet;
-    transition-duration: 0.75s;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+    transition-timing-function: var(--ease-in-out);
   }
 
   html.is-theme-swap *,
   html.is-theme-swap *::before,
   html.is-theme-swap *::after {
     transition-property: opacity, transform !important;
-    transition-duration: 0.35s !important;
-    transition-timing-function: ease !important;
+    transition-duration: 200ms !important;
+    transition-timing-function: var(--ease-in-out) !important;
   }
 }
 
@@ -2376,7 +2702,7 @@ input.field-control {
     html.is-theme-swap *::before,
     html.is-theme-swap *::after {
       transition-property: background-color, color, border-color, fill, stroke, opacity, transform !important;
-      transition-duration: 0.75s !important;
+      transition-duration: 200ms !important;
     }
   }
 }

@@ -146,7 +146,7 @@ export function ProfilePage() {
   return (
     <div className={night ? 'profile-view is-night' : 'profile-view'}>
       <h1>Профиль</h1>
-      <div className="profile-cluster">
+      <div className="profile-cluster stagger">
         <div className="profile-bubble profile-rate" aria-label={`Доля удачных пролазов ${rate}%`}>
           <SvgIcon src="/male-climbing-icon.svg" size={28} />
           <span>{rate}%</span>

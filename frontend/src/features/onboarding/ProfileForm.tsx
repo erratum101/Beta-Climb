@@ -126,7 +126,7 @@ export function ProfileForm({
   }
 
   return (
-    <form className="profile-form" onSubmit={handleSubmit} aria-busy={saving}>
+    <form className="profile-form stagger" onSubmit={handleSubmit} aria-busy={saving}>
       <label className="field">
         <span className="visually-hidden">Имя или ник</span>
         <input

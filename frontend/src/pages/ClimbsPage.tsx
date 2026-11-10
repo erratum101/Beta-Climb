@@ -4,6 +4,7 @@ import { useSession } from '../app/session'
 import { HomeGuideContext } from '../features/capture/CaptureGuide'
 import { attemptHref, gradeGroup } from '../entities/attempt'
 import { IconFilter } from '../shared/ui/icons'
+import { sharedNavigate } from '../shared/ui/motion'
 import { WallThumb } from '../shared/ui/WallThumb'
 import { Wordmark } from '../shared/ui/Wordmark'
 
@@ -65,36 +66,34 @@ export function ClimbsPage() {
           <IconFilter />
         </button>
       </div>
-      {open ? (
-        <div className="chip-row" role="listbox" aria-label="Категория">
-          {FILTERS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={filter === item.id ? 'chip is-on' : 'chip'}
-              onClick={() => {
-                setFilter(item.id)
-                setOpen(false)
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      <div className={open ? 'chip-row is-open' : 'chip-row'} role="listbox" aria-label="Категория" inert={open ? undefined : true}>
+        {FILTERS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={filter === item.id ? 'chip is-on' : 'chip'}
+            onClick={() => {
+              setFilter(item.id)
+              setOpen(false)
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
 
       {visible.length === 0 ? (
         <div className="empty-copy">
           <p>Нет пролазов этой категории</p>
         </div>
       ) : (
-        <div className="climbs-grid">
+        <div className="climbs-grid stagger">
           {visible.map((attempt) => (
             <button
               key={attempt.id}
               type="button"
               className="climb-card"
-              onClick={() => navigate(attemptHref(attempt))}
+              onClick={(event) => sharedNavigate(navigate, attemptHref(attempt), event.currentTarget)}
             >
               <WallThumb variant={attempt.wallVariant} />
               <span className={`climb-grade ${gradeTone(attempt.gradeLabel)}`}>{attempt.gradeLabel}</span>
