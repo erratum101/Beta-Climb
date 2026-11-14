@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './app/App'
 import './shared/styles.css'
+import './shared/landing.css'
 
 document.addEventListener('touchstart', () => {}, { passive: true })
 

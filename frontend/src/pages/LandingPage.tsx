@@ -1,20 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { encode } from 'uqr'
+import { useSession } from '../app/session'
 import { SvgIcon } from '../shared/ui/SvgIcon'
+import { SiteIntro } from './SiteIntro'
 
-type Platform = 'ios' | 'android'
-
-const GUIDES: Record<Platform, { title: string; steps: string[] }> = {
-  ios: {
-    title: 'iPhone',
-    steps: [
-      'Откройте эту страницу в Safari',
-      'Нажмите «Поделиться» внизу экрана',
-      'Выберите «На экран „Домой“»',
-      'Нажмите «Добавить»',
-    ],
-  },
+const GUIDES = {
   android: {
     title: 'Android',
     steps: [
@@ -24,81 +14,241 @@ const GUIDES: Record<Platform, { title: string; steps: string[] }> = {
       'Подтвердите — иконка появится на экране',
     ],
   },
+  ios: {
+    title: 'iPhone',
+    steps: [
+      'Откройте эту страницу в Safari',
+      'Нажмите «Поделиться» внизу экрана',
+      'Выберите «На экран „Домой“»',
+      'Нажмите «Добавить»',
+    ],
+  },
+} as const
+
+type GuideId = keyof typeof GUIDES
+
+const NAV = [
+  { id: 'home', label: 'Главная' },
+  { id: 'how', label: 'Как это работает?' },
+  { id: 'install', label: 'Установка' },
+  { id: 'about', label: 'О нас' },
+] as const
+
+type SectionId = (typeof NAV)[number]['id']
+
+const RU_ZONES = new Set([
+  'Europe/Kaliningrad',
+  'Europe/Moscow',
+  'Europe/Simferopol',
+  'Europe/Kirov',
+  'Europe/Volgograd',
+  'Europe/Astrakhan',
+  'Europe/Saratov',
+  'Europe/Ulyanovsk',
+  'Europe/Samara',
+  'Asia/Yekaterinburg',
+  'Asia/Omsk',
+  'Asia/Novosibirsk',
+  'Asia/Barnaul',
+  'Asia/Tomsk',
+  'Asia/Novokuznetsk',
+  'Asia/Krasnoyarsk',
+  'Asia/Irkutsk',
+  'Asia/Chita',
+  'Asia/Yakutsk',
+  'Asia/Khandyga',
+  'Asia/Vladivostok',
+  'Asia/Ust-Nera',
+  'Asia/Magadan',
+  'Asia/Sakhalin',
+  'Asia/Srednekolymsk',
+  'Asia/Kamchatka',
+  'Asia/Anadyr',
+])
+
+function isRussianRegion() {
+  const languages = navigator.languages?.length ? navigator.languages : [navigator.language || '']
+  if (languages.some((tag) => tag.toLowerCase().startsWith('ru'))) return true
+  try {
+    return RU_ZONES.has(Intl.DateTimeFormat().resolvedOptions().timeZone)
+  } catch {
+    return false
+  }
 }
 
-const FEATURES = [
-  {
-    title: 'По секундам',
-    text: 'Замечание стоит на своём отрезке видео: что не так, что произошло и что сделать.',
-  },
-  {
-    title: 'Одно действие',
-    text: 'На следующую попытку остаётся одно движение, а не список советов.',
-  },
-  {
-    title: 'Было и стало',
-    text: 'Повтор той же трассы сравнивает одно движение. Общей оценки техники нет.',
-  },
-  {
-    title: 'Честный кадр',
-    text: 'Если камера, цвет или стена не подходят, разбора не будет. Система не придумывает.',
-  },
-]
+const SHEET_SHIFT = 70
+const CHROME_IDLE_MS = 160
+const CHROME_CLOSE_MS = 640
+const ctaAt = 120
 
-const REEL = [
-  {
-    at: '0:12',
-    title: 'Работа ног',
-    text: 'Оставь левую ногу на опоре, пока рука не возьмёт зацепку.',
-  },
-  {
-    at: '0:09',
-    title: 'Баланс',
-    text: 'Смести таз над стопой и только потом тянись вверх.',
-  },
-  {
-    at: '0:19',
-    title: 'Перехват',
-    text: 'Возьми промежуточную зацепку и укороти движение.',
-  },
-]
+const NAV_INK = 'var(--landing-ink)'
+const NAV_FILL_MS = 720
 
-const LOOP = [
-  { n: '01', text: 'Снимаешь пролаз. Ролик остаётся на телефоне.' },
-  { n: '02', text: 'Получаешь 1–3 момента, привязанных к секундам.' },
-  { n: '03', text: 'Повторяешь трассу и сравниваешь то же движение.' },
-]
-
-function detectPlatform(): Platform {
-  return /Android/i.test(navigator.userAgent) ? 'android' : 'ios'
+function navFillImage(accentOnLeft: boolean) {
+  const accent = 'var(--accent)'
+  const mix = `color-mix(in srgb, var(--accent) 50%, ${NAV_INK})`
+  return accentOnLeft
+    ? `linear-gradient(90deg, ${accent} 0%, ${accent} 42%, ${mix} 50%, ${NAV_INK} 58%, ${NAV_INK} 100%)`
+    : `linear-gradient(90deg, ${NAV_INK} 0%, ${NAV_INK} 42%, ${mix} 50%, ${accent} 58%, ${accent} 100%)`
 }
 
-function shareUrl() {
-  return `${window.location.origin}/`
+function paintNavFill(buttons: HTMLButtonElement[], from: number, to: number, forward: boolean, travel: boolean) {
+  const start = forward ? '100% 0' : '0% 0'
+  const end = forward ? '0% 0' : '100% 0'
+  buttons.forEach((button, i) => {
+    const leaving = travel && i === from && i !== to
+    button.style.transition = 'none'
+    button.style.backgroundImage = navFillImage(leaving ? !forward : forward)
+    button.style.backgroundSize = '250% 100%'
+    button.style.backgroundRepeat = 'no-repeat'
+    button.style.backgroundPosition = !travel && i === to ? end : start
+  })
+  if (!travel || buttons.length === 0) return
+  void buttons[0].offsetWidth
+  buttons.forEach((button, i) => {
+    if (i !== to && i !== from) return
+    button.style.transition = `background-position ${NAV_FILL_MS}ms var(--ease-out)`
+    button.style.backgroundPosition = end
+  })
 }
 
-function isLocalHost(hostname: string) {
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'
-}
+function SectionNav({
+  placement,
+  active,
+  night,
+  onSelect,
+  onNight,
+}: {
+  placement: 'top' | 'bottom'
+  active: SectionId
+  night: boolean
+  onSelect: (id: SectionId) => void
+  onNight: (next: boolean) => void
+}) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const fromIndex = useRef(0)
+  const index = Math.max(0, NAV.findIndex((item) => item.id === active))
 
-function QrMark({ value }: { value: string }) {
-  const { data, size } = useMemo(() => encode(value, { ecc: 'M', border: 2 }), [value])
-  const path = data
-    .flatMap((row, y) => row.map((on, x) => (on ? `M${x} ${y}h1v1H${x}Z` : '')))
-    .join('')
+  useLayoutEffect(() => {
+    const track = trackRef.current
+    const bar = track?.querySelector<HTMLElement>('.landing-nav-bar')
+    const buttons = [...(track?.querySelectorAll<HTMLButtonElement>(':scope > button') ?? [])]
+    const button = buttons[index]
+    if (!track || !bar || !button) return
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const from = fromIndex.current
+    const to = index
+    fromIndex.current = to
+    const travel = track.dataset.barReady === '1' && !reduce && from !== to
+
+    const stacked = Boolean(
+      track.closest('.screen.landing:not(.is-desktop)') && track.closest('.landing-nav.is-top'),
+    )
+
+    const measure = () => {
+      const trackBox = track.getBoundingClientRect()
+      const box = button.getBoundingClientRect()
+      return {
+        x: box.left - trackBox.left,
+        y: box.bottom - trackBox.top + 4,
+        w: box.width,
+      }
+    }
+
+    const paint = (x: number, y: number, w: number, ms: number) => {
+      bar.style.transition =
+        ms === 0 ? 'none' : `transform ${ms}ms var(--ease-out), width ${ms}ms var(--ease-out)`
+      bar.style.width = `${w}px`
+      bar.style.top = stacked ? '0' : ''
+      bar.style.bottom = stacked ? 'auto' : ''
+      bar.style.transform = stacked ? `translate(${x}px, ${y}px)` : `translateX(${x}px)`
+    }
+
+    const next = measure()
+    paint(next.x, next.y, next.w, travel ? NAV_FILL_MS : 0)
+    paintNavFill(buttons, from, to, to >= from, travel)
+    track.dataset.barReady = '1'
+
+    const onResize = () => {
+      const fresh = measure()
+      paint(fresh.x, fresh.y, fresh.w, 0)
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [index])
 
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} role="img" aria-label="QR-код со ссылкой на Beta Climb">
-      <path d={path} fill="#111111" />
+    <nav className={placement === 'top' ? 'landing-nav is-top' : 'landing-nav'} aria-label="Разделы страницы">
+      <div className="landing-nav-slide">
+      <p className="landing-brand">
+        <SvgIcon src="/logo.svg" size={26} />
+        <span>
+          Beta
+          <br />
+          Climb
+        </span>
+      </p>
+      <div className="landing-nav-track" ref={trackRef}>
+        {NAV.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            data-label={item.label}
+            aria-current={active === item.id ? 'true' : undefined}
+            onClick={() => onSelect(item.id)}
+          >
+            <span>{item.label}</span>
+          </button>
+        ))}
+        <span className="landing-nav-bar" aria-hidden="true" />
+      </div>
+      <div className="landing-theme" role="group" aria-label="Тема">
+        <button type="button" aria-pressed={!night} aria-label="Светлая тема" onClick={() => night && onNight(false)}>
+          <SvgIcon src="/light-mode.svg" size={18} />
+        </button>
+        <button type="button" aria-pressed={night} aria-label="Тёмная тема" onClick={() => !night && onNight(true)}>
+          <SvgIcon src="/dark-mode.svg" size={18} />
+        </button>
+      </div>
+      </div>
+    </nav>
+  )
+}
+
+function AndroidMark() {
+  return (
+    <svg className="landing-store-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M17.6 9.48 19.44 6.3a.637.637 0 0 0-1.11-.59l-1.88 3.24a11.46 11.46 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-1.11.63l1.84 3.18C2.7 11.25 1 14.44 1 18h22c0-3.56-1.7-6.75-5.4-8.52z"
+      />
+      <circle cx="7" cy="14" r="1.15" fill="#fff" />
+      <circle cx="17" cy="14" r="1.15" fill="#fff" />
+      <path
+        fill="currentColor"
+        d="M6 18.2c0 .55.45 1 1 1h1v3.3c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19.2h2v3.3c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19.2h1c.55 0 1-.45 1-1V16H6v2.2zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5z"
+      />
     </svg>
   )
 }
 
-function Steps({ platform }: { platform: Platform }) {
+function AppleMark() {
+  return (
+    <svg className="landing-store-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
+      />
+    </svg>
+  )
+}
+
+function Steps({ platform }: { platform: GuideId }) {
   const guide = GUIDES[platform]
   return (
-    <section className="landing-block">
-      <h3>{guide.title}</h3>
+    <section className="landing-block" id={`install-${platform}`} aria-labelledby={`install-${platform}-title`}>
+      <h3 id={`install-${platform}-title`}>{guide.title}</h3>
       <ol className="landing-steps">
         {guide.steps.map((step, index) => (
           <li key={step}>
@@ -111,173 +261,441 @@ function Steps({ platform }: { platform: Platform }) {
   )
 }
 
-function MomentReel() {
-  return (
-    <div className="reel">
-      <div className="reel-top">
-        <span>6a · болдеринг</span>
-        <b>попытка</b>
-      </div>
-      <div className="reel-bar" aria-hidden="true">
-        <i />
-      </div>
-      <div className="reel-frame">
-        {REEL.map((moment) => (
-          <article className="reel-card" key={moment.title}>
-            <p>
-              <strong>{moment.title}</strong>
-              <em>{moment.at}</em>
-            </p>
-            <span>{moment.text}</span>
-          </article>
-        ))}
-      </div>
-      <p className="reel-note">Пример разбора, не результат с вашей стены.</p>
-    </div>
-  )
+function currentSection(root: HTMLElement) {
+  const edge = root.getBoundingClientRect().top + 56
+  let current: SectionId = 'home'
+  for (const item of NAV) {
+    const node = document.getElementById(item.id)
+    if (node && node.getBoundingClientRect().top <= edge) current = item.id
+  }
+  return current
+}
+
+const INTRO_SEEN_KEY = 'beta-climb.intro-seen'
+
+/** Keeps the first-load decision across a StrictMode remount. A reload starts fresh. */
+let introOnThisLoad: boolean | null = null
+
+function shouldPlayIntro() {
+  if (introOnThisLoad !== null) return introOnThisLoad
+  let seen = false
+  try {
+    seen = sessionStorage.getItem(INTRO_SEEN_KEY) === '1'
+    if (!seen) sessionStorage.setItem(INTRO_SEEN_KEY, '1')
+  } catch {
+    seen = false
+  }
+  introOnThisLoad = !seen
+  return introOnThisLoad
 }
 
 export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
+  const russian = isRussianRegion()
   const navigate = useNavigate()
+  const { night, setNight } = useSession()
+  const stageRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [platform, setPlatform] = useState<Platform>(detectPlatform)
-  const url = shareUrl()
-  const local = isLocalHost(window.location.hostname)
+  const [intro, setIntro] = useState(shouldPlayIntro)
+  const [shown, setShown] = useState(() => !shouldPlayIntro())
+  const [active, setActive] = useState<SectionId>('home')
 
   useEffect(() => {
-    const root = scrollRef.current
-    if (!root) return
-    const nodes = [...root.querySelectorAll('.reveal')]
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      nodes.forEach((node) => node.classList.add('is-in'))
-      return
+    const stage = stageRef.current
+    const scroll = scrollRef.current
+    if (!stage || !scroll) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    let held = 0
+    let idle = 0
+    let classTimer = 0
+    let pinned = false
+    let hoverX: number | null = null
+    let hoverY: number | null = null
+    const activeId = { current: 'home' as SectionId }
+
+    const band = (side: 'top' | 'bottom') => {
+      const nav = stage.querySelector<HTMLElement>(
+        side === 'top' ? '.landing-nav.is-top' : '.landing-nav:not(.is-top)',
+      )
+      return nav?.getBoundingClientRect().height || SHEET_SHIFT
     }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return
-          entry.target.classList.add('is-in')
-          observer.unobserve(entry.target)
-        })
-      },
-      { root, threshold: 0.08 },
-    )
-    nodes.forEach((node) => observer.observe(node))
-    return () => observer.disconnect()
+
+    const pointerOnWhite = () => {
+      if (hoverX == null || hoverY == null || held === 0) return false
+      const bounds = stage.getBoundingClientRect()
+      const inOpenedBand =
+        held < 0 ? hoverY >= bounds.bottom - band('bottom') : hoverY <= bounds.top + band('top')
+      if (inOpenedBand) return true
+      const hit = document.elementFromPoint(hoverX, hoverY)
+      return Boolean(hit && stage.contains(hit) && !hit.closest('.landing-sheet'))
+    }
+
+    const syncMenuChrome = (open: boolean) => {
+      if (mode !== 'mobile') return
+      const root = document.documentElement
+      root.classList.toggle('is-landing-menu', open)
+      const theme = document.querySelector('meta[name="theme-color"]')
+      const next = open
+        ? root.classList.contains('is-night') ? '#343434' : '#ffffff'
+        : getComputedStyle(root).getPropertyValue('--bg').trim()
+      if (theme && next) theme.setAttribute('content', next)
+    }
+
+    const paint = (next: number) => {
+      const wasOpen = held !== 0
+      held = next
+      const raised = next < 0
+      const lowered = next > 0
+      const shift = raised ? band('bottom') : lowered ? band('top') : SHEET_SHIFT
+      window.clearTimeout(classTimer)
+      if (next === 0) {
+        if (wasOpen) stage.classList.add('is-closing')
+        classTimer = window.setTimeout(() => {
+          stage.classList.remove('is-raised', 'is-lowered', 'is-closing')
+          syncMenuChrome(false)
+        }, CHROME_CLOSE_MS)
+      } else {
+        stage.classList.remove('is-closing')
+        stage.classList.toggle('is-raised', raised)
+        stage.classList.toggle('is-lowered', lowered)
+        syncMenuChrome(lowered)
+      }
+      stage.style.setProperty('--sheet-shift', next === 0 ? '0px' : `${next * shift}px`)
+      stage.style.setProperty('--sheet-lift', raised ? `${shift}px` : '0px')
+      stage.style.setProperty('--sheet-top', lowered ? `${shift}px` : '0px')
+      stage.style.setProperty('--menu-top', lowered ? '1' : '0')
+      stage.style.setProperty('--menu-bottom', raised ? '1' : '0')
+      stage.style.setProperty('--sheet-top-radius', lowered ? 'var(--landing-corner)' : '0px')
+      stage.style.setProperty('--sheet-bottom-radius', raised ? 'var(--landing-corner)' : '0px')
+      stage.style.setProperty('--reveal-bottom-extra', raised ? 'var(--landing-corner)' : '0px')
+      stage.style.setProperty('--reveal-top-extra', lowered ? 'var(--landing-corner)' : '0px')
+    }
+
+    const armIdle = () => {
+      window.clearTimeout(idle)
+      idle = window.setTimeout(release, CHROME_IDLE_MS)
+    }
+
+    const release = () => {
+      if (held === 0) return
+      if (pointerOnWhite()) {
+        pinned = true
+        return
+      }
+      pinned = false
+      paint(0)
+    }
+
+    const hold = (deltaY: number) => {
+      if (Math.abs(deltaY) < 1) return
+      const next = deltaY > 0 ? -1 : 1
+      if (next !== held) paint(next)
+      if (pointerOnWhite()) {
+        pinned = true
+        window.clearTimeout(idle)
+        return
+      }
+      armIdle()
+    }
+
+    const noteSection = () => {
+      const next = currentSection(scroll)
+      if (next === activeId.current) return
+      activeId.current = next
+      setActive(next)
+    }
+
+    let last = scroll.scrollTop
+
+    if (mode === 'mobile') {
+      let latched = false
+      let touchY = 0
+      let pull = 0
+      const pullNeeded = 16
+      const openPullNeeded = 96
+      const sheet = stage.querySelector<HTMLElement>('.landing-sheet')
+      const onSheetRest = (event: TransitionEvent) => {
+        if (event.target !== sheet || event.propertyName !== 'transform' || !latched) return
+        navigator.vibrate?.(15)
+      }
+      sheet?.addEventListener('transitionend', onSheetRest)
+
+      const openHeader = () => {
+        if (latched) return
+        latched = true
+        pull = 0
+        window.clearTimeout(idle)
+        paint(1)
+      }
+
+      const closeHeader = () => {
+        if (!latched) return
+        latched = false
+        pull = 0
+        window.clearTimeout(idle)
+        paint(0)
+      }
+
+      const onScroll = () => {
+        const y = scroll.scrollTop
+        const dy = y - last
+        last = y
+        if (!latched && y < -openPullNeeded) openHeader()
+        if (latched && y > 1 && dy > 0) closeHeader()
+        noteSection()
+      }
+
+      const onTouchStart = (event: TouchEvent) => {
+        touchY = event.touches[0]?.clientY ?? 0
+        pull = 0
+      }
+
+      const onTouchMove = (event: TouchEvent) => {
+        const y = event.touches[0]?.clientY ?? touchY
+        const dy = touchY - y
+        touchY = y
+        if (dy === 0) return
+        const atTop = scroll.scrollTop <= 1
+        if (!latched) {
+          if (atTop && dy < 0) {
+            pull += -dy
+            if (pull >= openPullNeeded) openHeader()
+          } else {
+            pull = 0
+          }
+          return
+        }
+        if (dy > 0) {
+          pull += dy
+          if (pull >= pullNeeded) closeHeader()
+        } else {
+          pull = 0
+        }
+      }
+
+      const onWheel = (event: WheelEvent) => {
+        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+        const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? scroll.clientHeight : 1
+        const delta = event.deltaY * unit
+        const atTop = scroll.scrollTop <= 1
+        if (!latched && atTop && delta < 0) openHeader()
+        else if (latched && delta > 0) closeHeader()
+        const max = scroll.scrollHeight - scroll.clientHeight
+        const atBottom = scroll.scrollTop >= max - 1
+        const atEdge = max <= 1 || (atTop && delta < 0) || (atBottom && delta > 0)
+        if (!atEdge && !scroll.contains(event.target as Node)) scroll.scrollTop += delta
+      }
+
+      scroll.addEventListener('scroll', onScroll, { passive: true })
+      stage.addEventListener('wheel', onWheel, { passive: true })
+      stage.addEventListener('touchstart', onTouchStart, { passive: true })
+      stage.addEventListener('touchmove', onTouchMove, { passive: true })
+      return () => {
+        window.clearTimeout(idle)
+        window.clearTimeout(classTimer)
+        sheet?.removeEventListener('transitionend', onSheetRest)
+        navigator.vibrate?.(0)
+        scroll.removeEventListener('scroll', onScroll)
+        stage.removeEventListener('wheel', onWheel)
+        stage.removeEventListener('touchstart', onTouchStart)
+        stage.removeEventListener('touchmove', onTouchMove)
+        stage.classList.remove('is-raised', 'is-lowered', 'is-closing')
+        stage.style.removeProperty('--sheet-shift')
+        stage.style.removeProperty('--sheet-top')
+        stage.style.removeProperty('--sheet-lift')
+        stage.style.removeProperty('--sheet-top-radius')
+        stage.style.removeProperty('--sheet-bottom-radius')
+        stage.style.removeProperty('--reveal-top-extra')
+        stage.style.removeProperty('--reveal-bottom-extra')
+        stage.style.removeProperty('--menu-top')
+        stage.style.removeProperty('--menu-bottom')
+        document.documentElement.classList.remove('is-landing-menu')
+        const theme = document.querySelector('meta[name="theme-color"]')
+        const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
+        if (theme && bg) theme.setAttribute('content', bg)
+      }
+    }
+
+    const onScroll = () => {
+      const y = scroll.scrollTop
+      const dy = y - last
+      last = y
+      if (Math.abs(dy) > 0.5) hold(dy)
+      noteSection()
+    }
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse') return
+      hoverX = event.clientX
+      hoverY = event.clientY
+      if (held === 0) return
+      if (pointerOnWhite()) {
+        pinned = true
+        window.clearTimeout(idle)
+        return
+      }
+      if (!pinned) return
+      pinned = false
+      armIdle()
+    }
+
+    const onPointerLeave = () => {
+      hoverX = null
+      hoverY = null
+      if (pinned) {
+        pinned = false
+        armIdle()
+      }
+    }
+
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+      hoverX = event.clientX
+      hoverY = event.clientY
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? scroll.clientHeight : 1
+      const delta = event.deltaY * unit
+      hold(delta)
+      const max = scroll.scrollHeight - scroll.clientHeight
+      const atTop = scroll.scrollTop <= 0
+      const atBottom = scroll.scrollTop >= max - 1
+      const atEdge = max <= 1 || (atTop && delta < 0) || (atBottom && delta > 0)
+      if (!atEdge && !scroll.contains(event.target as Node)) scroll.scrollTop += delta
+    }
+
+    let touchY = 0
+    const onTouchStart = (event: TouchEvent) => {
+      touchY = event.touches[0]?.clientY ?? 0
+    }
+    const onTouchMove = (event: TouchEvent) => {
+      const y = event.touches[0]?.clientY ?? touchY
+      const dy = touchY - y
+      touchY = y
+      const max = scroll.scrollHeight - scroll.clientHeight
+      const atTop = scroll.scrollTop <= 0
+      const atBottom = scroll.scrollTop >= max - 1
+      if (max <= 1 || (atTop && dy < 0) || (atBottom && dy > 0)) hold(dy)
+    }
+
+    scroll.addEventListener('scroll', onScroll, { passive: true })
+    stage.addEventListener('wheel', onWheel, { passive: true })
+    stage.addEventListener('pointermove', onPointerMove)
+    stage.addEventListener('pointerleave', onPointerLeave)
+    stage.addEventListener('touchstart', onTouchStart, { passive: true })
+    stage.addEventListener('touchmove', onTouchMove, { passive: true })
+    return () => {
+      window.clearTimeout(idle)
+      window.clearTimeout(classTimer)
+      scroll.removeEventListener('scroll', onScroll)
+      stage.removeEventListener('wheel', onWheel)
+      stage.removeEventListener('pointermove', onPointerMove)
+      stage.removeEventListener('pointerleave', onPointerLeave)
+      stage.removeEventListener('touchstart', onTouchStart)
+      stage.removeEventListener('touchmove', onTouchMove)
+      stage.classList.remove('is-raised', 'is-lowered', 'is-closing')
+      stage.style.removeProperty('--sheet-shift')
+      stage.style.removeProperty('--sheet-top')
+      stage.style.removeProperty('--sheet-lift')
+      stage.style.removeProperty('--sheet-top-radius')
+      stage.style.removeProperty('--sheet-bottom-radius')
+      stage.style.removeProperty('--reveal-top-extra')
+      stage.style.removeProperty('--reveal-bottom-extra')
+      stage.style.removeProperty('--menu-top')
+      stage.style.removeProperty('--menu-bottom')
+    }
   }, [mode])
 
+  function scrollToId(id: string) {
+    const root = scrollRef.current
+    const node = document.getElementById(id)
+    if (!root || !node) return
+    const top = node.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop
+    root.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+  }
+
+  const screenClass = [
+    'screen landing',
+    mode === 'desktop' ? 'is-desktop' : '',
+    intro ? 'is-intro' : '',
+    shown ? 'is-shown' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <div className={mode === 'desktop' ? 'screen landing is-desktop' : 'screen landing'}>
+    <div className={screenClass} ref={stageRef}>
+      <div className="landing-reveal is-top" aria-hidden="true" />
+      {mode === 'desktop' ? <div className="landing-reveal is-bottom" aria-hidden="true" /> : null}
+      <div className="landing-sheet">
       <div className="landing-scroll" ref={scrollRef}>
-        <div className="landing-layout">
-          <div className="landing-main">
-            <section className="landing-hero">
-              <div className="landing-copy">
-                <p className="landing-brand">
-                  <SvgIcon src="/logo.svg" size={36} />
-                  Beta Climb
-                </p>
-                <h1 className="landing-title">
-                  Сними попытку.
-                  <em>Увидь момент.</em>
-                </h1>
-                <p className="landing-lead">
-                  Разбор одного пролаза на скалодроме. Не балл за технику — моменты на видео и одно движение,
-                  с которого начинается следующая попытка.
-                </p>
-                <ol className="landing-loop">
-                  {LOOP.map((step) => (
-                    <li key={step.n}>
-                      <b>{step.n}</b>
-                      <span>{step.text}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-
-              <figure className="landing-poster">
-                <span className="hold hold-a" aria-hidden="true" />
-                <span className="hold hold-b" aria-hidden="true" />
-                <span className="hold hold-c" aria-hidden="true" />
-                <img src="/male-onboarding.webp" alt="Скалолаз тянется к зацепке, контур показывает следующее положение" />
-                <figcaption>Следующее положение</figcaption>
-              </figure>
-            </section>
-
-            <section className="landing-story reveal">
-              <div className="landing-story-head">
-                <p className="landing-kicker">Что внутри</p>
-                <h2>Разбор, который можно повторить</h2>
-              </div>
-              <div className="landing-bento">
-                <MomentReel />
-                {FEATURES.map((feature) => (
-                  <article className="landing-feature" key={feature.title}>
-                    <h3>{feature.title}</h3>
-                    <p>{feature.text}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <section className="landing-install reveal">
-              <div className="landing-story-head">
-                <p className="landing-kicker">На домашний экран</p>
-                <h2>Открывайте как приложение</h2>
-              </div>
-              <p className="landing-install-lead">
-                Добавьте Beta Climb на экран телефона. С иконки сразу попадёте в приложение, без этой страницы.
-              </p>
-              {mode === 'mobile' ? (
-                <div className="landing-switch" role="tablist" aria-label="Инструкция для телефона">
-                  <button type="button" role="tab" aria-selected={platform === 'ios'} onClick={() => setPlatform('ios')}>
-                    iPhone
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={platform === 'android'}
-                    onClick={() => setPlatform('android')}
-                  >
-                    Android
-                  </button>
-                </div>
-              ) : null}
-              <div className="landing-guides">
-                {mode === 'desktop' ? (
-                  <>
-                    <Steps platform="ios" />
-                    <Steps platform="android" />
-                  </>
-                ) : (
-                  <Steps platform={platform} />
-                )}
-              </div>
-            </section>
+        <section className="landing-frame landing-hero-frame" id="home" aria-label="Beta Climb">
+          <div className="landing-hero-art" role="img" aria-label="Телефон на скалодроме снимает пролаз" />
+          <div className="landing-hero-copy" lang={russian ? 'ru' : 'en'}>
+            <h1 className="landing-title">
+              {russian ? (
+                <>
+                  С Beta Climb
+                  <br />
+                  будешь лазать
+                  <br />
+                  бетее!
+                </>
+              ) : (
+                <>
+                  With Beta
+                  <br />
+                  Climb you’ll
+                  <br />
+                  climb better!
+                </>
+              )}
+            </h1>
+            <div className="landing-hero-actions">
+              <button type="button" className="btn" onClick={() => scrollToId('install-android')}>
+                <AndroidMark />
+                {russian ? 'Установить на Android' : 'Install on Android'}
+              </button>
+              <button type="button" className="btn" onClick={() => scrollToId('install-ios')}>
+                <AppleMark />
+                {russian ? 'Установить на iOS' : 'Install on iOS'}
+              </button>
+            </div>
           </div>
+        </section>
 
-          {mode === 'desktop' ? (
-            <aside className="landing-side">
-              <div className="landing-qr">
-                <QrMark value={url} />
-                <p>Приложение доступно только на мобильных устройствах. Отсканируйте QR</p>
-                {local ? (
-                  <p className="landing-note">
-                    С телефона localhost не откроется. Откройте сайт по адресу компьютера в сети и отсканируйте QR уже
-                    там.
-                  </p>
-                ) : null}
-              </div>
-            </aside>
-          ) : null}
-        </div>
+        <section className="landing-frame landing-install-frame" id="install" aria-labelledby="install-title">
+          <div className="landing-install-inner">
+            <div className="landing-story-head">
+              <p className="landing-kicker">На домашний экран</p>
+              <h2 id="install-title">Как установить</h2>
+            </div>
+            <p className="landing-install-lead">
+              Добавьте Beta Climb на экран телефона. С иконки сразу попадёте в приложение.
+            </p>
+            <div className="landing-guides">
+              <Steps platform="android" />
+              <Steps platform="ios" />
+            </div>
+          </div>
+        </section>
       </div>
 
       {mode === 'mobile' ? (
-        <button type="button" className="btn btn-light landing-cta" onClick={() => navigate('/app', { replace: true })}>
+        <button
+          type="button"
+          className="btn btn-light landing-cta"
+          style={{ animationDelay: `${ctaAt}ms` }}
+          onClick={() => navigate('/app', { replace: true })}
+        >
           В приложение
         </button>
       ) : null}
+      </div>
+
+      <SectionNav placement="top" active={active} night={night} onSelect={scrollToId} onNight={setNight} />
+      {mode === 'desktop' ? (
+        <SectionNav placement="bottom" active={active} night={night} onSelect={scrollToId} onNight={setNight} />
+      ) : null}
+      {intro ? <SiteIntro onExit={() => setShown(true)} onDone={() => setIntro(false)} /> : null}
     </div>
   )
 }

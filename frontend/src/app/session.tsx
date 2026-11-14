@@ -18,22 +18,11 @@ interface SessionValue {
 const SessionContext = createContext<SessionValue | null>(null)
 
 const THEME_KEY = 'beta-climb.theme'
-const THEME_SWAP_MS = 1000
-let themeSwapTimer = 0
-
-function beginThemeSwap() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-  const root = document.documentElement
-  root.classList.add('is-theme-swap')
-  void root.offsetWidth
-  window.clearTimeout(themeSwapTimer)
-  themeSwapTimer = window.setTimeout(() => {
-    root.classList.remove('is-theme-swap')
-  }, THEME_SWAP_MS)
-}
+const THEME_SET_KEY = 'beta-climb.theme-set'
 
 function readStoredNight(): boolean | null {
   try {
+    if (localStorage.getItem(THEME_SET_KEY) !== '1') return null
     const stored = localStorage.getItem(THEME_KEY)
     if (stored === 'dark') return true
     if (stored === 'light') return false
@@ -43,21 +32,30 @@ function readStoredNight(): boolean | null {
   return null
 }
 
+function persistNight(on: boolean) {
+  try {
+    localStorage.setItem(THEME_SET_KEY, '1')
+    localStorage.setItem(THEME_KEY, on ? 'dark' : 'light')
+  } catch {
+    /* private mode */
+  }
+}
+
 function readNightPreference(): boolean {
   const stored = readStoredNight()
   if (stored != null) return stored
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
+  return false
 }
 
 function applyNightTheme(on: boolean) {
-  const stored = readStoredNight()
   const root = document.documentElement
-  const scheme = stored == null ? 'light dark' : stored ? 'dark' : 'light'
-  root.classList.toggle('is-night', stored === true)
-  root.classList.toggle('is-light', stored === false)
+  const scheme = on ? 'dark' : 'light'
+  root.classList.toggle('is-night', on)
+  root.classList.toggle('is-light', !on)
   root.classList.remove('is-boot-dark')
   root.style.colorScheme = scheme
-  replaceMeta('theme-color', on ? '#1e1e1e' : '#fd7115')
+  const menuOpen = root.classList.contains('is-landing-menu')
+  replaceMeta('theme-color', menuOpen ? (on ? '#343434' : '#ffffff') : on ? '#1e1e1e' : '#fd7115')
   replaceMeta('color-scheme', scheme)
 }
 
@@ -76,65 +74,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [profile, setProfile] = useState<AthleteProfile | null>(null)
   const [attempts, setAttempts] = useState<Attempt[]>([])
-  const chosen = useRef(readStoredNight() != null)
   const [night, setNightState] = useState(() => {
     const on = readNightPreference()
     applyNightTheme(on)
     return on
   })
-
-  useLayoutEffect(() => {
-    if (chosen.current) {
-      try {
-        localStorage.setItem(THEME_KEY, night ? 'dark' : 'light')
-      } catch {
-        /* private mode */
-      }
-    }
-    applyNightTheme(night)
-  }, [night])
-
   const nightRef = useRef(night)
   nightRef.current = night
 
-  useEffect(() => {
-    let lastSystem = window.matchMedia('(prefers-color-scheme: dark)').matches
-
-    const followSystem = (next: boolean) => {
-      if (next === lastSystem) return
-      lastSystem = next
-      chosen.current = false
-      try {
-        localStorage.removeItem(THEME_KEY)
-      } catch {
-        /* private mode */
-      }
-      if (nightRef.current !== next) beginThemeSwap()
-      applyNightTheme(next)
-      setNightState(next)
-    }
-
-    const onChange = (event: MediaQueryListEvent) => {
-      followSystem(event.matches)
-    }
-
-    const onForeground = () => {
-      if (document.visibilityState === 'hidden') return
-      followSystem(window.matchMedia('(prefers-color-scheme: dark)').matches)
-    }
-
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
-    media.addEventListener('change', onChange)
-    document.addEventListener('visibilitychange', onForeground)
-    window.addEventListener('pageshow', onForeground)
-    window.addEventListener('focus', onForeground)
-    return () => {
-      media.removeEventListener('change', onChange)
-      document.removeEventListener('visibilitychange', onForeground)
-      window.removeEventListener('pageshow', onForeground)
-      window.removeEventListener('focus', onForeground)
-    }
-  }, [])
+  useLayoutEffect(() => {
+    applyNightTheme(night)
+  }, [night])
 
   useEffect(() => {
     let alive = true
@@ -166,9 +116,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     attempts,
     night,
     setNight: (next) => {
-      chosen.current = true
-      beginThemeSwap()
-      setNightState((current) => (typeof next === 'function' ? next(current) : next))
+      const nextNight = typeof next === 'function' ? next(nightRef.current) : next
+      nightRef.current = nextNight
+      persistNight(nextNight)
+      setNightState(nextNight)
     },
     saveProfile: async (next) => {
       const saved = { ...next, nickname: next.nickname.trim() }

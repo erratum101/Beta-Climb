@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
 import { SvgIcon } from '../shared/ui/SvgIcon'
 
-const HOLD_MS = 900
+const HOLD_MS = 760
 const EXIT_MS = 300
 export const SPLASH_ENTER_KEY = 'beta-climb.from-splash'
 

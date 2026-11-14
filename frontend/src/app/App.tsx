@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom'
 import { AppRouter } from './router'
 import { SessionProvider } from './session'
+import { AppCursor } from '../shared/ui/AppCursor'
 
 /** Keeps swipe-back / browser Back from leaving the current in-app screen. */
 function BlockBrowserBack() {
@@ -34,6 +35,7 @@ export function App() {
     <BrowserRouter>
       <SessionProvider>
         <BlockBrowserBack />
+        <AppCursor />
         <AppRouter />
       </SessionProvider>
     </BrowserRouter>

@@ -1,6 +1,5 @@
-/* Светлая тема — :root.
-   Тёмная сама включается по теме телефона (prefers-color-scheme).
-   Ручной выбор: html.is-night или html.is-light — он сильнее системы.
+/* Светлая тема — обычное состояние.
+   Тёмная включается только явным выбором: html.is-night.
    @property нужен, чтобы смена темы интерполировала сами цвета. */
 
 @property --accent { syntax: "<color>"; inherits: true; initial-value: #fd7115; }
@@ -16,7 +15,7 @@
 @property --quiet { syntax: "<color>"; inherits: true; initial-value: #8a8a92; }
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   /* Акцент */
   --accent: #fd7115;
@@ -57,34 +56,9 @@
   --source-bottom-ink: var(--accent);
 }
 
-/* Явный светлый выбор при тёмной теме телефона */
+/* Явный светлый выбор */
 html.is-light {
   color-scheme: light;
-  
-}
-
-@media (prefers-color-scheme: dark) {
-  html:not(.is-light) {
-    color-scheme: dark;
-
-    --bg: #1e1e1e;
-    --bg-secondary: #2a2a2a;
-    --bg-elevated: #343434;
-    --bg-muted: #343434;
-    --bg-canvas: var(--accent);
-    --text: #cecece;
-    --heading: var(--accent);
-    --ink-soft: #cecece;
-    --quiet: #8a8a8a;
-    --nav: #1e1e1e;
-    --nav-accent: #fd7115;
-    --accent-soft: transparent;
-
-    --source-top: #1e1e1e;
-    --source-top-ink: var(--accent);
-    --source-bottom: #343434;
-    --source-bottom-ink: var(--accent);
-  }
 }
 
 html.is-night {

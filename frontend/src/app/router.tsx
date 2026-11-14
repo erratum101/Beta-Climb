@@ -42,7 +42,7 @@ function TabsLayout() {
   useEffect(() => {
     if (!fromSplash) return
     navigate(location.pathname, { replace: true, state: null })
-    const timer = window.setTimeout(() => setSplashEnter(false), 1300)
+    const timer = window.setTimeout(() => setSplashEnter(false), 1100)
     return () => window.clearTimeout(timer)
   }, [fromSplash, location.pathname, navigate])
 
