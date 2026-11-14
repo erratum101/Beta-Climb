@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = "DB_SCHEMA=betaclimb")
 @AutoConfigureMockMvc
 @Import(PostgresTestConfiguration.class)
 class ApiApplicationTests {
@@ -52,8 +52,16 @@ class ApiApplicationTests {
     void appliesMigrationToPostgres() {
         assertThat(jdbcTemplate.queryForObject("select 1", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject(
-                "select count(*) from flyway_schema_history where version = '1' and success", Integer.class
-        )).isEqualTo(1);
+                "select count(*) from flyway_schema_history where version in ('1', '2', '3', '4') and success", Integer.class
+        )).isEqualTo(4);
+        assertThat(jdbcTemplate.queryForObject("select current_schema()", String.class)).isEqualTo("betaclimb");
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from pg_tables where schemaname = 'betaclimb' and tablename <> 'flyway_schema_history'",
+                Integer.class
+        )).isEqualTo(4);
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from pg_tables where schemaname = 'public'", Integer.class
+        )).isZero();
     }
 
     @Test
