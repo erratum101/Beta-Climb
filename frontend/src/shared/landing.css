@@ -11,7 +11,7 @@
 }
 
 html {
-  --landing-menu: #fff;
+  --landing-menu: #dfdfdf;
   --landing-ink: #1c1c1e;
 }
 
@@ -32,7 +32,7 @@ html.is-night {
   --chrome-ease: var(--ease-out);
   position: relative;
   overflow: hidden;
-  background: #e4e4e4;
+  background: #dfdfdf;
   color: #fff;
   padding: 0;
 }
@@ -85,6 +85,7 @@ html.is-night .screen.landing {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  container-type: inline-size;
   background: var(--bg);
   border-radius: var(--sheet-top-radius, 0px) var(--sheet-top-radius, 0px) var(--sheet-bottom-radius, 0px) var(--sheet-bottom-radius, 0px);
   corner-shape: squircle;
@@ -269,20 +270,18 @@ html.is-landing-menu #root {
   min-height: 0;
   overflow: hidden;
   aspect-ratio: 1920 / 994;
-  background: #fd7115;
+  background: var(--bg);
   color: #dfdfdf;
+  transition: background-color 200ms linear;
   container-type: inline-size;
-  border-radius: 0 0 calc(100vw * 75 / 1920) calc(100vw * 75 / 1920);
+  border-radius: 0 0 calc(100cqi * 143 / 1920) calc(100cqi * 143 / 1920);
 }
 
 .landing-hero-art {
   position: absolute;
   z-index: 0;
-  left: 0;
-  top: calc(100% * -68.7129 / 994);
-  width: 100%;
-  height: calc(100% * 1080.57 / 994);
-  background: url('/bg-main.png') center / 100% 100% no-repeat;
+  inset: 0;
+  background: url('/bg-main.png') right center / auto 100% no-repeat;
   pointer-events: none;
 }
 
@@ -294,7 +293,7 @@ html.is-landing-menu #root {
   justify-content: flex-start;
   gap: calc(100cqi * 32 / 1920);
   width: max-content;
-  max-width: 58%;
+  max-width: calc(100% - calc(100cqi * 109 / 1920));
   margin: 0;
   padding:
     calc(100cqi * 78 / 1920)
@@ -306,6 +305,7 @@ html.is-landing-menu #root {
 .landing-hero-copy .landing-title {
   margin: 0;
   color: #dfdfdf;
+  transition: color 200ms linear;
   font-size: calc(100cqi * 128 / 1920);
   font-weight: 800;
   letter-spacing: -0.045em;
@@ -315,28 +315,42 @@ html.is-landing-menu #root {
 
 .landing-hero-actions {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: calc(100cqi * 14 / 1920);
-  width: max(260px, calc(100cqi * 360 / 1920));
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: calc(100cqi * 16 / 1920);
+  width: max-content;
   max-width: 100%;
+  margin-top: calc(100cqi * 88 / 1920);
 }
 
 .landing-hero-actions .btn {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  background: #fff;
+  gap: calc(100cqi * 12 / 1920);
+  background: #dfdfdf;
   color: #1c1c1e;
-  width: 100%;
-  height: max(48px, calc(100cqi * 64 / 1920));
-  font-size: max(15px, calc(100cqi * 18 / 1920));
+  width: auto;
+  height: max(56px, calc(100cqi * 96 / 1920));
+  padding: 0 calc(100cqi * 36 / 1920);
+  font-size: max(16px, calc(100cqi * 28 / 1920));
+  white-space: nowrap;
+}
+
+.landing-hero-actions .btn:hover,
+.landing-hero-actions .btn:focus-visible {
+  background: #fff;
+}
+
+html.is-night .landing-hero-copy .landing-title {
+  color: var(--accent);
 }
 
 .landing-store-icon {
-  width: 20px;
-  height: 20px;
+  width: max(22px, calc(100cqi * 32 / 1920));
+  height: max(22px, calc(100cqi * 32 / 1920));
   flex: none;
 }
 
@@ -898,26 +912,25 @@ html.is-night .landing-theme {
   .landing-hero-frame {
     display: block;
     aspect-ratio: auto;
-    border-radius: 0 0 28px 28px;
   }
 
   .landing-hero-art {
     position: relative;
-    top: auto;
+    inset: auto;
     width: 100%;
     height: auto;
     aspect-ratio: 1672 / 941;
-    background: url('/bg-main.png') left center / 100% 100% no-repeat;
+    background: url('/bg-main.png') center / contain no-repeat;
   }
 
   .landing-hero-copy {
     position: absolute;
     top: 0;
     left: 0;
-    width: min(340px, 78%);
-    max-width: 78%;
+    width: calc(100% - 24px);
+    max-width: none;
     margin: 0;
-    padding: 7% 12px 0 20px;
+    padding: 7% 12px 0 16px;
     gap: 14px;
     background: none;
   }
@@ -928,15 +941,26 @@ html.is-night .landing-theme {
     white-space: normal;
   }
 
-  .landing-hero-actions .btn {
-    height: 44px;
-    min-height: 0;
-    font-size: 14px;
-  }
-
   .landing-hero-actions {
     width: 100%;
     min-width: 0;
+    gap: 8px;
+    margin-top: 28px;
+  }
+
+  .landing-hero-actions .btn {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    height: 48px;
+    padding: 0 12px;
+    font-size: clamp(12px, 3.2vw, 15px);
+    gap: 6px;
+  }
+
+  .landing-store-icon {
+    width: 18px;
+    height: 18px;
   }
 
   .landing-main {

@@ -55,7 +55,7 @@ function applyNightTheme(on: boolean) {
   root.classList.remove('is-boot-dark')
   root.style.colorScheme = scheme
   const menuOpen = root.classList.contains('is-landing-menu')
-  replaceMeta('theme-color', menuOpen ? (on ? '#343434' : '#ffffff') : on ? '#1e1e1e' : '#fd7115')
+  replaceMeta('theme-color', menuOpen ? (on ? '#343434' : '#dfdfdf') : on ? '#1e1e1e' : '#fd7115')
   replaceMeta('color-scheme', scheme)
 }
 

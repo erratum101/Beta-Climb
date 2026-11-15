@@ -67,8 +67,8 @@
 
 .app-cursor-glyph {
   display: block;
-  width: 30px;
-  height: 30px;
+  width: 35px;
+  height: 35px;
   transform-origin: 100% 100%;
   transform: rotate(10deg);
   transition: transform 42ms cubic-bezier(0.5, 0, 1, 1);

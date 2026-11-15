@@ -336,7 +336,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
       root.classList.toggle('is-landing-menu', open)
       const theme = document.querySelector('meta[name="theme-color"]')
       const next = open
-        ? root.classList.contains('is-night') ? '#343434' : '#ffffff'
+        ? root.classList.contains('is-night') ? '#343434' : '#dfdfdf'
         : getComputedStyle(root).getPropertyValue('--bg').trim()
       if (theme && next) theme.setAttribute('content', next)
     }
