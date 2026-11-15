@@ -51,11 +51,20 @@ public class ProfileService {
     }
 
     private SavedProfile toResponse(ProfileEntity entity) {
-        return new SavedProfile(entity.getId(), new ProfileData(
-                entity.getNickname(), entity.getHeightCm(), entity.getWeightKg(),
-                entity.getAgeYears(), entity.getExperience(), List.of(entity.getDisciplines()),
-                entity.getMaxGrade(), entity.getGender(), entity.getConsentAccepted()
-        ));
+        return new SavedProfile(
+                entity.getId(),
+                new ProfileData(
+                        entity.getNickname(),
+                        entity.getHeightCm(),
+                        entity.getWeightKg(),
+                        entity.getAgeYears(),
+                        entity.getExperience(),
+                        List.of(entity.getDisciplines()),
+                        entity.getMaxGrade(),
+                        entity.getGender(),
+                        entity.getConsentAccepted()
+                )
+        );
     }
 
     public record SavedProfile(UUID id, ProfileData profile) {
