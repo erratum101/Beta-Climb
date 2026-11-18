@@ -26,6 +26,11 @@ document.addEventListener(
       edgeSwipeActive = false
       return
     }
+    const target = event.target
+    if (target instanceof Element && target.closest('.squish-switch, .landing-theme')) {
+      edgeSwipeActive = false
+      return
+    }
     const x = event.touches[0].clientX
     const w = window.innerWidth
     edgeSwipeActive = x <= EDGE_GUARD_PX || x >= w - EDGE_GUARD_PX
@@ -72,6 +77,12 @@ document.addEventListener(
   },
   { passive: false },
 )
+
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {})
+  })
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

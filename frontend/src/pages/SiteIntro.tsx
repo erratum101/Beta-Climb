@@ -1,20 +1,31 @@
 import { useEffect, useRef, useState } from 'react'
 
-type Phase = 'b' | 'shake' | 'logo' | 'words' | 'exit'
+type Phase = 'load' | 'logo' | 'words' | 'exit'
 
 const EXIT_MS = 640
 
-export function SiteIntro({ onDone, onExit }: { onDone: () => void; onExit: () => void }) {
-  const [phase, setPhase] = useState<Phase>('b')
+export function SiteIntro({
+  onDone,
+  onExit,
+  ready,
+}: {
+  onDone: () => void
+  onExit: () => void
+  ready: boolean
+}) {
+  const [phase, setPhase] = useState<Phase>('load')
+  const [mainMark, setMainMark] = useState(false)
+  const [shaking, setShaking] = useState(false)
+  const [reverse, setReverse] = useState(false)
   const onDoneRef = useRef(onDone)
   const onExitRef = useRef(onExit)
-  const skipped = useRef(false)
+  const readyRef = useRef(ready)
   const left = useRef(false)
-  const laterRef = useRef<(ms: number, run: () => void) => void>(() => {})
-  const clearRef = useRef<() => void>(() => {})
+  const finished = useRef(false)
 
   onDoneRef.current = onDone
   onExitRef.current = onExit
+  readyRef.current = ready
 
   useEffect(() => {
     let alive = true
@@ -26,87 +37,92 @@ export function SiteIntro({ onDone, onExit }: { onDone: () => void; onExit: () =
         }, ms),
       )
     }
-    const clear = () => {
-      ids.forEach((id) => window.clearTimeout(id))
-      ids.length = 0
+    const finish = () => {
+      if (finished.current) return
+      finished.current = true
+      onDoneRef.current()
     }
-    laterRef.current = later
-    clearRef.current = clear
-
-    const finish = () => onDoneRef.current()
     const leave = () => {
       if (left.current) return
       left.current = true
+      setPhase('exit')
       onExitRef.current()
+      later(EXIT_MS, finish)
     }
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reveal = (reduce: boolean) => {
+      setShaking(false)
+      setReverse(false)
+      setMainMark(true)
+      setPhase('logo')
+      const wordAt = reduce ? 40 : 340
+      later(wordAt, () => setPhase('words'))
+      later(wordAt + (reduce ? 320 : 860), leave)
+    }
 
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduce) {
-      setPhase('words')
-      later(420, () => {
-        setPhase('exit')
-        leave()
-      })
-      later(480, finish)
+      const wait = window.setInterval(() => {
+        if (!alive || !readyRef.current) return
+        window.clearInterval(wait)
+        reveal(true)
+      }, 80)
       return () => {
         alive = false
-        clear()
+        window.clearInterval(wait)
+        ids.forEach((id) => window.clearTimeout(id))
       }
     }
 
-    let started = false
-    const play = () => {
-      if (!alive || started || skipped.current) return
-      started = true
-      const steps: Array<[Phase, number]> = [
-        ['shake', 580],
-        ['logo', 340],
-        ['words', 340],
-        ['exit', 780],
-      ]
-      let at = 0
-      for (const [next, wait] of steps) {
-        at += wait
-        const phaseNext = next
-        later(at, () => {
-          if (skipped.current) return
-          setPhase(phaseNext)
-          if (phaseNext === 'exit') leave()
+    let onMain = false
+    const jerk = (toMain: boolean) => {
+      window.requestAnimationFrame(() => {
+        if (!alive) return
+        window.requestAnimationFrame(() => {
+          if (!alive) return
+          setReverse(!toMain)
+          setShaking(true)
+          later(120, () => {
+            onMain = toMain
+            setMainMark(toMain)
+          })
+          later(340, () => {
+            setShaking(false)
+            if (readyRef.current && onMain) {
+              later(200, () => reveal(false))
+              return
+            }
+            later(480, () => jerk(!onMain))
+          })
         })
-      }
-      later(at + EXIT_MS, finish)
+      })
     }
 
-    const cap = window.setTimeout(play, 700)
-    const fonts = document.fonts?.ready ?? Promise.resolve()
-    fonts.then(() => {
-      if (!alive) return
-      window.clearTimeout(cap)
-      play()
-    })
+    later(580, () => jerk(true))
 
     return () => {
       alive = false
-      window.clearTimeout(cap)
-      clear()
+      ids.forEach((id) => window.clearTimeout(id))
     }
   }, [])
 
   function skip() {
-    if (skipped.current || phase === 'exit') return
-    skipped.current = true
-    clearRef.current()
+    if (phase !== 'words' || left.current) return
+    left.current = true
     setPhase('exit')
-    if (!left.current) {
-      left.current = true
-      onExitRef.current()
-    }
-    laterRef.current(EXIT_MS, () => onDoneRef.current())
+    onExitRef.current()
+    window.setTimeout(() => {
+      if (finished.current) return
+      finished.current = true
+      onDoneRef.current()
+    }, EXIT_MS)
   }
 
   const className = [
     'site-intro',
-    phase === 'shake' ? 'is-shake' : '',
+    phase === 'load' ? 'is-loading' : '',
+    phase === 'load' && shaking ? 'is-shake' : '',
+    phase === 'load' && shaking && reverse ? 'is-back' : '',
+    phase === 'load' && mainMark ? 'is-main' : '',
     phase === 'logo' || phase === 'words' || phase === 'exit' ? 'is-logo' : '',
     phase === 'words' || phase === 'exit' ? 'is-words' : '',
     phase === 'exit' ? 'is-exit' : '',
@@ -115,9 +131,14 @@ export function SiteIntro({ onDone, onExit }: { onDone: () => void; onExit: () =
     .join(' ')
 
   return (
-    <div className={className}>
-      <button type="button" className="site-intro-hit" onClick={skip}>
-        <span className="visually-hidden">Beta Climb</span>
+    <div className={className} role="status" aria-busy={phase === 'load'}>
+      <button
+        type="button"
+        className="site-intro-hit"
+        onClick={skip}
+        aria-label={phase === 'load' ? 'Загрузка' : 'Beta Climb'}
+      >
+        <span className="visually-hidden">{phase === 'load' ? 'Загрузка видео' : 'Beta Climb'}</span>
         <span className="site-intro-lockup" aria-hidden="true">
           <span className="site-intro-mark">
             <Mark src="/B.svg" className="mark-plain" />

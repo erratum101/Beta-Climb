@@ -30,6 +30,7 @@
   --dur-drop-out: 140ms;
   --dur-press: 105ms;
   --dur-list: 290ms;
+  --theme-fade: 640ms;
   --stagger: 26ms;
   color: var(--text);
   font-family: "Montserrat Alternates", "Segoe UI", sans-serif;
@@ -271,7 +272,7 @@ html.is-vt .route-enter-layer {
   overflow: hidden;
   background: var(--bg-secondary);
   padding-bottom: 105px;
-  transition: background-color 200ms linear;
+  transition: background-color var(--theme-fade) var(--ease-in-out);
 }
 
 .app-shell.is-splash-enter .app-field {
@@ -376,7 +377,7 @@ html.is-vt .route-enter-layer {
   border-radius: 0 0 var(--screen-corner) var(--screen-corner);
   corner-shape: squircle;
   background: var(--bg);
-  transition: background-color 200ms linear;
+  transition: background-color var(--theme-fade) var(--ease-in-out);
 }
 
 .app-shell.is-guide,
@@ -647,7 +648,7 @@ html.is-vt .route-enter-layer {
   background: var(--bg);
   color: var(--accent);
   container-type: size;
-  transition: background-color 200ms linear;
+  transition: background-color var(--theme-fade) var(--ease-in-out);
 }
 
 .profile-view h1 {
@@ -658,7 +659,7 @@ html.is-vt .route-enter-layer {
   font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  transition: color 200ms linear;
+  transition: color var(--theme-fade) var(--ease-in-out);
 }
 
 .profile-cluster {
@@ -683,8 +684,8 @@ html.is-vt .route-enter-layer {
   z-index: 3;
   transition:
     scale var(--dur-press) var(--ease-out),
-    background-color 200ms linear,
-    color 200ms linear;
+    background-color var(--theme-fade) var(--ease-in-out),
+    color var(--theme-fade) var(--ease-in-out);
 }
 
 .profile-rate {
@@ -1575,7 +1576,7 @@ input.field-control {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: end;
-  transition: background-color 200ms linear;
+  transition: background-color var(--theme-fade) var(--ease-in-out);
 }
 
 .bottom-nav.is-pair {
@@ -2732,8 +2733,9 @@ html.is-vt::view-transition-new(shared-attempt) {
   html {
     transition-property:
       --accent, --bg, --bg-secondary, --bg-elevated, --bg-muted, --bg-canvas,
-      --text, --heading, --ink-soft, --accent-soft, --quiet;
-    transition-duration: 200ms;
+      --text, --heading, --ink-soft, --accent-soft, --quiet,
+      --landing-menu, --landing-ink;
+    transition-duration: var(--theme-fade);
     transition-timing-function: var(--ease-in-out);
   }
 }
@@ -2744,7 +2746,7 @@ html.is-vt::view-transition-new(shared-attempt) {
   @media (prefers-reduced-motion: no-preference) {
     html {
       transition-property: background-color, color;
-      transition-duration: 200ms;
+      transition-duration: var(--theme-fade);
       transition-timing-function: var(--ease-in-out);
     }
   }

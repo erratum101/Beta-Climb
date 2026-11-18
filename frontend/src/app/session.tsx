@@ -53,10 +53,18 @@ function applyNightTheme(on: boolean) {
   root.classList.toggle('is-night', on)
   root.classList.toggle('is-light', !on)
   root.classList.remove('is-boot-dark')
-  root.style.colorScheme = scheme
   const menuOpen = root.classList.contains('is-landing-menu')
-  replaceMeta('theme-color', menuOpen ? (on ? '#343434' : '#dfdfdf') : on ? '#1e1e1e' : '#fd7115')
+  const landing = root.classList.contains('is-landing')
+  if (landing && !menuOpen) {
+    root.style.colorScheme = 'normal'
+    document.querySelectorAll('meta[name="theme-color"], meta[name="color-scheme"]').forEach((node) => node.remove())
+    return
+  }
+  root.style.colorScheme = scheme
   replaceMeta('color-scheme', scheme)
+  const bg = getComputedStyle(root).getPropertyValue('--bg').trim()
+  const chrome = bg || (on ? '#1e1e1e' : '#fd7115')
+  replaceMeta('theme-color', chrome)
 }
 
 function replaceMeta(name: string, content: string) {

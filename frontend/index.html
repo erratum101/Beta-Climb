@@ -40,7 +40,10 @@
         root.classList.toggle('is-light', !night)
         var bg = night ? '#1e1e1e' : '#fd7115'
         var scheme = night ? 'dark' : 'light'
-        root.style.colorScheme = scheme
+        var installed = window.navigator.standalone === true
+          || window.matchMedia('(display-mode: standalone)').matches
+          || window.matchMedia('(display-mode: fullscreen)').matches
+        root.style.colorScheme = installed ? scheme : 'normal'
         var screenW = Math.min(screen.width, screen.height)
         var screenH = Math.max(screen.width, screen.height)
         var screenCorners = {
@@ -60,9 +63,14 @@
         }
         root.style.setProperty('--screen-corner', (screenCorner || 47) + 'px')
         var theme = document.querySelector('meta[name="theme-color"]')
-        if (theme) theme.setAttribute('content', bg)
         var schemeMeta = document.querySelector('meta[name="color-scheme"]')
-        if (schemeMeta) schemeMeta.setAttribute('content', scheme)
+        if (installed) {
+          if (theme) theme.setAttribute('content', bg)
+          if (schemeMeta) schemeMeta.setAttribute('content', scheme)
+        } else {
+          if (theme) theme.remove()
+          if (schemeMeta) schemeMeta.remove()
+        }
       })()
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
