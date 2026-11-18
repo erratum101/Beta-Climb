@@ -290,7 +290,9 @@ html.is-landing-menu #root {
   width: max-content;
   transform: translate(-50%, -50%);
   font-size: 1em;
+  font-weight: 600;
   line-height: 1;
+  opacity: 1;
   color: transparent;
   background-image: inherit;
   background-size: inherit;
@@ -298,12 +300,33 @@ html.is-landing-menu #root {
   background-position: inherit;
   background-clip: text;
   -webkit-background-clip: text;
-  transition: font-size 0.2s var(--ease-out);
+  transition:
+    font-size 0.45s var(--ease-out),
+    opacity 0.45s var(--ease-out);
+}
+
+.landing-nav-track > button > span[aria-hidden='true'] {
+  font-weight: 800;
+  opacity: 0;
+}
+
+.landing-nav-track > button:hover,
+.landing-nav-track > button:focus-visible {
+  z-index: 1;
 }
 
 .landing-nav-track > button:hover > span,
 .landing-nav-track > button:focus-visible > span {
-  font-size: calc(1em + 1px);
+  font-size: 1.12em;
+}
+
+.landing-nav-track > button:hover:not([aria-current='true']) > span[aria-hidden='true'],
+.landing-nav-track > button:focus-visible:not([aria-current='true']) > span[aria-hidden='true'] {
+  opacity: 1;
+}
+
+.landing-nav-track > button[aria-current='true'] > span:not([aria-hidden='true']) {
+  font-weight: 800;
 }
 
 .landing-nav-track > button[aria-current='true'] {

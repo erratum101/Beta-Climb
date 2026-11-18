@@ -259,6 +259,7 @@ function SectionNav({
             onClick={() => onSelect(item.id)}
           >
             <span>{item.label}</span>
+            <span aria-hidden="true">{item.label}</span>
           </button>
         ))}
         <span className="landing-nav-bar" aria-hidden="true" />
