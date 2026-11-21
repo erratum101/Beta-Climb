@@ -34,6 +34,7 @@ html.is-night {
 
 .screen.landing {
   --landing-nav: 70px;
+  --landing-mark: 40px;
   --landing-corner: 70px;
   --sheet-top: 0px;
   --sheet-lift: 0px;
@@ -792,36 +793,10 @@ html:not(.is-night) .screen.landing:not(.is-desktop).is-lowered:not(.is-closing)
 }
 
 .screen.landing:not(.is-desktop) .landing-theme.is-pin {
-  top: calc(16px + env(safe-area-inset-top));
+  top: calc(16px + env(safe-area-inset-top) + (13px * 1.05 * 2 - var(--landing-mark)) / 2);
   right: 20px;
   height: auto;
   margin-top: 0;
-}
-
-.landing-theme .squish-switch__track,
-.landing-theme .squish-switch[data-on] .squish-switch__track {
-  background: var(--landing-menu);
-}
-
-.landing-theme .squish-switch__thumb,
-.landing-theme .squish-switch[data-on] .squish-switch__thumb {
-  background: var(--landing-ink);
-}
-
-html:not(.is-night) .screen.landing:not(.is-desktop):is(.is-lowered, .is-raised) .landing-theme .squish-switch__track {
-  background: #fff;
-}
-
-html:not(.is-night) .screen.landing:not(.is-desktop):is(.is-lowered, .is-raised) .landing-theme .squish-switch__thumb {
-  background: #fd7115;
-}
-
-html:not(.is-night) .screen.landing:not(.is-desktop):is(.is-lowered, .is-raised) .landing-theme-icon.is-sun {
-  color: #fff;
-}
-
-html:not(.is-night) .screen.landing:not(.is-desktop):is(.is-lowered, .is-raised) .landing-theme-icon.is-moon {
-  color: #1c1c1e;
 }
 
 .landing-theme {
@@ -831,45 +806,6 @@ html:not(.is-night) .screen.landing:not(.is-desktop):is(.is-lowered, .is-raised)
   flex: none;
   align-items: center;
   justify-self: end;
-  touch-action: none;
-}
-
-.landing-theme-icons {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.landing-theme-icon {
-  position: absolute;
-  top: 50%;
-  display: grid;
-  place-items: center;
-  width: 15px;
-  height: 15px;
-  transform: translateY(-50%);
-  transition:
-    color var(--theme-fade) var(--ease-in-out),
-    opacity var(--theme-fade) var(--ease-in-out);
-}
-
-.landing-theme-icon.is-sun {
-  left: calc(var(--ss-inset, 4px) + (var(--ss-thumb, 24px) - 15px) / 2);
-  color: var(--accent);
-}
-
-.landing-theme-icon.is-moon {
-  right: calc(var(--ss-inset, 4px) + (var(--ss-thumb, 24px) - 15px) / 2);
-  color: var(--landing-ink);
-}
-
-html.is-night .landing-theme-icon.is-sun {
-  color: #dfdfdf;
-}
-
-html.is-night .landing-theme-icon.is-moon {
-  color: var(--accent);
 }
 
 .landing-title {
@@ -879,6 +815,21 @@ html.is-night .landing-theme-icon.is-moon {
   font-weight: 800;
   letter-spacing: -0.055em;
   line-height: 0.9;
+}
+
+.landing-title.is-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  line-height: 0.96;
+  white-space: normal;
+  text-align: center;
+}
+
+.landing-title.is-lines > span {
+  display: block;
+  white-space: nowrap;
 }
 
 .landing-title em {
@@ -1173,26 +1124,38 @@ html.is-night .landing-theme-icon.is-moon {
   line-height: 1.35;
 }
 
+.install-steps {
+  position: relative;
+}
+
 .install-step-page {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   width: min(100%, 1080px);
-  height: 100%;
-  min-height: 100%;
+  height: 100lvh;
+  min-height: 100lvh;
   margin: 0 auto;
   padding: 28px 40px 36px;
   color: #fff;
 }
 
 .install-step-top {
+  position: sticky;
+  top: calc(env(safe-area-inset-top) + (var(--landing-nav) - var(--landing-mark)) / 2);
+  z-index: 4;
   display: flex;
+  align-items: flex-start;
   justify-content: center;
   width: 100%;
+  height: 0;
+  pointer-events: none;
 }
 
-.install-step-page .landing-switch {
+.install-step-top .landing-switch {
+  flex: none;
   margin: 0;
+  pointer-events: auto;
 }
 
 .install-page {
@@ -1273,26 +1236,69 @@ html:not(.is-night) .apple-step-shot img.is-dark {
 }
 
 .landing-switch {
+  --switch-pad: 2px;
+  --switch-gap: 4px;
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  align-items: center;
+  gap: var(--switch-gap);
+  box-sizing: border-box;
   width: min(100%, 280px);
+  height: var(--landing-mark);
   margin: 18px 0 0;
-  padding: 4px;
+  padding: var(--switch-pad);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
 }
 
+.landing-switch-thumb {
+  position: absolute;
+  z-index: 0;
+  top: var(--switch-pad);
+  bottom: var(--switch-pad);
+  border-radius: 999px;
+  background: #fff;
+  pointer-events: none;
+  transition: background-color var(--theme-fade) var(--ease-in-out);
+}
+
+html.is-night .landing-switch-thumb {
+  background: var(--accent);
+}
+
+.landing-switch[data-platform='android'] .landing-switch-thumb {
+  left: var(--switch-pad);
+  right: calc(50% + var(--switch-gap) / 2);
+  transition:
+    left 0.3s cubic-bezier(0.33, 1, 0.32, 1),
+    right 0.52s cubic-bezier(0.22, 1, 0.36, 1) 0.08s,
+    background-color var(--theme-fade) var(--ease-in-out);
+}
+
+.landing-switch[data-platform='ios'] .landing-switch-thumb {
+  left: calc(50% + var(--switch-gap) / 2);
+  right: var(--switch-pad);
+  transition:
+    right 0.3s cubic-bezier(0.33, 1, 0.32, 1),
+    left 0.52s cubic-bezier(0.22, 1, 0.36, 1) 0.08s,
+    background-color var(--theme-fade) var(--ease-in-out);
+}
+
 .landing-switch button {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  height: 36px;
+  gap: 4px;
+  height: calc(var(--landing-mark) - 2 * var(--switch-pad));
+  min-height: 0;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.82);
+  transition: color 0.2s ease;
 }
 
 .landing-switch .landing-store-icon {
@@ -1301,8 +1307,94 @@ html:not(.is-night) .apple-step-shot img.is-dark {
 }
 
 .landing-switch button[aria-selected='true'] {
-  background: #fff;
   color: #1c1c1e;
+  transition-delay: 0.16s;
+}
+
+html.is-night .landing-switch button[aria-selected='true'] {
+  color: #fff;
+}
+
+.landing-theme-switch {
+  width: auto;
+  margin: 0;
+  transition: background-color var(--theme-fade) var(--ease-in-out);
+}
+
+.landing-theme-side {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: calc(var(--landing-mark) - 2 * var(--switch-pad));
+  height: calc(var(--landing-mark) - 2 * var(--switch-pad));
+  color: rgba(255, 255, 255, 0.82);
+  transition: color 0.2s ease;
+}
+
+.landing-theme-switch[data-theme='day'] .landing-theme-side.is-sun,
+.landing-theme-switch[data-theme='night'] .landing-theme-side.is-moon {
+  color: #1c1c1e;
+  transition-delay: 0.08s;
+}
+
+html.is-night .landing-theme-switch[data-theme='day'] .landing-theme-side.is-sun,
+html.is-night .landing-theme-switch[data-theme='night'] .landing-theme-side.is-moon {
+  color: #fff;
+}
+
+.landing-theme-switch[data-theme='day'] .landing-switch-thumb {
+  left: var(--switch-pad);
+  right: calc(50% + var(--switch-gap) / 2);
+  transition:
+    left 0.14s cubic-bezier(0.33, 1, 0.32, 1),
+    right 0.22s cubic-bezier(0.22, 1, 0.36, 1) 0.04s,
+    background-color var(--theme-fade) var(--ease-in-out);
+}
+
+.landing-theme-switch[data-theme='night'] .landing-switch-thumb {
+  left: calc(50% + var(--switch-gap) / 2);
+  right: var(--switch-pad);
+  transition:
+    right 0.14s cubic-bezier(0.33, 1, 0.32, 1),
+    left 0.22s cubic-bezier(0.22, 1, 0.36, 1) 0.04s,
+    background-color var(--theme-fade) var(--ease-in-out);
+}
+
+html:not(.is-night) .screen.landing.is-desktop.is-lowered .landing-theme.is-pin .landing-theme-switch,
+html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-theme-switch {
+  background: rgba(28, 28, 30, 0.08);
+}
+
+html:not(.is-night) .screen.landing.is-desktop.is-lowered .landing-theme.is-pin .landing-theme-side,
+html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-theme-side {
+  color: rgba(28, 28, 30, 0.55);
+}
+
+html:not(.is-night) .screen.landing.is-desktop.is-lowered .landing-theme.is-pin .landing-theme-switch[data-theme='day'] .landing-theme-side.is-sun,
+html:not(.is-night) .screen.landing.is-desktop.is-lowered .landing-theme.is-pin .landing-theme-switch[data-theme='night'] .landing-theme-side.is-moon,
+html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-theme-switch[data-theme='day'] .landing-theme-side.is-sun,
+html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-theme-switch[data-theme='night'] .landing-theme-side.is-moon {
+  color: #1c1c1e;
+}
+
+.install-page.is-swap .scroll-float.landing-float {
+  overflow: visible;
+}
+
+.install-page.is-swap .apple-step-shot,
+.install-page.is-swap .landing-qr {
+  animation: install-swap-fade 0.42s ease-out both;
+}
+
+@keyframes install-swap-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .landing-qr {
@@ -1330,17 +1422,85 @@ html:not(.is-night) .apple-step-shot img.is-dark {
 }
 
 @media (max-width: 759px) {
+  .install-step-page {
+    padding: 68px 20px 24px;
+  }
+
+  .install-step-top {
+    top: calc(8px + env(safe-area-inset-top) + (13px * 1.05 * 2 - var(--landing-mark)) / 2);
+    box-sizing: border-box;
+    width: 100%;
+    padding-right: calc(16px + var(--landing-corner) * 0.28 + 92px);
+    padding-left: calc(16px + var(--landing-corner) * 0.28 + 86px);
+  }
+
+  .install-page,
+  .install-page.has-shot.is-shot-left,
+  .install-page.has-shot.is-shot-right,
   .install-page.has-qr {
     grid-template-columns: minmax(0, 1fr);
     align-content: center;
     justify-items: center;
-    gap: 16px;
+    gap: 14px;
+  }
+
+  .install-page.has-shot.is-shot-left,
+  .install-page.has-shot.is-shot-right {
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: stretch;
+    align-content: stretch;
+    justify-items: center;
+  }
+
+  .install-page .apple-step-shot,
+  .install-page .landing-qr {
+    order: -1;
+  }
+
+  .install-page .apple-step-shot {
+    position: relative;
+    align-self: stretch;
+    justify-self: center;
+    width: min(280px, 72vw);
+    height: 100%;
+    min-height: 0;
+    max-width: none;
+    max-height: none;
+  }
+
+  .install-page .apple-step-shot img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0 auto;
+    object-fit: contain;
+  }
+
+  .install-page-copy {
+    max-width: 26rem;
+    text-align: center;
+  }
+
+  .install-page h3 {
+    font-size: clamp(28px, 8vw, 36px);
+  }
+
+  .install-page p.scroll-float,
+  .install-page-copy p {
+    margin-top: 10px;
+    font-size: 15px;
   }
 
   .install-page.has-qr .install-page-copy {
     display: flex;
     flex-direction: column;
     align-items: center;
+    min-height: 0;
     text-align: center;
   }
 
@@ -1349,19 +1509,158 @@ html:not(.is-night) .apple-step-shot img.is-dark {
     margin-left: auto;
   }
 
-  .install-page.has-qr h3 {
-    font-size: 32px;
-  }
-
   .install-step-page:has(.landing-qr) {
-    padding: 16px 22px 18px;
+    padding: 68px 20px 24px;
   }
 
   .landing-qr {
-    width: min(100%, 176px);
+    width: min(100%, 168px);
     padding: 12px;
     border-radius: 26px;
   }
+
+  .install-step-top .landing-switch {
+    width: max-content;
+    max-width: 100%;
+    height: var(--landing-mark);
+  }
+
+  .install-step-top .landing-switch button {
+    width: calc(var(--landing-mark) - 2 * var(--switch-pad));
+    height: calc(var(--landing-mark) - 2 * var(--switch-pad));
+    min-width: 0;
+    max-height: none;
+    padding: 0;
+    overflow: hidden;
+    line-height: 1;
+  }
+
+  .install-step-top .landing-switch .landing-switch-label {
+    display: none;
+  }
+
+  .install-step-top .landing-switch .landing-store-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .install-step-top .landing-switch .landing-store-icon svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.screen.landing:not(.is-desktop) .install-step-page {
+  padding: 68px 20px 24px;
+}
+
+.screen.landing:not(.is-desktop) .install-step-top {
+  top: calc(16px + env(safe-area-inset-top) + (13px * 1.05 * 2 - var(--landing-mark)) / 2);
+  box-sizing: border-box;
+  width: 100%;
+  padding-right: 112px;
+  padding-left: 104px;
+}
+
+.screen.landing:not(.is-desktop) .install-page,
+.screen.landing:not(.is-desktop) .install-page.has-shot.is-shot-left,
+.screen.landing:not(.is-desktop) .install-page.has-shot.is-shot-right,
+.screen.landing:not(.is-desktop) .install-page.has-qr {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+}
+
+.screen.landing:not(.is-desktop) .install-page.has-shot.is-shot-left,
+.screen.landing:not(.is-desktop) .install-page.has-shot.is-shot-right {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: stretch;
+  align-content: stretch;
+  justify-items: center;
+}
+
+.screen.landing:not(.is-desktop) .install-page .apple-step-shot,
+.screen.landing:not(.is-desktop) .install-page .landing-qr {
+  order: -1;
+}
+
+.screen.landing:not(.is-desktop) .install-page .apple-step-shot {
+  position: relative;
+  align-self: stretch;
+  justify-self: center;
+  width: min(280px, 72vw);
+  height: 100%;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+}
+
+.screen.landing:not(.is-desktop) .install-page .apple-step-shot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.screen.landing:not(.is-desktop) .install-page-copy {
+  max-width: 26rem;
+  text-align: center;
+}
+
+.screen.landing:not(.is-desktop) .install-page h3 {
+  font-size: clamp(28px, 8vw, 36px);
+}
+
+.screen.landing:not(.is-desktop) .install-page p.scroll-float,
+.screen.landing:not(.is-desktop) .install-page-copy p {
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.screen.landing:not(.is-desktop) .install-page.has-qr .install-page-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  text-align: center;
+}
+
+.screen.landing:not(.is-desktop) .landing-qr {
+  width: min(100%, 168px);
+  padding: 12px;
+  border-radius: 26px;
+}
+
+.screen.landing:not(.is-desktop) .install-step-top .landing-switch {
+  width: max-content;
+  max-width: 100%;
+  height: var(--landing-mark);
+}
+
+.screen.landing:not(.is-desktop) .install-step-top .landing-switch button {
+  width: calc(var(--landing-mark) - 2 * var(--switch-pad));
+  height: calc(var(--landing-mark) - 2 * var(--switch-pad));
+  min-width: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.screen.landing:not(.is-desktop) .install-step-top .landing-switch .landing-switch-label {
+  display: none;
+}
+
+.screen.landing:not(.is-desktop) .install-step-top .landing-switch .landing-store-icon,
+.screen.landing:not(.is-desktop) .install-step-top .landing-switch .landing-store-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .landing-note {
@@ -1531,15 +1830,16 @@ html:not(.is-night) .apple-step-shot img.is-dark {
     max-height: 100%;
     box-sizing: border-box;
     margin: 0;
-    padding: 0 20px calc(16px + var(--safe-area-max-inset-bottom, 0px));
+    padding: calc(64px + env(safe-area-inset-top, 0px)) 20px calc(16px + var(--safe-area-max-inset-bottom, 0px));
     gap: 0;
   }
 
   .landing-hero-copy .landing-title {
     align-self: center;
-    font-size: clamp(36px, 10vw, 48px);
-    line-height: 1.02;
-    white-space: pre-line;
+    width: 100%;
+    font-size: clamp(44px, 12vw, 76px);
+    line-height: 0.96;
+    white-space: normal;
   }
 
   .landing-hero-actions {
@@ -1559,11 +1859,15 @@ html:not(.is-night) .apple-step-shot img.is-dark {
     min-width: 0;
   }
 
-  .landing-hero-actions .btn {
+  .landing-hero-actions .btn,
+  .landing-hero-actions .btn.is-android,
+  .landing-hero-actions .btn.is-ios {
     height: 52px;
     padding: 0 20px;
     font-size: 16px;
     gap: 8px;
+    background: var(--accent);
+    color: #fff;
   }
 
   .landing-store-icon {
@@ -1599,6 +1903,10 @@ html:not(.is-night) .apple-step-shot img.is-dark {
     align-items: flex-start;
     height: auto;
     margin-top: 8px;
+  }
+
+  .landing-theme.is-pin {
+    margin-top: calc(8px + (13px * 1.05 * 2 - var(--landing-mark)) / 2);
   }
 }
 
@@ -1652,15 +1960,16 @@ html.is-night .screen.landing:not(.is-desktop) .landing-hero-frame {
   max-height: 100%;
   box-sizing: border-box;
   margin: 0;
-  padding: 0 20px calc(16px + var(--safe-area-max-inset-bottom, 0px));
+  padding: calc(64px + env(safe-area-inset-top, 0px)) 20px calc(16px + var(--safe-area-max-inset-bottom, 0px));
   gap: 0;
 }
 
 .screen.landing:not(.is-desktop) .landing-hero-copy .landing-title {
   align-self: center;
-  font-size: clamp(36px, 10vw, 48px);
-  line-height: 1.02;
-  white-space: pre-line;
+  width: 100%;
+  font-size: clamp(44px, 12vw, 76px);
+  line-height: 0.96;
+  white-space: normal;
 }
 
 .screen.landing:not(.is-desktop) .landing-hero-actions {
@@ -1687,14 +1996,13 @@ html.is-night .screen.landing:not(.is-desktop) .landing-hero-frame {
   gap: 8px;
 }
 
-html:not(.is-night) .screen.landing:not(.is-desktop) .landing-hero-actions .btn {
+.screen.landing:not(.is-desktop) .landing-hero-actions .btn,
+.screen.landing:not(.is-desktop) .landing-hero-actions .btn.is-android,
+.screen.landing:not(.is-desktop) .landing-hero-actions .btn.is-ios,
+html.is-night .screen.landing:not(.is-desktop) .landing-hero-actions .btn,
+html.is-night .screen.landing:not(.is-desktop) .landing-hero-actions .btn.is-ios {
   background: var(--accent);
   color: #fff;
-}
-
-html.is-night .screen.landing:not(.is-desktop) .landing-hero-actions .btn {
-  background: #1c1c1e;
-  color: #dfdfdf;
 }
 
 .screen.landing:not(.is-desktop) .landing-store-icon {
@@ -2005,7 +2313,9 @@ button.site-intro-hit:active {
   }
 
   .landing-store-icon,
-  .install-page {
+  .install-page,
+  .landing-switch-thumb,
+  .landing-switch button {
     transition: none;
     animation: none;
   }

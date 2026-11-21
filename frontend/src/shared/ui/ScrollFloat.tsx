@@ -65,6 +65,11 @@ export type ScrollFloatProps = {
   /** Pause before the pieces move, in seconds. */
   startDelay?: number
   /**
+   * Fade the whole line in with ease-out, and start the per-character move
+   * only after that fade has finished.
+   */
+  fadeFirst?: boolean
+  /**
    * Play the piece timing on the clock when the trigger enters.
    * Leave this off to tie the same move directly to the scroll position.
    */
@@ -93,6 +98,7 @@ const ScrollFloat = ({
   scrollStart = 'center bottom+=50%',
   scrollEnd = 'bottom bottom-=40%',
   startDelay = 0,
+  fadeFirst = false,
   playOnEnter = false,
   stagger = 0.03,
   distance = 120,
@@ -140,6 +146,7 @@ const ScrollFloat = ({
   useEffect(() => setMounted(true), [])
 
   useIsomorphicLayoutEffect(() => {
+    ;(window as unknown as { __gsap?: typeof gsap }).__gsap = gsap
     const el = containerRef.current
     const textEl = textRef.current
     if (!el || !textEl) return
@@ -299,6 +306,34 @@ const ScrollFloat = ({
         )
         add({ rotation: 0 }, { ease: sway, rotation: -16 * sign })
         add({ opacity: 0 }, { ease: (progress: number) => clamp01(timing(progress) * 2.5), opacity: 1 })
+      } else if (fadeFirst) {
+        const fadeDuration = 0.42
+        const letterDuration = 0.4
+        gsap.set(targets, {
+          willChange: 'opacity, transform',
+          opacity: 0,
+          y: 14 * sign,
+          yPercent: 0,
+          scaleX: 1,
+          scaleY: 1,
+          rotation: 0,
+          transformOrigin: '50% 100%',
+        })
+        timeline.to(
+          targets,
+          { opacity: 1, duration: fadeDuration, ease: 'power2.out', stagger: 0 },
+          0,
+        )
+        timeline.to(
+          targets,
+          {
+            y: 0,
+            duration: letterDuration,
+            ease: 'power2.out',
+            stagger: (index: number) => delays[index] || 0,
+          },
+          fadeDuration,
+        )
       } else {
         add(
           {
@@ -312,7 +347,7 @@ const ScrollFloat = ({
         )
       }
 
-      if (shiftColor) {
+      if (shiftColor && !(fadeFirst && effect === 'float')) {
         add(
           { '--scroll-float-mix': 1 },
           { ease: (progress: number) => smoothstep(0.5, 1, timing(progress)), '--scroll-float-mix': 0 },
@@ -368,6 +403,7 @@ const ScrollFloat = ({
     scrollStart,
     scrollEnd,
     startDelay,
+    fadeFirst,
     playOnEnter,
     stagger,
     distance,

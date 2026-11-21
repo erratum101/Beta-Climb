@@ -31,16 +31,6 @@ const GUIDE_MARKS = [
   { n: 5, x: 47.31, y: 18.07 },
 ]
 
-const GUIDE_ZOOM = 2.4
-
-function aimAtMark(mark: { x: number; y: number }) {
-  const limit = ((GUIDE_ZOOM - 1) / 2) * 100
-  const clamp = (value: number) => Math.min(limit, Math.max(-limit, value))
-  const x = clamp((50 - mark.x) * GUIDE_ZOOM)
-  const y = clamp((50 - mark.y) * GUIDE_ZOOM)
-  return { x: `${x.toFixed(2)}%`, y: `${y.toFixed(2)}%`, s: String(GUIDE_ZOOM) }
-}
-
 export function captureGuideSeen(): boolean {
   try {
     return localStorage.getItem(GUIDE_KEY) === '1'
@@ -148,8 +138,6 @@ export function CaptureSource() {
 }
 
 export function CaptureGuideBody({ step }: { step: number }) {
-  const aim = step === 0 ? { x: '0%', y: '0%', s: '1' } : aimAtMark(GUIDE_MARKS[step])
-
   return (
     <div className="screen capture-guide">
       <div className="capture-guide-dots" aria-hidden="true">
@@ -162,10 +150,7 @@ export function CaptureGuideBody({ step }: { step: number }) {
         {step + 1}. {STEPS[step]}
       </h1>
       <div className="capture-guide-art">
-        <div
-          className="capture-guide-frame"
-          style={{ ['--aim-x' as string]: aim.x, ['--aim-y' as string]: aim.y, ['--aim-s' as string]: aim.s }}
-        >
+        <div className="capture-guide-frame">
           <img src="/instructions.webp" alt="" />
           {GUIDE_MARKS.map((mark) =>
             mark.n <= step + 1 ? (

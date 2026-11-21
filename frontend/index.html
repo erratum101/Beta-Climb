@@ -27,15 +27,26 @@
     <script>
       (function () {
         var choice = null
+        var seen = null
         try {
           if (localStorage.getItem('beta-climb.theme-set') === '1') {
             choice = localStorage.getItem('beta-climb.theme')
           } else {
             localStorage.removeItem('beta-climb.theme')
           }
+          seen = localStorage.getItem('beta-climb.theme-system')
         } catch (e) {}
         var root = document.documentElement
-        var night = choice === 'dark'
+        var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        var systemValue = systemDark ? 'dark' : 'light'
+        if (seen != null && seen !== systemValue) {
+          choice = null
+          try {
+            localStorage.removeItem('beta-climb.theme-set')
+            localStorage.removeItem('beta-climb.theme')
+          } catch (e) {}
+        }
+        var night = choice === 'dark' || (choice == null && systemDark)
         root.classList.toggle('is-night', night)
         root.classList.toggle('is-light', !night)
         var bg = night ? '#1e1e1e' : '#fd7115'

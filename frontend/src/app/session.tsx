@@ -20,6 +20,7 @@ const SessionContext = createContext<SessionValue | null>(null)
 
 const THEME_KEY = 'beta-climb.theme'
 const THEME_SET_KEY = 'beta-climb.theme-set'
+const THEME_SYSTEM_KEY = 'beta-climb.theme-system'
 
 function readStoredNight(): boolean | null {
   try {
@@ -42,10 +43,41 @@ function persistNight(on: boolean) {
   }
 }
 
+function systemNight(): boolean {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+
+function rememberSystem(on: boolean) {
+  try {
+    localStorage.setItem(THEME_SYSTEM_KEY, on ? 'dark' : 'light')
+  } catch {
+    /* private mode */
+  }
+}
+
+function clearNightOverride() {
+  try {
+    localStorage.removeItem(THEME_SET_KEY)
+    localStorage.removeItem(THEME_KEY)
+  } catch {
+    /* private mode */
+  }
+}
+
 function readNightPreference(): boolean {
+  const system = systemNight()
+  const systemValue = system ? 'dark' : 'light'
+  let seen: string | null = null
+  try {
+    seen = localStorage.getItem(THEME_SYSTEM_KEY)
+  } catch {
+    seen = null
+  }
+  rememberSystem(system)
   const stored = readStoredNight()
-  if (stored != null) return stored
-  return false
+  if (stored != null && (seen == null || seen === systemValue)) return stored
+  clearNightOverride()
+  return system
 }
 
 function applyNightTheme(on: boolean) {
@@ -96,6 +128,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     applyNightTheme(night)
   }, [night])
+
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () => {
+      const next = query.matches
+      clearNightOverride()
+      rememberSystem(next)
+      nightRef.current = next
+      setNightState(next)
+    }
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
+  }, [])
 
   useEffect(() => {
     let alive = true

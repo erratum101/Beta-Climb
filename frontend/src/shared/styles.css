@@ -1,23 +1,5 @@
 @import "./theme.css";
 
-@property --aim-x {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 0%;
-}
-
-@property --aim-y {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 0%;
-}
-
-@property --aim-s {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 1;
-}
-
 :root {
   --cursor: url("/cursor.png?v=3") 6 3, auto;
   --screen-corner: 47px;
@@ -30,7 +12,7 @@
   --dur-drop-out: 140ms;
   --dur-press: 105ms;
   --dur-list: 290ms;
-  --theme-fade: 640ms;
+  --theme-fade: 280ms;
   --stagger: 26ms;
   color: var(--text);
   font-family: "Montserrat Alternates", "Segoe UI", sans-serif;
@@ -2007,12 +1989,6 @@ input.field-control {
   width: min(100cqw, calc(100cqh * 1024 / 1536));
   height: auto;
   container-type: inline-size;
-  transform-origin: center;
-  transform: translate(var(--aim-x, 0%), var(--aim-y, 0%)) scale(var(--aim-s, 1));
-  transition:
-    --aim-x 420ms var(--ease-in-out),
-    --aim-y 520ms var(--ease-in-out),
-    --aim-s 420ms var(--ease-in-out);
 }
 
 .capture-guide-frame img {
