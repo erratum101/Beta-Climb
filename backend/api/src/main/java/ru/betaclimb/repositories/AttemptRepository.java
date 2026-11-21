@@ -19,9 +19,19 @@ import java.util.UUID;
 
 @Repository
 public class AttemptRepository {
-    public record StoredAttempt(UUID id, UUID profileId, String sourceKey, String fileName, Instant createdAt,
-                                String status, String stage, double durationSec, String discipline,
-                                String rejectReason, JsonNode result) {
+    public record StoredAttempt(
+        UUID id, 
+        UUID profileId, 
+        String sourceKey, 
+        String fileName, 
+        Instant createdAt,
+        String status, 
+        String stage, 
+        double durationSec, 
+        String discipline,
+        String rejectReason, 
+        JsonNode result
+    ) {
         public Optional<String> thumbnailKey() {
             String key = result.path("thumbnailKey").asString("");
             if (key.startsWith("betaclimb/" + id + "/") && key.endsWith(".jpg") && !key.contains("..")) {
@@ -66,7 +76,6 @@ public class AttemptRepository {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCompletion(int status) {
-                // A connection loss during commit can leave its outcome unknown. Keep the object in that case.
                 if (status == STATUS_ROLLED_BACK) onRollback.run();
             }
         });

@@ -19,11 +19,25 @@ public record AttemptData(UUID id, Instant createdAt, String fileName, String gr
         JsonNode data = row.result();
         String base = "/api/attempts/" + row.id();
         String query = "?profileId=" + row.profileId();
-        return new AttemptData(row.id(), row.createdAt(), row.fileName(), data.path("gradeLabel").asString(""),
-                row.discipline(), data.path("result").asString("unknown"), row.durationSec(), row.status(),
-                row.stage(), row.rejectReason(), 0, array(data, "holds"), array(data, "moments"),
-                data.path("primaryAction").asString(""), array(data, "limitations"), data.get("route"),
-                base + "/media" + query, row.thumbnailKey().isPresent() ? base + "/thumbnail" + query : null);
+        return new AttemptData(
+            row.id(), 
+            row.createdAt(), 
+            row.fileName(), 
+            data.path("gradeLabel").asString(""),
+            row.discipline(), 
+            data.path("result").asString("unknown"), 
+            row.durationSec(), 
+            row.status(),
+            row.stage(), 
+            row.rejectReason(), 
+            0,
+            array(data, "holds"), 
+            array(data, "moments"),
+            data.path("primaryAction").asString(""), 
+            array(data, "limitations"), 
+            data.get("route"),
+            base + "/media" + query, row.thumbnailKey().isPresent() ? base + "/thumbnail" + query : null
+        );
     }
 
     private static Collection<JsonNode> array(JsonNode result, String field) {

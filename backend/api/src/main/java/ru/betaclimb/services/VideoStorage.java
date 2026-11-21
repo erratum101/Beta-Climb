@@ -49,7 +49,6 @@ public class VideoStorage {
     }
 
     public void upload(String key, MultipartFile file, String contentType) {
-        // The servlet spools multipart data to disk. A fresh stream allows the SDK to retry the same body.
         var body = RequestBody.fromContentProvider(() -> {
             try {
                 return file.getInputStream();
