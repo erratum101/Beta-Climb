@@ -539,7 +539,7 @@ function LandingFloat({
       direction="up"
       order="start"
       fromColor="var(--accent)"
-      animationDuration={0.48}
+      animationDuration={0.2}
       ease="back.inOut(2)"
       scrollStart="top 65%"
       scrollEnd="top 12%"
