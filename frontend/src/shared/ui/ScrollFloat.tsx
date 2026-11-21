@@ -62,8 +62,13 @@ export type ScrollFloatProps = {
   ease?: string
   scrollStart?: string
   scrollEnd?: string
-  /** Wall-clock pause after the scroll range starts, in seconds. The rest of the range still finishes the animation. */
+  /** Pause before the pieces move, in seconds. */
   startDelay?: number
+  /**
+   * Play the piece timing on the clock when the trigger enters.
+   * Leave this off to tie the same move directly to the scroll position.
+   */
+  playOnEnter?: boolean
   stagger?: number
   distance?: number
   stretch?: number
@@ -88,6 +93,7 @@ const ScrollFloat = ({
   scrollStart = 'center bottom+=50%',
   scrollEnd = 'bottom bottom-=40%',
   startDelay = 0,
+  playOnEnter = false,
   stagger = 0.03,
   distance = 120,
   stretch = 2.3,
@@ -168,7 +174,7 @@ const ScrollFloat = ({
     mm.add('(prefers-reduced-motion: no-preference)', () => {
       const playback = { timeline: null as gsap.core.Timeline | null }
       const samples: { t: number; p: number }[] = []
-      const lagMs = Math.max(0, startDelay) * 1000
+      const lagMs = !playOnEnter ? Math.max(0, startDelay) * 1000 : 0
       const lagged = () => {
         const then = performance.now() - lagMs
         let value = 0
@@ -198,25 +204,43 @@ const ScrollFloat = ({
         gsap.ticker.remove(tick)
         ticking = false
       }
-      const timeline = gsap.timeline({
-        scrollTrigger: {
-          trigger,
-          scroller,
-          start: scrollStart,
-          end: clampToScroll(scrollEnd),
-          scrub: smoothing > 0 ? smoothing : true,
-          invalidateOnRefresh: true,
-          onUpdate(self) {
-            if (lagMs <= 0) return
-            remember(self.progress)
-            playback.timeline?.progress(lagged())
-            if (!ticking) {
-              ticking = true
-              gsap.ticker.add(tick)
-            }
-          },
-        },
-      })
+      let pending: gsap.core.Tween | null = null
+      let removeScroll = () => {}
+      const arm = () => {
+        const current = playback.timeline
+        if (!current) return
+        pending?.kill()
+        current.pause(0)
+        const wait = Math.max(0, startDelay)
+        if (wait === 0) {
+          current.play()
+          return
+        }
+        pending = gsap.delayedCall(wait, () => current.play())
+      }
+      const timeline = gsap.timeline(
+        playOnEnter
+          ? { paused: true }
+          : {
+              scrollTrigger: {
+                trigger,
+                scroller,
+                start: scrollStart,
+                end: clampToScroll(scrollEnd),
+                scrub: smoothing > 0 ? smoothing : true,
+                invalidateOnRefresh: true,
+                onUpdate(self: { progress: number }) {
+                  if (lagMs <= 0) return
+                  remember(self.progress)
+                  playback.timeline?.progress(lagged())
+                  if (!ticking) {
+                    ticking = true
+                    gsap.ticker.add(tick)
+                  }
+                },
+              },
+            },
+      )
       playback.timeline = timeline
       const add = (fromVars: gsap.TweenVars, toVars: gsap.TweenVars) => {
         gsap.set(targets, { willChange: 'opacity, transform', ...fromVars })
@@ -295,7 +319,35 @@ const ScrollFloat = ({
         )
       }
 
+      if (playOnEnter) {
+        const root = scroller instanceof Element ? scroller : window
+        const match = /^top\s+(\d+(?:\.\d+)?)%$/.exec(scrollStart.trim())
+        const ratio = match ? Number(match[1]) / 100 : 0.65
+        let played = false
+        const onScroll = () => {
+          const viewTop = root instanceof Element ? root.getBoundingClientRect().top : 0
+          const height = root instanceof Element ? root.clientHeight : window.innerHeight
+          const top = trigger.getBoundingClientRect().top - viewTop
+          if (!played && top <= height * ratio) {
+            played = true
+            arm()
+            return
+          }
+          if (played && top > height * ratio + 12) {
+            played = false
+            pending?.kill()
+            timeline.reverse()
+          }
+        }
+        // The landing scroller moves by setting scrollTop and does not emit scroll events, so poll the trigger.
+        const timer = window.setInterval(onScroll, 50)
+        onScroll()
+        removeScroll = () => window.clearInterval(timer)
+      }
+
       return () => {
+        pending?.kill()
+        removeScroll()
         gsap.ticker.remove(tick)
       }
     })
@@ -316,6 +368,7 @@ const ScrollFloat = ({
     scrollStart,
     scrollEnd,
     startDelay,
+    playOnEnter,
     stagger,
     distance,
     stretch,

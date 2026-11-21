@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { climbApi } from '../shared/api'
+import { readClientKind } from '../shared/clientKind'
 import type { AthleteProfile, Attempt, CreateAttemptInput } from '../shared/api'
 
 interface SessionValue {
@@ -54,7 +55,9 @@ function applyNightTheme(on: boolean) {
   root.classList.toggle('is-light', !on)
   root.classList.remove('is-boot-dark')
   const menuOpen = root.classList.contains('is-landing-menu')
-  const landing = root.classList.contains('is-landing')
+  const landing =
+    root.classList.contains('is-landing') ||
+    (readClientKind() === 'mobile' && window.location.pathname === '/')
   if (landing && !menuOpen) {
     root.style.colorScheme = 'normal'
     document.querySelectorAll('meta[name="theme-color"], meta[name="color-scheme"]').forEach((node) => node.remove())
