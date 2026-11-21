@@ -530,13 +530,13 @@ function LandingFloat({
       direction="up"
       order="start"
       fromColor="var(--accent)"
-      animationDuration={0.72}
+      animationDuration={0.48}
       ease="back.inOut(2)"
       scrollStart="top 65%"
       scrollEnd="top 12%"
-      startDelay={0.1}
+      startDelay={0}
       playOnEnter
-      stagger={0.032}
+      stagger={0.02}
       distance={120}
       stretch={2.3}
       smoothing={0}
