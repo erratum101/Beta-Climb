@@ -2,7 +2,10 @@
   "installCommand": "unset npm_config_cache_dir NPM_CONFIG_CACHE_DIR; npm ci --include=dev --prefix frontend",
   "buildCommand": "unset npm_config_cache_dir NPM_CONFIG_CACHE_DIR; npm run build --prefix frontend",
   "outputDirectory": "frontend/dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://beta-climb-production.up.railway.app/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/manifest.webmanifest",

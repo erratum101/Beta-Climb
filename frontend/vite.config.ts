@@ -7,7 +7,10 @@ export default defineConfig({
     host: true,
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:8080',
+      '/api': {
+        target: 'https://beta-climb-production.up.railway.app',
+        changeOrigin: true,
+      },
     },
   },
 })
