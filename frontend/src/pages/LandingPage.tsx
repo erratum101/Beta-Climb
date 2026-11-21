@@ -43,18 +43,19 @@ const INSTALL_PAGES = {
     {
       title: 'Выберите «На экран „Домой“»',
       text: 'Если пункта не видно, пролистайте меню вниз. По-английски он называется Add to Home Screen.',
-      shot: 'home',
+      shot: 'menu',
     },
     {
       title: 'Нажмите «Добавить»',
       text: 'Иконка появится на домашнем экране и откроет Beta Climb как приложение.',
+      shot: 'add',
     },
   ],
 } as const
 
 type GuideId = keyof typeof INSTALL_PAGES
 type InstallPage = (typeof INSTALL_PAGES)[GuideId][number]
-type AppleShot = 'share' | 'home'
+type AppleShot = 'share' | 'menu' | 'add'
 
 function pageShot(page: InstallPage): AppleShot | null {
   return 'shot' in page ? page.shot : null
@@ -64,14 +65,22 @@ function AppleStepShot({ kind }: { kind: AppleShot }) {
   if (kind === 'share') {
     return (
       <figure className="apple-step-shot is-share">
-        <img src="/shere-apl.webp" alt="" />
+        <img src="/shere-apple.webp" alt="" />
+      </figure>
+    )
+  }
+  if (kind === 'menu') {
+    return (
+      <figure className="apple-step-shot is-menu">
+        <img className="is-light" src="/add%20to%20home%20screen%20light.webp" alt="" />
+        <img className="is-dark" src="/add%20to%20home%20screen%20darck.webp" alt="" />
       </figure>
     )
   }
   return (
-    <figure className="apple-step-shot is-home">
-      <img className="is-light" src="/add-to-home-screen-light-apl.webp" alt="" />
-      <img className="is-dark" src="/add-to-home-screen-darck-apl.webp" alt="" />
+    <figure className="apple-step-shot is-add">
+      <img className="is-light" src="/add-white-apple.webp" alt="" />
+      <img className="is-dark" src="/add-black-apple.webp" alt="" />
     </figure>
   )
 }

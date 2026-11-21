@@ -1267,8 +1267,8 @@ html.is-night .landing-theme-icon.is-moon {
   object-fit: contain;
 }
 
-html.is-night .apple-step-shot.is-home img.is-light,
-html:not(.is-night) .apple-step-shot.is-home img.is-dark {
+html.is-night .apple-step-shot img.is-light,
+html:not(.is-night) .apple-step-shot img.is-dark {
   display: none;
 }
 
@@ -1312,11 +1312,10 @@ html:not(.is-night) .apple-step-shot.is-home img.is-dark {
   background: #fff;
   color: #1c1c1e;
   border-radius: 32px;
-  padding: 16px 16px 14px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
   text-align: center;
   box-shadow:
     0 0 0 1px rgba(253, 113, 21, 0.28),
@@ -1328,15 +1327,6 @@ html:not(.is-night) .apple-step-shot.is-home img.is-dark {
   width: 100%;
   height: auto;
   display: block;
-}
-
-.landing-qr p {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
-  color: #1c1c1e;
 }
 
 @media (max-width: 759px) {
@@ -1369,7 +1359,7 @@ html:not(.is-night) .apple-step-shot.is-home img.is-dark {
 
   .landing-qr {
     width: min(100%, 176px);
-    padding: 12px 12px 10px;
+    padding: 12px;
     border-radius: 26px;
   }
 }
@@ -2139,6 +2129,11 @@ button.site-intro-hit:active {
 .install-sheet-steps li.has-shot {
   grid-template-columns: 22px minmax(0, 1fr) auto;
   align-items: center;
+}
+
+.install-sheet-card .apple-step-shot img {
+  max-width: 88px;
+  max-height: 140px;
 }
 
 .install-sheet-steps li > span:first-child {

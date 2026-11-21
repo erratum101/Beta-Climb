@@ -33,7 +33,6 @@ export function SiteQr() {
           </g>
         ) : null}
       </svg>
-      <p>betaclimb.ru</p>
     </figure>
   )
 }
