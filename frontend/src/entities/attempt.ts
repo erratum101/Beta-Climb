@@ -3,7 +3,7 @@ import type { Attempt, AttemptResult } from '../shared/api'
 export const RESULT_LABEL: Record<AttemptResult, string> = {
   sent: 'Пройдена',
   failed: 'Не пройдена',
-  unknown: 'В разборе',
+  unknown: 'Результат прохождения неизвестен',
 }
 
 export function plural(count: number, one: string, few: string, many: string): string {
@@ -50,39 +50,24 @@ export function groupByDay(attempts: Attempt[]) {
   return groups
 }
 
-export function groupByGrade(attempts: Attempt[]) {
-  const order: string[] = []
-  const map = new Map<string, Attempt[]>()
-  for (const attempt of attempts) {
-    const list = map.get(attempt.gradeLabel)
-    if (!list) {
-      map.set(attempt.gradeLabel, [attempt])
-      order.push(attempt.gradeLabel)
-    } else {
-      list.push(attempt)
-    }
-  }
-  return order.map((grade) => ({ grade, attempts: map.get(grade) ?? [] }))
+export function gradeGroup(label: string): string {
+  return label.match(/\d/)?.[0] ?? ''
 }
 
 export function attemptNumber(attempt: Attempt, all: Attempt[]): number {
-  const same = all
-    .filter((item) => item.gradeLabel === attempt.gradeLabel)
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-  return same.findIndex((item) => item.id === attempt.id) + 1
-}
-
-export function gradeGroup(label: string): string {
-  return label.match(/\d/)?.[0] ?? ''
+  const ordered = [...all].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  return ordered.findIndex((item) => item.id === attempt.id) + 1
 }
 
 export function attemptStatusLabel(attempt: Attempt): string {
   if (attempt.status === 'processing') return 'Разбираем'
   if (attempt.status === 'rejected') return 'Не разобрана'
-  return RESULT_LABEL[attempt.result]
+  if (attempt.status === 'failed') return 'Ошибка обработки'
+  if (attempt.status === 'limited') return 'Частичный разбор'
+  return attempt.result === 'unknown' ? 'Разбор готов' : RESULT_LABEL[attempt.result]
 }
 
 export function attemptHref(attempt: Attempt): string {
-  if (attempt.status === 'ready') return `/attempt/${attempt.id}`
+  if (attempt.status === 'ready' || attempt.status === 'limited') return `/attempt/${attempt.id}`
   return `/attempt/${attempt.id}/processing`
 }

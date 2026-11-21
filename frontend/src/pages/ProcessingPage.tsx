@@ -21,11 +21,11 @@ function stageIndex(stage: AnalysisStage): number {
 export function ProcessingPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { attempts, ready } = useSession()
+  const { attempts, ready, statusError } = useSession()
   const attempt = attempts.find((item) => item.id === id)
 
   useEffect(() => {
-    if (attempt?.status !== 'ready') return
+    if (attempt?.status !== 'ready' && attempt?.status !== 'limited') return
     const timer = window.setTimeout(() => {
       navigate(`/attempt/${attempt.id}`, { replace: true })
     }, 450)
@@ -37,16 +37,18 @@ export function ProcessingPage() {
 
   const current = stageIndex(attempt.stage)
   const rejected = attempt.status === 'rejected'
+  const stopped = rejected || attempt.status === 'failed'
 
   return (
     <div className="screen">
       <ScreenHeader
-        title={rejected ? 'Разбор не получился' : 'Разбор'}
+        title={stopped ? 'Разбор не получился' : 'Разбор'}
         onBack={() => navigate('/climbs')}
       />
-      <ol className="step-list stagger">
+      {(!stopped || current < STEPS.length) && <ol className="step-list stagger">
         {STEPS.map((step, index) => {
-          const state = rejected && index === 0 ? 'failed' : index < current ? 'done' : index === current && !rejected ? 'active' : 'pending'
+          if (stopped && index !== current) return null
+          const state = stopped ? 'failed' : index < current ? 'done' : index === current ? 'active' : 'pending'
           return (
             <li key={step.id} className={`step is-${state}`}>
               <span className="step-mark" aria-hidden="true">
@@ -56,21 +58,20 @@ export function ProcessingPage() {
             </li>
           )
         })}
-      </ol>
-      {rejected ? (
+      </ol>}
+      {stopped ? (
         <article className="card fail-card">
           <div className="fail-art">
             <SvgIcon src="/male-falling.svg" size={72} />
           </div>
-          <p className="card-kicker">Достоверный разбор не получился</p>
-          <p>{attempt.rejectReason}</p>
+          <p className="card-kicker">{rejected ? 'Данных для разбора недостаточно' : 'Ошибка обработки'}</p>
+          <p>{attempt.rejectReason || (rejected ? 'Попробуй снять трассу целиком с неподвижной камеры.' : 'Не удалось завершить обработку видео.')}</p>
+          {attempt.limitations?.length ? <ul>{attempt.limitations.map((reason) => <li key={reason}>{reason}</li>)}</ul> : null}
           <button type="button" className="btn btn-orange" onClick={() => navigate('/attempt/new')}>
-            Снять ещё раз
+            Добавить новое видео
           </button>
         </article>
-      ) : (
-        <p className="template-note">Статус обновляется локально. Очередь и Python-обработчик в шаблон не входят.</p>
-      )}
+      ) : <p className="template-note" role="status">{statusError ? 'Связь прервалась. Проверим статус снова.' : 'Можно закрыть приложение. Разбор сохранится в истории.'}</p>}
     </div>
   )
 }

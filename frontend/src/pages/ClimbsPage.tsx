@@ -2,11 +2,13 @@ import { useContext, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
 import { HomeGuideContext } from '../features/capture/CaptureGuide'
-import { attemptHref, gradeGroup } from '../entities/attempt'
+import { ClimbCover } from '../features/climbs/ClimbCover'
+import { attemptHref, attemptStatusLabel, gradeGroup } from '../entities/attempt'
+import { attemptMediaUrl } from '../shared/api'
 import { IconFilter } from '../shared/ui/icons'
 import { sharedNavigate } from '../shared/ui/motion'
-import { WallThumb } from '../shared/ui/WallThumb'
 import { Wordmark } from '../shared/ui/Wordmark'
+import { ChipButton } from '../shared/ui/ChipButton'
 
 const FILTERS = [
   { id: 'all', label: 'Все' },
@@ -17,6 +19,8 @@ const FILTERS = [
 ] as const
 
 type FilterId = (typeof FILTERS)[number]['id']
+
+const climbDate = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long', timeStyle: 'short' })
 
 function gradeTone(label: string): string {
   const value = label.toLowerCase()
@@ -36,7 +40,7 @@ export function ClimbsPage() {
     () => [...attempts].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [attempts],
   )
-  const visible = sorted.filter((attempt) => filter === 'all' || gradeGroup(attempt.gradeLabel) === filter)
+  const visible = sorted.filter((attempt) => filter === 'all' || gradeGroup(attempt.gradeLabel || '') === filter)
 
   if (attempts.length === 0) {
     return (
@@ -56,7 +60,7 @@ export function ClimbsPage() {
     <div className="screen climbs-screen with-nav">
       <div className="climbs-head">
         <h1>Все пролазы</h1>
-        <button
+        {sorted.some((attempt) => attempt.gradeLabel) ? <button
           type="button"
           className={filter === 'all' ? 'filter-btn' : 'filter-btn is-on'}
           aria-expanded={open}
@@ -64,21 +68,20 @@ export function ClimbsPage() {
           onClick={() => setOpen((current) => !current)}
         >
           <IconFilter />
-        </button>
+        </button> : null}
       </div>
       <div className={open ? 'chip-row is-open' : 'chip-row'} role="listbox" aria-label="Категория" inert={open ? undefined : true}>
         {FILTERS.map((item) => (
-          <button
+          <ChipButton
             key={item.id}
-            type="button"
-            className={filter === item.id ? 'chip is-on' : 'chip'}
+            selected={filter === item.id}
             onClick={() => {
               setFilter(item.id)
               setOpen(false)
             }}
           >
             {item.label}
-          </button>
+          </ChipButton>
         ))}
       </div>
 
@@ -95,11 +98,10 @@ export function ClimbsPage() {
               className="climb-card"
               onClick={(event) => sharedNavigate(navigate, attemptHref(attempt), event.currentTarget)}
             >
-              <WallThumb variant={attempt.wallVariant} />
-              <span className={`climb-grade ${gradeTone(attempt.gradeLabel)}`}>{attempt.gradeLabel}</span>
-              {attempt.status !== 'ready' ? (
-                <span className="climb-status">{attempt.status === 'rejected' ? 'отказ' : 'разбор'}</span>
-              ) : null}
+              <span className="visually-hidden">Открыть пролаз от {climbDate.format(new Date(attempt.createdAt))}. </span>
+              <ClimbCover thumbnailUrl={attempt.thumbnailUrl} mediaUrl={attempt.mediaUrl || attemptMediaUrl(attempt.id)} />
+              {attempt.gradeLabel && <span className={`climb-grade ${gradeTone(attempt.gradeLabel)}`}>{attempt.gradeLabel}</span>}
+              <span className="climb-status">{attemptStatusLabel(attempt)}</span>
             </button>
           ))}
         </div>

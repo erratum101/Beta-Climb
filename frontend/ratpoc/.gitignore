@@ -9,3 +9,7 @@ assets/*
 *.[aA][vV][iI]
 *.[mM][kK][vV]
 *.[wW][eE][bB][mM]
+# The three public The Way Up clips (CC BY 4.0, see SOURCES.md) and the decoder demo are kept in Git.
+!assets/clips/
+!assets/clips/*.mp4
+!results/contacts-demo/*.mp4

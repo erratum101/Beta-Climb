@@ -1,195 +1,143 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
-import type { Attempt } from '../../shared/api'
-import { formatSeconds } from '../../entities/attempt'
-import { IconPause, IconPlay } from '../../shared/ui/icons'
+import { useEffect, useEffectEvent, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
+import { type Attempt, attemptMediaUrl } from '../../shared/api'
+import { IconPlay, IconPause } from '../../shared/ui/icons'
 import { SHARED_ATTEMPT } from '../../shared/ui/motion'
+import { useReviewFullscreen } from './useReviewFullscreen'
 
-export function AttemptStage({
-  attempt,
-  time,
-  playing,
-  onTime,
-  onToggle,
-}: {
+export function videoTime(seconds: number) {
+  const whole = Math.floor(seconds)
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`
+}
+
+interface AttemptStageProps {
   attempt: Attempt
+  videoRef: RefObject<HTMLVideoElement | null>
+  episodeEnd: RefObject<number | null>
   time: number
-  playing: boolean
-  onTime: (time: number) => void
-  onToggle: () => void
-}) {
-  const duration = attempt.durationSec || 1
-  const progress = Math.min(1, Math.max(0, time / duration))
-  const bodyX = 50 + Math.sin(progress * Math.PI) * 10
-  const bodyY = 84 - progress * 66
-  const active = attempt.moments.find((moment) => time >= moment.startSec && time <= moment.endSec)
-
-  return (
-    <div className="player" style={{ viewTransitionName: SHARED_ATTEMPT }}>
-      <div className="player-top">
-        <span>{attempt.fileName}</span>
-        <strong>{formatSeconds(time)}</strong>
-      </div>
-      <svg className="route-map" viewBox="0 0 100 100" aria-hidden="true">
-        {attempt.holds.map((hold) => (
-          <circle key={hold.id} cx={hold.x} cy={hold.y} r="3.3" fill="#ff8a33" />
-        ))}
-        <g transform={`translate(${bodyX} ${bodyY})`} fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round">
-          <circle cx="0" cy="-7" r="1.7" fill="#fff" stroke="none" />
-          <path d="M0 -5 V2 M0 -2 L-4 2 M0 -2 L4 -6 M0 2 L-2.4 8 M0 2 L2.6 7" />
-        </g>
-      </svg>
-      <button type="button" className="play-btn" onClick={onToggle} aria-label={playing ? 'Пауза' : 'Смотреть момент'}>
-        <span className="icon-swap">
-          <span className={playing ? 'icon-swap-layer' : 'icon-swap-layer is-shown'}>
-            <IconPlay />
-          </span>
-          <span className={playing ? 'icon-swap-layer is-shown' : 'icon-swap-layer'}>
-            <IconPause />
-          </span>
-        </span>
-      </button>
-      <div className="player-foot">
-        <div className="marker-track">
-          {attempt.moments.map((moment) => (
-            <button
-              key={moment.id}
-              type="button"
-              className={active?.id === moment.id ? 'marker is-on' : 'marker'}
-              style={{ left: `${(moment.timeSec / duration) * 100}%` }}
-              onClick={() => onTime(moment.timeSec)}
-              aria-label={`${moment.title}, ${formatSeconds(moment.timeSec)}`}
-            />
-          ))}
-        </div>
-        <Scrub value={Math.min(time, duration)} max={duration} onChange={onTime} />
-        <p className="player-caption">{active ? active.title : 'Схема трассы и положения тела'}</p>
-      </div>
-    </div>
-  )
+  holdIds: string[]
+  onTime: (seconds: number) => void
+  onMediaReady: (ready: boolean) => void
+  onResume: () => void
+  onScrub: (seconds: number) => void
+  children: ReactNode
 }
 
-function resist(excess: number) {
-  const sign = Math.sign(excess)
-  const distance = Math.abs(excess)
-  return (sign * distance * 0.45) / (1 + distance / 120)
-}
-
-function Scrub({ value, max, onChange }: { value: number; max: number; onChange: (value: number) => void }) {
-  const trackRef = useRef<HTMLDivElement>(null)
-  const thumbRef = useRef<HTMLSpanElement>(null)
-  const dragging = useRef(false)
-  const ratio = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0
-
-  function place(clientX: number) {
-    const track = trackRef.current
-    const thumb = thumbRef.current
-    if (!track || !thumb) return 0
-    const rect = track.getBoundingClientRect()
-    const span = rect.width || 1
-    const raw = clientX - rect.left
-    let next = raw / span
-    let over = 0
-    if (next < 0) {
-      over = resist(raw)
-      next = 0
-    } else if (next > 1) {
-      over = resist(raw - span)
-      next = 1
-    }
-    thumb.style.transition = 'none'
-    thumb.style.transform = `translateX(${over}px) scaleX(1.12)`
-    onChange(next * max)
-    return over
-  }
-
-  function stop(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!dragging.current) return
-    dragging.current = false
-    const over = place(event.clientX)
-    const thumb = thumbRef.current
-    if (!thumb) return
-    const animation = thumb.animate(
-      [
-        { transform: `translateX(${over}px) scaleX(1.12)` },
-        { transform: 'translateX(0px) scaleX(1)' },
-      ],
-      { duration: 180, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
-    )
-    animation.onfinish = () => {
-      thumb.style.transform = ''
-    }
-  }
-
-  function onKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    const step = event.shiftKey ? 1 : 0.1
-    if (event.key === 'ArrowRight') onChange(Math.min(max, value + step))
-    if (event.key === 'ArrowLeft') onChange(Math.max(0, value - step))
-    if (event.key === 'Home') onChange(0)
-    if (event.key === 'End') onChange(max)
-  }
-
-  return (
-    <div
-      ref={trackRef}
-      className="scrub"
-      role="slider"
-      tabIndex={0}
-      aria-valuemin={0}
-      aria-valuemax={max}
-      aria-valuenow={Math.round(value * 10) / 10}
-      aria-label="Время попытки"
-      onPointerDown={(event) => {
-        dragging.current = true
-        event.currentTarget.setPointerCapture(event.pointerId)
-        place(event.clientX)
-      }}
-      onPointerMove={(event) => {
-        if (!dragging.current) return
-        place(event.clientX)
-      }}
-      onPointerUp={stop}
-      onPointerCancel={stop}
-      onKeyDown={onKeyDown}
-    >
-      <span className="scrub-fill" style={{ width: `${ratio * 100}%` }} />
-      <span ref={thumbRef} className="scrub-thumb" style={{ left: `${ratio * 100}%` }} />
-    </div>
-  )
-}
-
-export function usePlayback(duration: number, initial: number) {
-  const [time, setTime] = useState(initial)
+export function AttemptStage({ attempt, videoRef, episodeEnd, time, holdIds, onTime, onMediaReady, onResume, onScrub, children }: AttemptStageProps) {
+  const { workspaceRef, buttonRef, expanded, toggleFullscreen } = useReviewFullscreen()
+  const [size, setSize] = useState({ width: 0, height: 0 })
+  const [duration, setDuration] = useState(attempt.durationSec)
+  const [error, setError] = useState(false)
   const [playing, setPlaying] = useState(false)
+  const ready = size.width > 0 && !error
+  const visibleHolds = attempt.holds.filter((hold) => holdIds.includes(hold.id))
+  const value = Math.min(Math.max(0, time), duration)
+  const playLabel = playing ? 'Приостановить видео' : 'Воспроизвести видео'
+  const expandLabel = expanded ? 'Выйти из полноэкранного режима' : 'На весь экран'
 
-  useEffect(() => {
-    setTime(initial)
-  }, [initial])
-
-  useEffect(() => {
-    if (!playing) return
-    let frame = 0
-    let last = performance.now()
-    const tick = (now: number) => {
-      const delta = (now - last) / 1000
-      last = now
-      setTime((current) => {
-        const next = current + delta
-        if (next >= duration) {
-          setPlaying(false)
-          return duration
-        }
-        return next
-      })
-      frame = requestAnimationFrame(tick)
-    }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
-  }, [playing, duration])
-
-  return {
-    time,
-    playing,
-    seek: (next: number) => setTime(Math.min(duration, Math.max(0, next))),
-    toggle: () => setPlaying((current) => !current),
+  function finishEpisode(video: HTMLVideoElement, end: number) {
+    episodeEnd.current = null
+    video.pause()
+    // The interval excludes its end. Leave the last frame of the episode on screen.
+    video.currentTime = Math.max(0, end - 0.001)
+    onTime(video.currentTime)
   }
+
+  const checkFrame = useEffectEvent((video: HTMLVideoElement, mediaTime: number) => {
+    const end = episodeEnd.current
+    // The worker produces constant 30fps. A timeupdate alone can lag by several frames.
+    const nextFrame = 1 / 30 + 0.00001
+    if (end !== null && !video.seeking && mediaTime + nextFrame >= end && video.currentTime + nextFrame >= end) {
+      finishEpisode(video, end)
+    }
+  })
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !playing || !video.requestVideoFrameCallback) return
+    let handle: number
+    function frame(_now: number, metadata: VideoFrameCallbackMetadata) {
+      if (!video || video.paused) return
+      checkFrame(video, metadata.mediaTime)
+      if (!video.paused) handle = video.requestVideoFrameCallback(frame)
+    }
+    handle = video.requestVideoFrameCallback(frame)
+    return () => video.cancelVideoFrameCallback(handle)
+  }, [videoRef, playing])
+
+  function togglePlayback() {
+    const video = videoRef.current
+    if (!video) return
+    if (!video.paused) video.pause()
+    else void video.play().catch(() => setPlaying(false))
+  }
+
+  return (
+    <div ref={workspaceRef} className={`review-workspace${expanded ? ' is-expanded' : ''}`}
+      role={expanded ? 'dialog' : 'region'} aria-modal={expanded || undefined} aria-label="Видео и разбор"
+      style={{ viewTransitionName: SHARED_ATTEMPT }}>
+      <div className="review-media">
+        <div className="review-picture">
+          <video ref={videoRef} src={attempt.mediaUrl || attemptMediaUrl(attempt.id)}
+            playsInline preload="metadata" aria-label={attempt.fileName}
+            onLoadedMetadata={({ currentTarget: video }) => {
+              setSize({ width: video.videoWidth, height: video.videoHeight })
+              if (Number.isFinite(video.duration)) setDuration(video.duration)
+              setError(false)
+              onMediaReady(true)
+            }}
+            onTimeUpdate={({ currentTarget: video }) => {
+              const end = episodeEnd.current
+              if (end !== null && !video.seeking && video.currentTime >= end) finishEpisode(video, end)
+              else onTime(video.currentTime)
+            }}
+            onPlay={() => { setPlaying(true); onResume() }}
+            onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
+            onEmptied={() => {
+              setSize({ width: 0, height: 0 })
+              setPlaying(false)
+              setError(false)
+              onMediaReady(false)
+            }}
+            onError={() => { setPlaying(false); setError(true); onMediaReady(false) }} />
+          {ready && visibleHolds.length > 0 && (
+            <svg className="review-masks" viewBox={`0 0 ${size.width} ${size.height}`}
+              preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              {visibleHolds.map((hold) => hold.polygon && hold.polygon.length >= 3 ? (
+                <polygon key={hold.id} points={hold.polygon.map(([x, y]) => `${x * size.width},${y * size.height}`).join(' ')} />
+              ) : (
+                <circle key={hold.id} cx={hold.x * size.width} cy={hold.y * size.height} r={0.012 * Math.min(size.width, size.height)} />
+              ))}
+            </svg>
+          )}
+          {error && <div className="review-media-error" role="alert">
+            <p>Не удалось воспроизвести видео.</p>
+            <button type="button" onClick={() => videoRef.current?.load()}>Загрузить ещё раз</button>
+          </div>}
+        </div>
+        <div className="review-controls" role="group" aria-label="Управление видео">
+          <button type="button" className="review-icon-button review-play" aria-label={playLabel} title={playLabel}
+            disabled={!ready} onClick={togglePlayback}>{playing ? <IconPause /> : <IconPlay />}</button>
+          <span className="review-clock">{videoTime(value)}</span>
+          <div className="review-seek">
+            <input type="range" className="review-scrubber" min="0" max={duration || 1} step="0.1" value={value}
+              disabled={!ready || duration <= 0} aria-label="Позиция видео" aria-valuetext={videoTime(value)}
+              style={{ '--played': `${duration > 0 ? value / duration * 100 : 0}%` } as CSSProperties}
+              onChange={(event) => onScrub(event.currentTarget.valueAsNumber)} />
+            {duration > 0 && <div className="review-ticks" aria-hidden="true">
+              {attempt.moments.map((moment) => <i key={moment.id}
+                style={{ left: `${Math.min(100, Math.max(0, moment.timeSec / duration * 100))}%` }} />)}
+            </div>}
+          </div>
+          <button ref={buttonRef} type="button" className="review-icon-button review-expand"
+            aria-label={expandLabel} title={expandLabel} onClick={toggleFullscreen}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d={expanded ? 'M4 9h5V4m6 0v5h5M4 15h5v5m6 0v-5h5'
+                : 'M9 4H4v5m11-5h5v5M4 15v5h5m6 0h5v-5'} />
+            </svg>
+          </button>
+        </div>
+      </div>
+      {children}
+    </div>
+  )
 }

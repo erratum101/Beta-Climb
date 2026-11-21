@@ -8,8 +8,11 @@ authors = [
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "pydantic-settings>=2.0,<3.0",
-    "sqlalchemy>=2.0,<3.0",
+    "sqlalchemy[asyncio]>=2.0,<3.0",
     "psycopg[binary]>=3.2,<4.0",
+    "httpx>=0.28.1,<0.29",
+    "boto3==1.44.8",
+    "python-dotenv>=1,<2",
     "mediapipe==0.10.21",
     "ultralytics==8.4.177",
     "torch==2.14.1",
