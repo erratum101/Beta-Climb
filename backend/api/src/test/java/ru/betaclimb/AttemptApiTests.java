@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -77,6 +78,11 @@ class AttemptApiTests {
         mvc.perform(get(url + "/media").param("profileId", profile.toString()).cookie(owner))
                 .andExpect(status().isOk()).andExpect(content().contentType(MediaType.valueOf("video/mp4")))
                 .andExpect(content().bytes("video".getBytes()));
+        mvc.perform(get(url + "/media").param("profileId", profile.toString()).cookie(owner)
+                        .header("Range", "bytes=0-1"))
+                .andExpect(status().isPartialContent())
+                .andExpect(header().string("Content-Range", "bytes 0-1/5"))
+                .andExpect(content().bytes(new byte[]{'v', 'i'}));
     }
 
     @Test
