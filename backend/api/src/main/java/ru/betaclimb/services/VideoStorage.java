@@ -1,82 +1,93 @@
 package ru.betaclimb.services;
 
-import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
-import software.amazon.awssdk.core.exception.SdkException;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.S3Configuration;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.time.Duration;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.regex.Pattern;
 
 @Service
 public class VideoStorage {
-    private final S3Client client;
-    private final S3Presigner presigner;
-    private final String bucket;
+    private static final Pattern KEY = Pattern.compile(
+            "betaclimb/[0-9a-fA-F-]{36}(?:/[A-Za-z0-9._-]+)+");
 
-    public VideoStorage(@Value("${S3__ENDPOINT_URL:https://storage.yandexcloud.net}") URI endpoint,
-                        @Value("${S3__REGION_NAME:ru-central1}") String regionName,
-                        @Value("${S3__BUCKET_NAME:}") String bucket,
-                        @Value("${S3__ACCESS_KEY:}") String accessKey,
-                        @Value("${S3__SECRET_KEY:}") String secretKey) {
-        this.bucket = bucket;
-        AwsCredentialsProvider credentials = () -> {
-            if (accessKey.isBlank() || secretKey.isBlank() || bucket.isBlank()) {
-                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Хранилище видео не настроено");
-            }
-            return AwsBasicCredentials.create(accessKey, secretKey);
-        };
-        var region = Region.of(regionName);
-        var config = S3Configuration.builder().pathStyleAccessEnabled(true).chunkedEncodingEnabled(false).build();
-        client = S3Client.builder().endpointOverride(endpoint).region(region).serviceConfiguration(config)
-                .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
-                .credentialsProvider(credentials).build();
-        presigner = S3Presigner.builder().endpointOverride(endpoint).region(region)
-                .serviceConfiguration(config).credentialsProvider(credentials).build();
+    private final Path root;
+
+    public VideoStorage(@Value("${storage.dir}") String directory) {
+        try {
+            root = Path.of(directory).toAbsolutePath().normalize();
+            Files.createDirectories(root);
+        } catch (IOException error) {
+            throw new IllegalStateException("Video storage directory is not writable", error);
+        }
     }
 
     public void upload(String key, MultipartFile file, String contentType) {
-        // The servlet spools multipart data to disk. A fresh stream allows the SDK to retry the same body.
-        var body = RequestBody.fromContentProvider(() -> {
-            try {
-                return file.getInputStream();
-            } catch (IOException error) {
-                throw new UncheckedIOException(error);
-            }
-        }, file.getSize(), contentType);
+        Path target = resolve(key);
         try {
-            client.putObject(request -> request.bucket(bucket).key(key).contentType(contentType), body);
-        } catch (SdkException error) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Не удалось сохранить видео в хранилище");
+            Files.createDirectories(target.getParent());
+            try (InputStream input = file.getInputStream()) {
+                Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+            Files.writeString(typePath(target), contentType, StandardCharsets.UTF_8);
+        } catch (IOException error) {
+            throw new UncheckedIOException(error);
         }
     }
 
     public void delete(String key) {
-        client.deleteObject(request -> request.bucket(bucket).key(key));
+        Path target = resolve(key);
+        try {
+            Files.deleteIfExists(target);
+            Files.deleteIfExists(typePath(target));
+        } catch (IOException error) {
+            throw new UncheckedIOException(error);
+        }
     }
 
-    public URI inlineUrl(String key) {
-        return URI.create(presigner.presignGetObject(request -> request.signatureDuration(Duration.ofMinutes(15))
-                .getObjectRequest(object -> object.bucket(bucket).key(key).responseContentDisposition("inline")))
-                .url().toExternalForm());
+    public StoredObject open(String key) {
+        Path target = resolve(key);
+        if (!Files.isRegularFile(target)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        String contentType;
+        try {
+            contentType = Files.readString(typePath(target), StandardCharsets.UTF_8).trim();
+        } catch (IOException error) {
+            contentType = "";
+        }
+        if (contentType.isEmpty()) {
+            contentType = "application/octet-stream";
+        }
+        return new StoredObject(new FileSystemResource(target), contentType);
     }
 
-    @PreDestroy
-    public void close() {
-        presigner.close();
-        client.close();
+    private Path resolve(String key) {
+        if (key == null || key.contains("..") || !KEY.matcher(key).matches()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        Path path = root.resolve(key).normalize();
+        if (!path.startsWith(root)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        return path;
+    }
+
+    private static Path typePath(Path target) {
+        return target.resolveSibling(target.getFileName() + ".type");
+    }
+
+    public record StoredObject(Resource body, String contentType) {
     }
 }

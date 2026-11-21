@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import AsyncMock, Mock, call
 from uuid import uuid4
 
@@ -33,9 +34,11 @@ class PublicationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.storage.delete.call_args_list, [call(self.video), call(self.cover)])
 
     def test_thumbnail_upload_sets_jpeg_content_type(self):
-        storage = object.__new__(ObjectStorage)
-        storage.client = Mock()
-        storage.bucket = "test-bucket"
-        storage.upload(Path("result.jpg"), self.cover)
-        storage.client.upload_file.assert_called_once_with(
-            "result.jpg", "test-bucket", self.cover, ExtraArgs={"ContentType": "image/jpeg"})
+        with TemporaryDirectory() as directory:
+            storage = ObjectStorage(Path(directory))
+            source = Path(directory) / "result.jpg"
+            source.write_bytes(b"jpeg")
+            storage.upload(source, self.cover)
+            stored = storage.root / self.cover
+            self.assertEqual(stored.read_bytes(), b"jpeg")
+            self.assertEqual(stored.with_name(stored.name + ".type").read_text(encoding="utf-8"), "image/jpeg")

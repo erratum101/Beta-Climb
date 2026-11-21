@@ -27,12 +27,9 @@ services:
         format: raw
     environment:
       DB_SCHEMA: betaclimb
-      S3__ACCESS_KEY: ${S3__ACCESS_KEY:-}
-      S3__SECRET_KEY: ${S3__SECRET_KEY:-}
-      S3__ENDPOINT_URL: ${S3__ENDPOINT_URL:-https://storage.yandexcloud.net}
-      S3__BUCKET_NAME: ${S3__BUCKET_NAME:-betaclimb}
-      S3__REGION_NAME: ${S3__REGION_NAME:-ru-central1}
+      STORAGE_DIR: /data/media
     volumes:
+      - api_media:/data/media
       - type: bind
         source: ${HOME}/.cloud-certs/root.crt
         target: /certs/root.crt
@@ -50,3 +47,4 @@ services:
 
 volumes:
   postgres_data:
+  api_media:

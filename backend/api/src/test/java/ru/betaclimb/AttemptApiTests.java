@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -14,9 +16,9 @@ import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequ
 import ru.betaclimb.services.ProfileData;
 import ru.betaclimb.services.ProfileService;
 import ru.betaclimb.services.VideoStorage;
+import ru.betaclimb.services.VideoStorage.StoredObject;
 import tools.jackson.databind.ObjectMapper;
 
-import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -34,7 +36,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -71,10 +73,10 @@ class AttemptApiTests {
         String playback = "betaclimb/" + id + "/runs/sample/prepared.mp4";
         db.update("UPDATE videos SET result_data=jsonb_build_object('playbackKey', CAST(? AS text)) WHERE id=?",
                 playback, UUID.fromString(id));
-        URI signed = URI.create("https://storage.example.test/private/video");
-        when(storage.inlineUrl(playback)).thenReturn(signed);
+        when(storage.open(playback)).thenReturn(new StoredObject(new ByteArrayResource("video".getBytes()), "video/mp4"));
         mvc.perform(get(url + "/media").param("profileId", profile.toString()).cookie(owner))
-                .andExpect(status().isTemporaryRedirect()).andExpect(header().string("Location", signed.toString()));
+                .andExpect(status().isOk()).andExpect(content().contentType(MediaType.valueOf("video/mp4")))
+                .andExpect(content().bytes("video".getBytes()));
     }
 
     @Test
@@ -94,16 +96,16 @@ class AttemptApiTests {
 
         String key = "betaclimb/" + id + "/runs/sample/thumbnail.jpg";
         db.update(setThumbnail, key, id);
-        URI signed = URI.create("https://storage.example.test/private/thumbnail");
-        when(storage.inlineUrl(key)).thenReturn(signed);
+        when(storage.open(key)).thenReturn(new StoredObject(new ByteArrayResource("cover".getBytes()), "image/jpeg"));
         mvc.perform(get("/api/attempts").param("profileId", profile.toString()).cookie(owner))
                 .andExpect(jsonPath("$[0].thumbnailUrl").value(thumbnail + "?profileId=" + profile));
         mvc.perform(get(thumbnail).param("profileId", profile.toString())).andExpect(status().isNotFound());
         mvc.perform(get(thumbnail).param("profileId", UUID.randomUUID().toString()).cookie(owner))
                 .andExpect(status().isNotFound());
         mvc.perform(get(thumbnail).param("profileId", profile.toString()).cookie(owner))
-                .andExpect(status().isTemporaryRedirect()).andExpect(header().string("Location", signed.toString()));
-        verify(storage).inlineUrl(key);
+                .andExpect(status().isOk()).andExpect(content().contentType(MediaType.IMAGE_JPEG))
+                .andExpect(content().bytes("cover".getBytes()));
+        verify(storage).open(key);
     }
 
     @Test

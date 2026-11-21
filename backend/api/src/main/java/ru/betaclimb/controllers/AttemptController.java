@@ -2,7 +2,9 @@ package ru.betaclimb.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.CacheControl;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.betaclimb.services.AttemptData;
 import ru.betaclimb.services.AttemptService;
+import ru.betaclimb.services.VideoStorage.StoredObject;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,16 +53,36 @@ public class AttemptController {
     }
 
     @GetMapping("/{id}/media")
-    public ResponseEntity<Void> media(@PathVariable UUID id, @RequestParam UUID profileId, HttpServletRequest request,
-                                      HttpServletResponse response) {
-        var url = attempts.media(BrowserOwner.resolve(request, response), profileId, id);
-        return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT).location(url).build();
+    public ResponseEntity<?> media(@PathVariable UUID id, @RequestParam UUID profileId, HttpServletRequest request,
+                                   HttpServletResponse response) throws IOException {
+        return inline(attempts.media(BrowserOwner.resolve(request, response), profileId, id), request);
     }
 
     @GetMapping("/{id}/thumbnail")
-    public ResponseEntity<Void> thumbnail(@PathVariable UUID id, @RequestParam UUID profileId, HttpServletRequest request,
-                                          HttpServletResponse response) {
-        var url = attempts.thumbnail(BrowserOwner.resolve(request, response), profileId, id);
-        return ResponseEntity.status(HttpStatus.TEMPORARY_REDIRECT).cacheControl(CacheControl.noStore()).location(url).build();
+    public ResponseEntity<?> thumbnail(@PathVariable UUID id, @RequestParam UUID profileId, HttpServletRequest request,
+                                       HttpServletResponse response) throws IOException {
+        return inline(attempts.thumbnail(BrowserOwner.resolve(request, response), profileId, id), request);
+    }
+
+    private static ResponseEntity<?> inline(StoredObject object, HttpServletRequest request) throws IOException {
+        Resource body = object.body();
+        MediaType type = MediaType.parseMediaType(object.contentType());
+        long length = body.contentLength();
+        String rangeHeader = request.getHeader(HttpHeaders.RANGE);
+        if (rangeHeader == null || rangeHeader.isBlank()) {
+            return ResponseEntity.ok()
+                    .contentType(type)
+                    .contentLength(length)
+                    .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                    .cacheControl(org.springframework.http.CacheControl.noStore())
+                    .body(body);
+        }
+        var region = HttpRange.parseRanges(rangeHeader).getFirst().toResourceRegion(body);
+        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+                .contentType(type)
+                .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+                .cacheControl(org.springframework.http.CacheControl.noStore())
+                .body(region);
     }
 }

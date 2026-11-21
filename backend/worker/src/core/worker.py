@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from core.stages import DEPENDENCIES
 from database.manager import DBManager, Task
 from service.feedback import build_feedback
-from service.llm import ElizaChatClient, LLMError
+from service.llm import ChatClient, DeepSeekChatClient, LLMError
 from service.storage import ObjectStorage
 
 LOG = logging.getLogger("betaclimb.worker")
@@ -47,7 +47,7 @@ async def compute_stage(task: Task, source: Path, inputs: dict[str, Path], outpu
 
 
 class Worker:
-    def __init__(self, db: DBManager, storage: ObjectStorage, llm: ElizaChatClient, models: Path):
+    def __init__(self, db: DBManager, storage: ObjectStorage, llm: ChatClient, models: Path):
         self.db = db
         self.storage = storage
         self.llm = llm
@@ -167,7 +167,7 @@ async def run(args: argparse.Namespace) -> None:
         loop.add_signal_handler(sig, stop.set)
     try:
         async with httpx.AsyncClient() as http:
-            worker = Worker(db, ObjectStorage(), ElizaChatClient(http), args.models_dir)
+            worker = Worker(db, ObjectStorage(), DeepSeekChatClient(http), args.models_dir)
             await asyncio.gather(*(worker.poll(stop, args.once) for _ in range(args.concurrency)))
     finally:
         await db.engine.dispose()

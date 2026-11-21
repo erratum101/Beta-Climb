@@ -1,4 +1,7 @@
-"""Async chat completions for the video analysis worker."""
+"""Async chat completions for the video analysis worker.
+
+The model receives the text timeline only. Video stays on disk and is not sent to DeepSeek.
+"""
 
 import os
 from collections.abc import Sequence
@@ -24,67 +27,56 @@ class LLMError(RuntimeError):
         self.retryable = retryable
 
 
-class ElizaChatClient:
-    """Uses a caller-owned HTTP pool and the worker's Eliza credentials."""
+class DeepSeekChatClient:
+    """Text chat on api.deepseek.com. The caller owns the HTTP pool."""
 
     def __init__(self, http: httpx.AsyncClient) -> None:
         self._http = http
-        self._model = os.environ.get("LLM__MODEL", "glm-5.3-flash").strip()
+        self._model = os.environ.get("LLM__MODEL", "deepseek-chat").strip()
         try:
-            url = httpx.URL(os.environ.get(
-                "LLM__URL", "https://api.eliza.yandex.net/raw/zai/v1/chat/completions",
-            ))
+            url = httpx.URL(os.environ.get("LLM__URL", "https://api.deepseek.com/chat/completions"))
         except httpx.InvalidURL:
-            raise LLMError("Invalid Eliza endpoint") from None
+            raise LLMError("Invalid DeepSeek endpoint") from None
         if (
             url.scheme != "https"
-            or url.host != "api.eliza.yandex.net"
+            or url.host != "api.deepseek.com"
             or url.port is not None
             or url.userinfo
             or url.query
             or url.fragment
         ):
-            raise LLMError("LLM__URL must be an HTTPS endpoint on api.eliza.yandex.net")
+            raise LLMError("LLM__URL must be an HTTPS endpoint on api.deepseek.com")
         self._url = url
-
         if not self._model:
             raise LLMError("LLM__MODEL must specify a model")
-        self._reasoning_effort = None
-        if self._model == "glm-5.3-flash" and url.path.startswith("/raw/zai/"):
-            self._reasoning_effort = os.environ.get("LLM__REASONING_EFFORT", "low")
-            if self._reasoning_effort not in {"low", "high", "max"}:
-                raise LLMError("LLM__REASONING_EFFORT must be low, high or max")
-        token = os.environ.get("MEMORY_ELIZA_OAUTH_TOKEN", "").strip()
+        token = os.environ.get("DEEPSEEK_API_KEY", "").strip()
         if not token or not token.isascii() or not token.isprintable():
-            raise LLMError("MEMORY_ELIZA_OAUTH_TOKEN is missing or malformed")
+            raise LLMError("DEEPSEEK_API_KEY is missing or malformed")
         self._headers = httpx.Headers({"Authorization": f"Bearer {token}"})
 
     async def complete(self, messages: Sequence[ChatMessage]) -> str:
         payload = {"model": self._model, "messages": list(messages), "stream": False}
-        if self._reasoning_effort is not None:
-            payload["reasoning_effort"] = self._reasoning_effort
         try:
             response = await self._http.post(
                 self._url,
                 headers=self._headers,
                 json=payload,
-                # The reasoning model can take several minutes on a complete timeline.
                 timeout=httpx.Timeout(connect=10.0, read=360.0, write=30.0, pool=10.0),
                 follow_redirects=False,
             )
         except httpx.RequestError as exc:
-            raise LLMError(f"Eliza request failed ({type(exc).__name__})", retryable=True) from None
+            raise LLMError(f"DeepSeek request failed ({type(exc).__name__})", retryable=True) from None
 
         if not response.is_success:
             status = response.status_code
-            raise LLMError(f"Eliza returned HTTP {status}", retryable=status in {408, 429} or status >= 500)
+            raise LLMError(f"DeepSeek returned HTTP {status}", retryable=status in {408, 429} or status >= 500)
         try:
             choice = response.json()["choices"][0]
             if choice["finish_reason"] != "stop":
-                raise LLMError("Eliza returned an incomplete chat completion")
+                raise LLMError("DeepSeek returned an incomplete chat completion")
             content = choice["message"]["content"]
         except (ValueError, KeyError, IndexError, TypeError):
-            raise LLMError("Eliza returned an invalid chat completion") from None
+            raise LLMError("DeepSeek returned an invalid chat completion") from None
         if not isinstance(content, str) or not content.strip():
-            raise LLMError("Eliza returned an empty chat completion")
+            raise LLMError("DeepSeek returned an empty chat completion")
         return content

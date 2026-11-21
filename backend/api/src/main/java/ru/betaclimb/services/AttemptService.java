@@ -10,7 +10,6 @@ import ru.betaclimb.repositories.AttemptRepository;
 import ru.betaclimb.repositories.AttemptRepository.StoredAttempt;
 import tools.jackson.databind.ObjectMapper;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -45,19 +44,19 @@ public class AttemptService {
         return AttemptData.from(requireAttempt(owner, profileId, id));
     }
 
-    public URI media(String owner, UUID profileId, UUID id) {
+    public VideoStorage.StoredObject media(String owner, UUID profileId, UUID id) {
         StoredAttempt attempt = requireAttempt(owner, profileId, id);
         String key = attempt.result().path("playbackKey").asString(attempt.sourceKey());
         if (!key.startsWith("betaclimb/" + id + "/") || key.contains("..")) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        return storage.inlineUrl(key);
+        return storage.open(key);
     }
 
-    public URI thumbnail(String owner, UUID profileId, UUID id) {
+    public VideoStorage.StoredObject thumbnail(String owner, UUID profileId, UUID id) {
         String key = requireAttempt(owner, profileId, id).thumbnailKey()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        return storage.inlineUrl(key);
+        return storage.open(key);
     }
 
     public AttemptData create(String owner, UUID profileId, UUID requestId, MultipartFile file, String discipline) {
