@@ -71,12 +71,15 @@ export const climbApi: ClimbApi = {
     if (!response.ok) throw new Error('Не удалось обновить разбор.')
     return response.json()
   },
-  async createAttempt({ file, idempotencyKey }) {
+  async createAttempt({ file, idempotencyKey, frame, durationSec }) {
     const profileId = localStorage.getItem(PROFILE_ID_KEY)
     if (!profileId) throw new Error('Для загрузки видео нужен профиль.')
     const body = new FormData()
     body.append('profileId', profileId)
     body.append('file', file)
+    body.append('review', 'true')
+    if (frame) body.append('frame', frame, 'frame.jpg')
+    if (durationSec && Number.isFinite(durationSec)) body.append('durationSec', String(durationSec))
     const response = await request(endpoints.attempts, {
       method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body,
     })

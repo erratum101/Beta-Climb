@@ -7,6 +7,48 @@ import { SvgIcon } from '../../shared/ui/SvgIcon'
 
 const GUIDE_KEY = 'beta-climb.capture-guide'
 
+async function captureFrame(file: File): Promise<{ frame?: Blob; durationSec?: number }> {
+  const url = URL.createObjectURL(file)
+  const video = document.createElement('video')
+  video.preload = 'auto'
+  video.muted = true
+  video.playsInline = true
+  video.src = url
+  try {
+    await new Promise<void>((resolve, reject) => {
+      video.onloadeddata = () => resolve()
+      video.onerror = () => reject(new Error('frame'))
+    })
+    const durationSec = Number.isFinite(video.duration) ? video.duration : 0
+    const target = durationSec > 1 ? Math.min(durationSec * 0.35, Math.max(0, durationSec - 0.05)) : 0
+    if (target > 0) {
+      await new Promise<void>((resolve) => {
+        const timer = window.setTimeout(resolve, 1500)
+        video.onseeked = () => {
+          window.clearTimeout(timer)
+          resolve()
+        }
+        video.currentTime = target
+      })
+    }
+    const width = video.videoWidth || 640
+    const height = video.videoHeight || 360
+    const scale = width > 960 ? 960 / width : 1
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(width * scale))
+    canvas.height = Math.max(1, Math.round(height * scale))
+    const context = canvas.getContext('2d')
+    if (!context) return { durationSec }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+    const frame = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82))
+    return frame ? { frame, durationSec } : { durationSec }
+  } catch {
+    return {}
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 export const CAPTURE_GUIDE_STEPS = [
   'Камера стоит неподвижно',
   'Один спортсмен в кадре',
@@ -114,7 +156,8 @@ export function CaptureSource({ onBack }: { onBack: () => void }) {
     setUploading(true)
     setError('')
     try {
-      const attempt = await startAttempt(selected)
+      const captured = await captureFrame(selected.file)
+      const attempt = await startAttempt({ ...selected, ...captured })
       if (mounted.current) navigate(attemptHref(attempt), { replace: true })
     } catch (reason) {
       if (mounted.current) setError(reason instanceof Error ? reason.message : 'Не удалось загрузить видео.')

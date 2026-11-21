@@ -81,6 +81,8 @@ export interface MovementChange {
 export interface CreateAttemptInput {
   file: File
   idempotencyKey: string
+  frame?: Blob
+  durationSec?: number
 }
 
 export interface ClimbApi {

@@ -35,9 +35,13 @@ public class AttemptController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AttemptData> create(@RequestParam UUID profileId, @RequestParam MultipartFile file,
-            @RequestParam(required = false) String discipline, @RequestHeader("Idempotency-Key") UUID requestId,
+            @RequestParam(required = false) String discipline, @RequestParam(required = false) MultipartFile frame,
+            @RequestParam(required = false) Double durationSec,
+            @RequestParam(required = false, defaultValue = "false") boolean review,
+            @RequestHeader("Idempotency-Key") UUID requestId,
             HttpServletRequest request, HttpServletResponse response) {
-        var attempt = attempts.create(BrowserOwner.resolve(request, response), profileId, requestId, file, discipline);
+        var attempt = attempts.create(BrowserOwner.resolve(request, response), profileId, requestId, file, discipline,
+                frame, durationSec, review);
         return ResponseEntity.accepted().body(attempt);
     }
 

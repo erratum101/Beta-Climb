@@ -28,12 +28,15 @@ public class AttemptService {
     private final ProfileService profiles;
     private final VideoStorage storage;
     private final ObjectMapper json;
+    private final ClimbReview review;
 
-    public AttemptService(AttemptRepository attempts, ProfileService profiles, VideoStorage storage, ObjectMapper json) {
+    public AttemptService(AttemptRepository attempts, ProfileService profiles, VideoStorage storage, ObjectMapper json,
+                          ClimbReview review) {
         this.attempts = attempts;
         this.profiles = profiles;
         this.storage = storage;
         this.json = json;
+        this.review = review;
     }
 
     public List<AttemptData> list(String owner, UUID profileId) {
@@ -59,7 +62,8 @@ public class AttemptService {
         return storage.open(key);
     }
 
-    public AttemptData create(String owner, UUID profileId, UUID requestId, MultipartFile file, String discipline) {
+    public AttemptData create(String owner, UUID profileId, UUID requestId, MultipartFile file, String discipline,
+                              MultipartFile frame, Double durationSec, boolean reviewRequested) {
         var existing = attempts.findRequest(owner, requestId);
         if (existing.isPresent()) {
             return resultForProfile(existing.get(), profileId);
@@ -85,6 +89,16 @@ public class AttemptService {
                 snapshot, () -> discardUnused(key, id));
         if (!stored.id().equals(id)) {
             discardUnused(key, id);
+        } else if (reviewRequested) {
+            byte[] jpeg = new byte[0];
+            if (frame != null && !frame.isEmpty()) {
+                try {
+                    jpeg = frame.getBytes();
+                } catch (java.io.IOException error) {
+                    jpeg = new byte[0];
+                }
+            }
+            review.start(stored.id(), jpeg, durationSec == null ? 0 : durationSec, profile);
         }
         return resultForProfile(stored, profileId);
     }

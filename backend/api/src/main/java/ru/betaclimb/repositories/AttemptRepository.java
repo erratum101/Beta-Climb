@@ -86,6 +86,21 @@ public class AttemptRepository {
         return findRequest(owner, requestId).orElseThrow();
     }
 
+    @Transactional
+    public void markStage(UUID id, String stage) {
+        jdbc.sql("UPDATE videos SET stage = ? WHERE id = ? AND status = 'processing'")
+                .params(stage, id).update();
+    }
+
+    @Transactional
+    public void publishReview(UUID id, String status, double durationSec, String resultJson, String rejectReason) {
+        jdbc.sql("""
+                UPDATE videos
+                   SET status = ?, stage = 'done', duration_sec = ?, result_data = CAST(? AS jsonb), reject_reason = ?
+                 WHERE id = ? AND status = 'processing'
+                """).params(status, durationSec, resultJson, rejectReason, id).update();
+    }
+
     private StoredAttempt map(ResultSet row, int index) throws SQLException {
         return new StoredAttempt(row.getObject("id", UUID.class), row.getObject("profile_id", UUID.class),
                 row.getString("url"), row.getString("file_name"),
