@@ -1,6 +1,16 @@
 import { useEffect, useState } from 'react'
 
 export type ClientKind = 'installed' | 'mobile' | 'desktop'
+export type PhonePlatform = 'android' | 'ios'
+
+/** Android and iOS need different install paths. iPadOS desktop mode still counts as iOS. */
+export function readPhonePlatform(): PhonePlatform {
+  const ua = navigator.userAgent
+  const hints = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
+  if (hints?.platform === 'iOS' || /iPhone|iPad|iPod/i.test(ua)) return 'ios'
+  if (navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua)) return 'ios'
+  return 'android'
+}
 
 function isHandheld() {
   const ua = navigator.userAgent

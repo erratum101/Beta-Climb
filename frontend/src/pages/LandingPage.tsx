@@ -1,6 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSession } from '../app/session'
+import { readPhonePlatform } from '../shared/clientKind'
+import { isAppInstalled, promptInstall, subscribeInstallPrompt } from '../shared/installPrompt'
+import { SiteQr } from '../shared/ui/SiteQr'
 import { SvgIcon } from '../shared/ui/SvgIcon'
 import Magnet from '../shared/ui/Magnet'
 import ScrollFloat from '../shared/ui/ScrollFloat'
@@ -8,28 +11,79 @@ import SquishSwitch from '../shared/ui/SquishSwitch'
 import VariableProximity from '../shared/ui/VariableProximity'
 import { SiteIntro } from './SiteIntro'
 
-const GUIDES = {
-  android: {
-    title: 'Android',
-    steps: [
-      'Откройте эту страницу в Chrome',
-      'Нажмите меню ⋮ справа вверху',
-      'Выберите «Добавить на главный экран» или «Установить приложение»',
-      'Подтвердите — иконка появится на экране',
-    ],
-  },
-  ios: {
-    title: 'iPhone',
-    steps: [
-      'Откройте эту страницу в Safari',
-      'Нажмите «Поделиться» внизу экрана',
-      'Выберите «На экран „Домой“»',
-      'Нажмите «Добавить»',
-    ],
-  },
+const INSTALL_PAGES = {
+  android: [
+    {
+      title: 'Откройте эту страницу в Chrome',
+      text: 'Установка идёт из браузера. Откройте Beta Climb именно в Chrome — другие браузеры этот пункт не покажут.',
+    },
+    {
+      title: 'Нажмите меню ⋮ справа вверху',
+      text: 'Три точки в углу Chrome открывают действия со страницей.',
+    },
+    {
+      title: 'Выберите «Добавить на главный экран» или «Установить приложение»',
+      text: 'Chrome может назвать пункт по-разному. Оба варианта ставят иконку Beta Climb.',
+    },
+    {
+      title: 'Подтвердите — иконка появится на экране',
+      text: 'Нажмите «Добавить» или «Установить». С иконки сразу откроется приложение.',
+    },
+  ],
+  ios: [
+    {
+      title: 'Откройте эту страницу в Safari',
+      text: 'На iPhone сайт ставится только из Safari. В Chrome и других браузерах этого шага нет.',
+    },
+    {
+      title: 'Нажмите «Поделиться» внизу экрана',
+      text: 'Это квадрат со стрелкой вверх в центре нижней панели Safari.',
+      shot: 'share',
+    },
+    {
+      title: 'Выберите «На экран „Домой“»',
+      text: 'Если пункта не видно, пролистайте меню вниз. По-английски он называется Add to Home Screen.',
+      shot: 'menu',
+    },
+    {
+      title: 'Нажмите «Добавить»',
+      text: 'Иконка появится на домашнем экране и откроет Beta Climb как приложение.',
+      shot: 'add',
+    },
+  ],
 } as const
 
-type GuideId = keyof typeof GUIDES
+type GuideId = keyof typeof INSTALL_PAGES
+type InstallPage = (typeof INSTALL_PAGES)[GuideId][number]
+type AppleShot = 'share' | 'menu' | 'add'
+
+function pageShot(page: InstallPage): AppleShot | null {
+  return 'shot' in page ? page.shot : null
+}
+
+function AppleStepShot({ kind }: { kind: AppleShot }) {
+  if (kind === 'share') {
+    return (
+      <figure className="apple-step-shot is-share">
+        <img src="/shere-apple.webp" alt="" />
+      </figure>
+    )
+  }
+  if (kind === 'menu') {
+    return (
+      <figure className="apple-step-shot is-menu">
+        <img className="is-light" src="/add%20to%20home%20screen%20light.webp" alt="" />
+        <img className="is-dark" src="/add%20to%20home%20screen%20darck.webp" alt="" />
+      </figure>
+    )
+  }
+  return (
+    <figure className="apple-step-shot is-add">
+      <img className="is-light" src="/add-white-apple.webp" alt="" />
+      <img className="is-dark" src="/add-black-apple.webp" alt="" />
+    </figure>
+  )
+}
 
 const NAV = [
   { id: 'home', label: 'Главная' },
@@ -300,45 +354,160 @@ function AppleMark() {
   )
 }
 
-function Steps({
+const SHEET_COPY = {
+  android: {
+    ru: {
+      title: 'Установить Beta Climb',
+      lead: 'Если системное окно не открылось, добавьте страницу на главный экран. Иконка откроет приложение.',
+    },
+    en: {
+      title: 'Install Beta Climb',
+      lead: 'If the system dialog did not open, add this page to your home screen. The icon opens the app.',
+    },
+  },
+  ios: {
+    ru: {
+      title: 'Установить Beta Climb',
+      lead: 'Safari ставит сайт только через «На экран „Домой“». Иконка откроет приложение.',
+    },
+    en: {
+      title: 'Install Beta Climb',
+      lead: 'Safari only installs this site through Add to Home Screen. The icon opens the app.',
+    },
+  },
+} as const
+
+const SHEET_STEPS = {
+  android: {
+    ru: INSTALL_PAGES.android.map((page) => page.title),
+    en: [
+      'Open this page in Chrome',
+      'Tap the ⋮ menu at the top right',
+      'Choose “Add to Home screen” or “Install app”',
+      'Confirm — the icon appears on your screen',
+    ],
+  },
+  ios: {
+    ru: INSTALL_PAGES.ios.map((page) => page.title),
+    en: [
+      'Open this page in Safari',
+      'Tap Share at the bottom of the screen',
+      'Choose “Add to Home Screen”',
+      'Tap Add',
+    ],
+  },
+} as const
+
+function PhoneInstall({
+  russian,
+  onManual,
+}: {
+  russian: boolean
+  onManual: (platform: GuideId) => void
+}) {
+  const platform = useState(readPhonePlatform)[0]
+  const [done, setDone] = useState(isAppInstalled)
+
+  useEffect(() => subscribeInstallPrompt(() => setDone(isAppInstalled())), [])
+
+  async function onClick() {
+    if (done) return
+    if (platform === 'android') {
+      const outcome = await promptInstall()
+      if (outcome === 'accepted') {
+        setDone(true)
+        return
+      }
+      if (outcome === 'dismissed') return
+    }
+    onManual(platform)
+  }
+
+  return (
+    <button
+      type="button"
+      className={platform === 'android' ? 'btn is-android' : 'btn is-ios'}
+      onClick={onClick}
+      disabled={done}
+    >
+      {platform === 'android' ? <AndroidMark /> : <AppleMark />}
+      {done ? (russian ? 'Установлено' : 'Installed') : russian ? 'Установить' : 'Install'}
+    </button>
+  )
+}
+
+function InstallSheet({
   platform,
-  scrollContainerRef,
-  triggerRef,
+  russian,
+  onClose,
 }: {
   platform: GuideId
-  scrollContainerRef: { readonly current: HTMLElement | null }
-  triggerRef: { readonly current: HTMLElement | null }
+  russian: boolean
+  onClose: () => void
 }) {
-  const guide = GUIDES[platform]
-  return (
-    <section className="landing-block" id={`install-${platform}`} aria-labelledby={`install-${platform}-title`}>
-      <LandingFloat
-        as="h3"
-        id={`install-${platform}-title`}
-        className="landing-step-title"
-        scrollContainerRef={scrollContainerRef}
-        triggerRef={triggerRef}
+  const lang = russian ? 'ru' : 'en'
+  const copy = SHEET_COPY[platform][lang]
+  const steps = SHEET_STEPS[platform][lang]
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return createPortal(
+    <div className="install-sheet" role="presentation" onClick={onClose}>
+      <div
+        className="install-sheet-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="install-sheet-title"
+        onClick={(event) => event.stopPropagation()}
       >
-        {guide.title}
-      </LandingFloat>
-      <ol className="landing-steps">
-        {guide.steps.map((step, index) => (
-          <li key={step}>
-            <LandingFloat
-              as="span"
-              className="landing-step-index"
-              scrollContainerRef={scrollContainerRef}
-              triggerRef={triggerRef}
-            >
-              {String(index + 1)}
-            </LandingFloat>
-            <LandingFloat as="span" scrollContainerRef={scrollContainerRef} triggerRef={triggerRef}>
-              {step}
-            </LandingFloat>
-          </li>
-        ))}
-      </ol>
-    </section>
+        <p className="install-sheet-kicker">{platform === 'ios' ? 'iPhone' : 'Android'}</p>
+        <h2 id="install-sheet-title">{copy.title}</h2>
+        <p>{copy.lead}</p>
+        <ol className="install-sheet-steps">
+          {steps.map((step, index) => {
+            const shot = pageShot(INSTALL_PAGES[platform][index])
+            return (
+              <li key={step} className={shot ? 'has-shot' : undefined}>
+                <span>{index + 1}</span>
+                <span className="install-sheet-step">{step}</span>
+                {shot ? <AppleStepShot kind={shot} /> : null}
+              </li>
+            )
+          })}
+        </ol>
+        <button type="button" className="btn btn-orange" onClick={onClose}>
+          {russian ? 'Понятно' : 'Got it'}
+        </button>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+function PlatformSwitch({
+  platform,
+  onPlatform,
+}: {
+  platform: GuideId
+  onPlatform: (platform: GuideId) => void
+}) {
+  return (
+    <div className="landing-switch" role="tablist" aria-label="Платформа">
+      <button type="button" role="tab" aria-selected={platform === 'android'} onClick={() => onPlatform('android')}>
+        <AndroidMark />
+        Android
+      </button>
+      <button type="button" role="tab" aria-selected={platform === 'ios'} onClick={() => onPlatform('ios')}>
+        <AppleMark />
+        iOS
+      </button>
+    </div>
   )
 }
 
@@ -370,18 +539,108 @@ function LandingFloat({
       direction="up"
       order="start"
       fromColor="var(--accent)"
-      animationDuration={1}
+      animationDuration={0.2}
       ease="back.inOut(2)"
-      scrollStart="top 100%"
+      scrollStart="top 65%"
       scrollEnd="top 12%"
-      startDelay={0.5}
-      stagger={0.045}
+      startDelay={0}
+      playOnEnter
+      stagger={0.02}
       distance={120}
       stretch={2.3}
       smoothing={0}
     >
       {children}
     </ScrollFloat>
+  )
+}
+
+function InstallStep({
+  page,
+  index,
+  first,
+  onPlatform,
+  platform,
+  scrollContainerRef,
+}: {
+  page: InstallPage
+  index: number
+  first: boolean
+  platform: GuideId
+  onPlatform: (platform: GuideId) => void
+  scrollContainerRef: { readonly current: HTMLElement | null }
+}) {
+  const pageRef = useRef<HTMLElement>(null)
+  const shot = pageShot(page)
+  const shotLeft = index % 2 === 0
+  const pageClass = shot
+    ? `install-page has-shot ${shotLeft ? 'is-shot-left' : 'is-shot-right'}`
+    : first
+      ? 'install-page has-qr'
+      : 'install-page'
+  return (
+    <article
+      ref={pageRef}
+      className="landing-frame install-step-page"
+      id={first ? 'install' : undefined}
+      aria-labelledby={first ? 'install-title' : undefined}
+    >
+      {first ? (
+        <div className="install-step-top">
+          <PlatformSwitch platform={platform} onPlatform={onPlatform} />
+        </div>
+      ) : null}
+      <div className={pageClass}>
+        {shot && shotLeft ? <AppleStepShot kind={shot} /> : null}
+        <div className="install-page-copy">
+          <LandingFloat
+            as="h3"
+            id={first ? 'install-title' : undefined}
+            scrollContainerRef={scrollContainerRef}
+            triggerRef={pageRef}
+          >
+            {page.title}
+          </LandingFloat>
+          <LandingFloat
+            as="p"
+            className="install-page-lead"
+            scrollContainerRef={scrollContainerRef}
+            triggerRef={pageRef}
+          >
+            {page.text}
+          </LandingFloat>
+        </div>
+        {shot && !shotLeft ? <AppleStepShot kind={shot} /> : null}
+        {first ? <SiteQr /> : null}
+      </div>
+    </article>
+  )
+}
+
+function InstallSteps({
+  platform,
+  onPlatform,
+  scrollContainerRef,
+}: {
+  platform: GuideId
+  onPlatform: (platform: GuideId) => void
+  scrollContainerRef: { readonly current: HTMLElement | null }
+}) {
+  const pages = INSTALL_PAGES[platform]
+  return (
+    <>
+      {pages.map((page, index) => (
+        <InstallStep
+          key={page.title}
+          page={page}
+          index={index}
+          first={index === 0}
+          platform={platform}
+          onPlatform={onPlatform}
+          scrollContainerRef={scrollContainerRef}
+        />
+      ))}
+    </>
   )
 }
 
@@ -601,13 +860,16 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
   }, [mode])
   const stageRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const installRef = useRef<HTMLElement>(null)
+  const scrollLockRef = useRef(0)
+  const scrollPinRef = useRef(0)
   const chromeRef = useRef<{ open: () => void } | null>(null)
   const glideRef = useRef<(top: number) => void>(() => {})
   const [intro, setIntro] = useState(shouldPlayIntro)
   const [shown, setShown] = useState(() => !shouldPlayIntro())
   const [videoReady, setVideoReady] = useState(false)
   const [active, setActive] = useState<SectionId>('home')
+  const [manualInstall, setManualInstall] = useState<GuideId | null>(null)
+  const [guidePlatform, setGuidePlatform] = useState<GuideId>(readPhonePlatform)
 
   useEffect(() => {
     const stage = stageRef.current
@@ -706,11 +968,20 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     }
 
     const heroFrame = () => scroll.querySelector<HTMLElement>('.landing-hero-frame')
-    const heroEnd = () => heroFrame()?.offsetHeight ?? scroll.clientHeight
     let snapping = false
     let dir = 0
     let settleTimer = 0
     let snapToken = 0
+
+    const frameStops = () => {
+      const root = scroll.getBoundingClientRect().top
+      const max = Math.max(0, scroll.scrollHeight - scroll.clientHeight)
+      const stops = [...scroll.querySelectorAll<HTMLElement>('.landing-frame')].map((node) => {
+        const top = node.getBoundingClientRect().top - root + scroll.scrollTop
+        return Math.min(max, Math.max(0, Math.round(top)))
+      })
+      return [...new Set(stops)].sort((a, b) => a - b)
+    }
 
     const syncShrink = () => {
       const frame = heroFrame()
@@ -764,32 +1035,70 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
 
     glideRef.current = snapTo
 
-    // The hero is one screen. A scroll that enters it finishes the trip
-    // instead of resting on a half-scaled frame.
+    // Every frame is one screen, same as the hero. A scroll finishes the trip
+    // to the next or previous page instead of resting halfway.
     const maybeSnap = (delta: number) => {
       if (Math.abs(delta) < 1) return false
       if (snapping) return true
-      const end = heroEnd()
+      const stops = frameStops()
+      if (stops.length < 2) return false
       const y = scroll.scrollTop
-      const inHero = y < end - 2
-      const atBoundary = Math.abs(y - end) <= 8
-      if (inHero && delta > 0) {
-        snapTo(end)
+      const max = Math.max(0, scroll.scrollHeight - scroll.clientHeight)
+      let index = 0
+      for (let i = 0; i < stops.length; i++) {
+        if (y + 8 >= stops[i]) index = i
+      }
+      const here = stops[index]
+      const next = stops[index + 1]
+      const prev = index > 0 ? stops[index - 1] : null
+      const aligned = Math.abs(y - here) <= 8
+
+      if (delta > 0) {
+        if (next == null || here >= max - 2 || next - y <= 2) return false
+        snapTo(next)
+        spendGesture()
         return true
       }
-      if ((inHero || atBoundary) && delta < 0 && y > 2) {
-        snapTo(0)
+
+      if (aligned) {
+        if (prev == null) return false
+        snapTo(prev)
+        spendGesture()
+        return true
+      }
+      if (y - here > 2) {
+        snapTo(here)
+        spendGesture()
         return true
       }
       return false
     }
 
+    // Platform switch rebuilds the step text and ScrollTrigger refreshes by
+    // scrolling the container. Pin the current page so that does not turn it.
+    const keepPinned = () => {
+      if (performance.now() >= scrollLockRef.current) return false
+      const pin = scrollPinRef.current
+      if (Math.abs(scroll.scrollTop - pin) > 1) scroll.scrollTop = pin
+      return true
+    }
+
     const settle = () => {
-      if (snapping) return
-      const end = heroEnd()
-      const top = scroll.scrollTop
-      if (top > 2 && top < end - 2) {
-        snapTo(dir >= 0 ? end : 0)
+      if (snapping || keepPinned()) return
+      const stops = frameStops()
+      const y = scroll.scrollTop
+      if (stops.length === 0) {
+        syncShrink()
+        return
+      }
+      let index = 0
+      for (let i = 0; i < stops.length; i++) {
+        if (y + 2 >= stops[i]) index = i
+      }
+      const here = stops[index]
+      const next = stops[index + 1]
+      if (next != null && y > here + 2 && y < next - 2) {
+        snapTo(dir >= 0 ? next : here)
         return
       }
       syncShrink()
@@ -880,6 +1189,10 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
 
       const onScroll = () => {
         syncShrink()
+        if (keepPinned()) {
+          last = scroll.scrollTop
+          return
+        }
         const y = scroll.scrollTop
         const dy = y - last
         last = y
@@ -937,9 +1250,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
             return
           }
           if (gestureAtBottom && atBottom && dy >= 1) {
-            openFooter()
-            spendGesture()
-            event.preventDefault()
+            pull = 0
             return
           }
           pull = 0
@@ -990,9 +1301,6 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
           return
         }
         if (gestureAtBottom && atBottom && delta > 0) {
-          openFooter()
-          spendGesture()
-          event.preventDefault()
           return
         }
         if (!latched && maybeSnap(delta)) {
@@ -1063,6 +1371,10 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
 
     const onScroll = () => {
       syncShrink()
+      if (keepPinned()) {
+        last = scroll.scrollTop
+        return
+      }
       const y = scroll.scrollTop
       const dy = y - last
       last = y
@@ -1200,6 +1512,20 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     glideRef.current(Math.max(0, top))
   }
 
+  function selectGuide(platform: GuideId) {
+    const scroll = scrollRef.current
+    if (scroll) {
+      scrollPinRef.current = scroll.scrollTop
+      scrollLockRef.current = performance.now() + 700
+    }
+    setGuidePlatform(platform)
+  }
+
+  function showGuide(platform: GuideId) {
+    setGuidePlatform(platform)
+    scrollToId('install')
+  }
+
   const screenClass = [
     'screen landing',
     mode === 'desktop' ? 'is-desktop' : '',
@@ -1241,75 +1567,57 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
           <div className="landing-hero-copy" lang={russian ? 'ru' : 'en'}>
             <HeroTitle russian={russian} night={night} plain={phone} />
             <div className="landing-hero-actions">
-              <Magnet
-                padding={100}
-                magnetStrength={5}
-                maxOffset={6}
-                disabled={phone}
-                wrapperClassName="landing-magnet"
-                innerClassName="landing-magnet-inner"
-                style={{ display: 'flex', width: '100%' }}
-              >
-                <button type="button" className="btn is-android" onClick={() => scrollToId('install-android')}>
-                  <AndroidMark />
-                  {russian ? 'Установить на Android' : 'Install on Android'}
-                </button>
-              </Magnet>
-              <Magnet
-                padding={100}
-                magnetStrength={5}
-                maxOffset={6}
-                disabled={phone}
-                wrapperClassName="landing-magnet"
-                innerClassName="landing-magnet-inner"
-                style={{ display: 'flex', width: '100%' }}
-              >
-                <button type="button" className="btn is-ios" onClick={() => scrollToId('install-ios')}>
-                  <AppleMark />
-                  {russian ? 'Установить на iOS' : 'Install on iOS'}
-                </button>
-              </Magnet>
+              {mode === 'mobile' ? (
+                <PhoneInstall russian={russian} onManual={setManualInstall} />
+              ) : (
+                <>
+                  <Magnet
+                    padding={100}
+                    magnetStrength={5}
+                    maxOffset={6}
+                    disabled={phone}
+                    wrapperClassName="landing-magnet"
+                    innerClassName="landing-magnet-inner"
+                    style={{ display: 'flex', width: '100%' }}
+                  >
+                    <button type="button" className="btn is-android" onClick={() => showGuide('android')}>
+                      <AndroidMark />
+                      {russian ? 'Установить на Android' : 'Install on Android'}
+                    </button>
+                  </Magnet>
+                  <Magnet
+                    padding={100}
+                    magnetStrength={5}
+                    maxOffset={6}
+                    disabled={phone}
+                    wrapperClassName="landing-magnet"
+                    innerClassName="landing-magnet-inner"
+                    style={{ display: 'flex', width: '100%' }}
+                  >
+                    <button type="button" className="btn is-ios" onClick={() => showGuide('ios')}>
+                      <AppleMark />
+                      {russian ? 'Установить на iOS' : 'Install on iOS'}
+                    </button>
+                  </Magnet>
+                </>
+              )}
             </div>
           </div>
         </section>
 
-        <section
-          className="landing-frame landing-install-frame"
-          id="install"
-          aria-labelledby="install-title"
-          ref={installRef}
-        >
-          <div className="landing-install-inner">
-            <div className="landing-story-head">
-              <LandingFloat as="p" className="landing-kicker" scrollContainerRef={scrollRef} triggerRef={installRef}>
-                На домашний экран
-              </LandingFloat>
-              <LandingFloat
-                as="h2"
-                id="install-title"
-                className="landing-install-title"
-                scrollContainerRef={scrollRef}
-                triggerRef={installRef}
-              >
-                Как установить
-              </LandingFloat>
-            </div>
-            <LandingFloat as="p" className="landing-install-lead" scrollContainerRef={scrollRef} triggerRef={installRef}>
-              Добавьте Beta Climb на экран телефона. С иконки сразу попадёте в приложение.
-            </LandingFloat>
-            <div className="landing-guides">
-              <Steps platform="android" scrollContainerRef={scrollRef} triggerRef={installRef} />
-              <Steps platform="ios" scrollContainerRef={scrollRef} triggerRef={installRef} />
-            </div>
-          </div>
-        </section>
+        <InstallSteps platform={guidePlatform} onPlatform={selectGuide} scrollContainerRef={scrollRef} />
       </div>
       </div>
 
       <SectionNav placement="top" active={active} night={night} onSelect={scrollToId} onNight={setNight} />
-      <SectionNav placement="bottom" active={active} night={night} onSelect={scrollToId} onNight={setNight} />
+      {mode === 'desktop' ? (
+        <SectionNav placement="bottom" active={active} night={night} onSelect={scrollToId} onNight={setNight} />
+      ) : null}
       {intro ? (
         <SiteIntro ready={videoReady} onExit={() => setShown(true)} onDone={() => setIntro(false)} />
+      ) : null}
+      {manualInstall ? (
+        <InstallSheet platform={manualInstall} russian={russian} onClose={() => setManualInstall(null)} />
       ) : null}
     </div>
   )

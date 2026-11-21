@@ -66,6 +66,7 @@ html.is-landing:not(.is-landing-menu) {
 
 .screen.landing:not(.is-desktop) {
   --landing-corner: 35px;
+  --safe-area-max-inset-bottom: env(safe-area-max-inset-bottom, 0px);
   height: 100%;
   max-height: none;
   min-height: 0;
@@ -158,12 +159,13 @@ html.is-landing .landing-safari-bleed.is-bottom {
 .landing-nav {
   --nav-tuck: 54px;
   --nav-fill: var(--accent);
+  --safe-area-max-inset-bottom: env(safe-area-max-inset-bottom, 0px);
   position: absolute;
   z-index: 2;
   left: 0;
   right: 0;
-  bottom: 0;
-  height: calc(var(--landing-nav) + env(safe-area-inset-bottom));
+  bottom: calc(env(safe-area-inset-bottom, 0px) - var(--safe-area-max-inset-bottom));
+  height: calc(var(--landing-nav) + var(--safe-area-max-inset-bottom));
   overflow: hidden;
   color: var(--landing-ink);
   transition: color var(--theme-fade) var(--ease-in-out);
@@ -178,7 +180,7 @@ html.is-landing .landing-safari-bleed.is-bottom {
   grid-template-areas: 'brand links theme';
   align-items: center;
   column-gap: clamp(10px, 2vw, 28px);
-  padding: 0 calc(16px + var(--landing-corner) * 0.28) env(safe-area-inset-bottom);
+  padding: 0 calc(16px + var(--landing-corner) * 0.28) var(--safe-area-max-inset-bottom);
   transition: transform var(--chrome-move) var(--chrome-ease);
 }
 
@@ -486,6 +488,7 @@ html.is-landing-menu #root {
   margin: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  overflow-anchor: none;
   overscroll-behavior: contain;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -674,9 +677,14 @@ html.is-landing-menu #root {
 }
 
 .landing-install-inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   width: min(100%, 920px);
+  min-height: 100%;
   margin: 0 auto;
   padding: 48px 28px 56px;
+  box-sizing: border-box;
 }
 
 .landing-layout {
@@ -1165,6 +1173,105 @@ html.is-night .landing-theme-icon.is-moon {
   line-height: 1.35;
 }
 
+.install-step-page {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(100%, 1080px);
+  height: 100%;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 28px 40px 36px;
+  color: #fff;
+}
+
+.install-step-top {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.install-step-page .landing-switch {
+  margin: 0;
+}
+
+.install-page {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: minmax(0, 28rem);
+  align-items: center;
+  justify-content: center;
+  gap: 28px 72px;
+  width: 100%;
+}
+
+.install-page.has-shot.is-shot-left {
+  grid-template-columns: auto minmax(0, 28rem);
+}
+
+.install-page.has-shot.is-shot-right,
+.install-page.has-qr {
+  grid-template-columns: minmax(0, 28rem) auto;
+}
+
+.install-page .apple-step-shot {
+  min-width: 0;
+  min-height: 0;
+  max-width: min(340px, 36vw);
+  max-height: 100%;
+}
+
+.install-page .apple-step-shot img {
+  width: auto;
+  height: auto;
+  max-width: min(340px, 36vw);
+  max-height: min(620px, 68vh);
+}
+
+.install-page h3,
+.install-page .scroll-float {
+  margin: 0;
+}
+
+.install-page h3 {
+  font-size: clamp(36px, 4.4vw, 52px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  color: #fff;
+}
+
+.install-page p.scroll-float,
+.install-page-copy p {
+  margin: 18px 0 0;
+  max-width: 26rem;
+  font-size: clamp(16px, 1.5vw, 20px);
+  font-weight: 500;
+  line-height: 1.35;
+  color: #fff;
+}
+
+.apple-step-shot {
+  margin: 0;
+  max-width: 100%;
+}
+
+.apple-step-shot img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(640px, 68vh);
+  margin: 0;
+  object-fit: contain;
+}
+
+html.is-night .apple-step-shot img.is-light,
+html:not(.is-night) .apple-step-shot img.is-dark {
+  display: none;
+}
+
 .landing-switch {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1177,11 +1284,20 @@ html.is-night .landing-theme-icon.is-moon {
 }
 
 .landing-switch button {
-  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
   border-radius: 999px;
   font-size: 14px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.82);
+}
+
+.landing-switch .landing-store-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .landing-switch button[aria-selected='true'] {
@@ -1190,31 +1306,62 @@ html.is-night .landing-theme-icon.is-moon {
 }
 
 .landing-qr {
-  justify-self: start;
-  width: min(100%, 220px);
+  justify-self: center;
+  width: min(100%, 248px);
+  margin: 0;
   background: #fff;
   color: #1c1c1e;
-  border-radius: 24px;
-  padding: 14px 14px 16px;
+  border-radius: 32px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
   text-align: center;
+  box-shadow:
+    0 0 0 1px rgba(253, 113, 21, 0.28),
+    0 18px 40px rgba(8, 7, 7, 0.16);
+  corner-shape: squircle;
 }
 
 .landing-qr svg {
-  width: 168px;
+  width: 100%;
   height: auto;
   display: block;
-  shape-rendering: crispEdges;
 }
 
-.landing-qr p {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.35;
+@media (max-width: 759px) {
+  .install-page.has-qr {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    justify-items: center;
+    gap: 16px;
+  }
+
+  .install-page.has-qr .install-page-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .install-page.has-qr .install-page-copy p {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .install-page.has-qr h3 {
+    font-size: 32px;
+  }
+
+  .install-step-page:has(.landing-qr) {
+    padding: 16px 22px 18px;
+  }
+
+  .landing-qr {
+    width: min(100%, 176px);
+    padding: 12px;
+    border-radius: 26px;
+  }
 }
 
 .landing-note {
@@ -1338,11 +1485,6 @@ html.is-night .landing-theme-icon.is-moon {
     padding-left: 28px;
   }
 
-  .screen.landing.is-desktop .landing-guides {
-    grid-template-columns: 1fr 1fr;
-    gap: 28px;
-  }
-
   .screen.landing.is-desktop .landing-install-body {
     grid-template-columns: minmax(0, 1fr) 220px;
     align-items: center;
@@ -1389,7 +1531,7 @@ html.is-night .landing-theme-icon.is-moon {
     max-height: 100%;
     box-sizing: border-box;
     margin: 0;
-    padding: 0 20px calc(16px + env(safe-area-inset-bottom));
+    padding: 0 20px calc(16px + var(--safe-area-max-inset-bottom, 0px));
     gap: 0;
   }
 
@@ -1490,6 +1632,7 @@ html.is-night .screen.landing:not(.is-desktop) .landing-hero-frame {
   inset: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
   filter: blur(6px);
   transform: scale(1.08);
 }
@@ -1509,7 +1652,7 @@ html.is-night .screen.landing:not(.is-desktop) .landing-hero-frame {
   max-height: 100%;
   box-sizing: border-box;
   margin: 0;
-  padding: 0 20px calc(16px + env(safe-area-inset-bottom));
+  padding: 0 20px calc(16px + var(--safe-area-max-inset-bottom, 0px));
   gap: 0;
 }
 
@@ -1542,6 +1685,16 @@ html.is-night .screen.landing:not(.is-desktop) .landing-hero-frame {
   padding: 0 20px;
   font-size: 16px;
   gap: 8px;
+}
+
+html:not(.is-night) .screen.landing:not(.is-desktop) .landing-hero-actions .btn {
+  background: var(--accent);
+  color: #fff;
+}
+
+html.is-night .screen.landing:not(.is-desktop) .landing-hero-actions .btn {
+  background: #1c1c1e;
+  color: #dfdfdf;
 }
 
 .screen.landing:not(.is-desktop) .landing-store-icon {
@@ -1851,8 +2004,10 @@ button.site-intro-hit:active {
     transition: none;
   }
 
-  .landing-store-icon {
+  .landing-store-icon,
+  .install-page {
     transition: none;
+    animation: none;
   }
 
   .screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button,
@@ -1906,4 +2061,90 @@ button.site-intro-hit:active {
   .landing .reel-card:not(:first-child) {
     opacity: 0;
   }
+}
+
+.install-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  background: rgba(8, 7, 7, 0.46);
+}
+
+.install-sheet-card {
+  width: min(100%, 420px);
+  padding: 22px 20px 18px;
+  border-radius: 28px;
+  background: var(--landing-menu);
+  color: var(--landing-ink);
+  corner-shape: squircle;
+}
+
+.install-sheet-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.install-sheet-card h2 {
+  margin: 6px 0 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.install-sheet-card p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.install-sheet-steps {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.install-sheet-steps li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.install-sheet-steps li.has-shot {
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.install-sheet-card .apple-step-shot img {
+  max-width: 88px;
+  max-height: 140px;
+}
+
+.install-sheet-steps li > span:first-child {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.install-sheet-step {
+  min-width: 0;
+}
+
+.install-sheet-card .btn {
+  margin-top: 18px;
 }

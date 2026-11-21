@@ -1,8 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './app/App'
+import { captureInstallPrompt } from './shared/installPrompt'
 import './shared/styles.css'
 import './shared/landing.css'
+
+captureInstallPrompt()
 
 document.addEventListener('touchstart', () => {}, { passive: true })
 
