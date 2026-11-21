@@ -1,7 +1,7 @@
 @import "./theme.css";
 
 :root {
-  --cursor: url("/cursor.png?v=3") 6 3, auto;
+  --cursor: auto;
   --screen-corner: 47px;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
@@ -200,13 +200,15 @@ ol {
   height: 100%;
   display: flex;
   flex-direction: column;
-  transform-origin: bottom center;
-  animation: route-enter var(--dur-enter) var(--ease-out) both;
 }
 
-.route-transition.is-static .route-enter-layer,
-html.is-vt .route-enter-layer {
-  animation: none;
+/* A tab change captures the pane; the surrounding screen and fixed navigation stay in place. */
+html[data-route-transition="pane"] [data-route-layer="pane"] {
+  view-transition-name: pane;
+}
+
+html[data-route-transition="screen"] [data-route-layer="screen"] {
+  view-transition-name: screen;
 }
 
 .app-field > .route-transition {
@@ -214,30 +216,9 @@ html.is-vt .route-enter-layer {
   overflow: hidden;
 }
 
-@keyframes route-enter {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.97);
-    filter: blur(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-}
-
-@keyframes route-leave {
-  from {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.98);
-    filter: blur(3px);
-  }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .screen.with-nav {
@@ -1787,8 +1768,8 @@ input.field-control {
   isolation: isolate;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  color: var(--heading);
+  background: var(--chip-surface, rgba(255, 255, 255, 0.18));
+  color: var(--chip-ink, var(--heading));
   font-weight: 700;
   transition: color 200ms linear;
 }
@@ -1799,14 +1780,14 @@ input.field-control {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: var(--bg-canvas);
+  background: var(--chip-selected-surface, var(--bg-canvas));
   clip-path: inset(0 100% 0 0);
   transition: clip-path var(--dur-drop-out) var(--ease-leave);
 }
 
 .chip.is-on {
   background: transparent;
-  color: var(--bg);
+  color: var(--chip-selected-ink, var(--bg));
 }
 
 .chip.is-on::before {
@@ -1826,6 +1807,21 @@ input.field-control {
   aspect-ratio: 3 / 4;
   border-radius: 18px;
   overflow: hidden;
+  background: var(--ink);
+}
+
+.climb-cover {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.climb-cover-message {
+  color: white;
+  font-size: 14px;
 }
 
 .climb-grade {
@@ -1863,7 +1859,7 @@ input.field-control {
   right: 10px;
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.72);
   color: white;
   font-size: 12px;
   font-weight: 700;
@@ -2112,6 +2108,30 @@ input.field-control {
   background: transparent;
 }
 
+.capture-back,
+.capture-file-error {
+  position: absolute;
+  z-index: 1;
+  left: 18px;
+  color: var(--source-top-ink);
+}
+
+.capture-back { top: max(16px, env(safe-area-inset-top)); }
+.capture-file-error { bottom: 12px; color: var(--source-bottom-ink); }
+.capture-upload { gap: 16px; color: var(--source-bottom-ink); overflow-wrap: anywhere; }
+.capture-upload button:disabled { opacity: 0.55; }
+
+.attempt-thumb {
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: white;
+}
+
+.climb-card .climb-grade { max-width: calc(100% - 20px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-item span, .list-row strong { overflow-wrap: anywhere; }
+
+
 .capture-source-gallery .svg-icon,
 .capture-source-camera .svg-icon {
   opacity: 0;
@@ -2297,234 +2317,6 @@ input.field-control {
   margin-top: 14px;
 }
 
-.player {
-  position: relative;
-  height: 340px;
-  overflow: hidden;
-  border-radius: 22px;
-  color: white;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 28%),
-    repeating-linear-gradient(90deg, #2c2622 0 26px, #241f1c 26px 28px),
-    #1b1816;
-}
-
-.player-top,
-.player-foot,
-.play-btn,
-.route-map {
-  position: absolute;
-}
-
-.route-map {
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.player-top {
-  z-index: 1;
-  top: 12px;
-  left: 14px;
-  right: 14px;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.play-btn {
-  z-index: 1;
-  left: 50%;
-  top: 42%;
-  width: 64px;
-  height: 64px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
-  color: white;
-  transform: translate(-50%, -50%);
-}
-
-.player-foot {
-  right: 14px;
-  bottom: 12px;
-  left: 14px;
-}
-
-.marker-track {
-  position: relative;
-  height: 14px;
-}
-
-.marker {
-  position: absolute;
-  top: 1px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: white;
-  transform: translateX(-50%);
-}
-
-.marker.is-on {
-  background: #ffd7b0;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
-}
-
-.scrub {
-  position: relative;
-  width: 100%;
-  height: 28px;
-  margin-top: 6px;
-  touch-action: none;
-  cursor: var(--cursor);
-}
-
-.scrub-fill {
-  position: absolute;
-  left: 0;
-  top: 12px;
-  height: 4px;
-  border-radius: 99px;
-  background: white;
-  pointer-events: none;
-}
-
-.scrub::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 12px;
-  height: 4px;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.35);
-}
-
-.scrub-thumb {
-  position: absolute;
-  top: 6px;
-  width: 16px;
-  height: 16px;
-  margin-left: -8px;
-  border-radius: 50%;
-  background: white;
-  pointer-events: none;
-}
-
-.player-caption {
-  margin-top: 8px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.meta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 14px 0 4px;
-}
-
-.pill {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.section-label {
-  margin: 16px 0 8px;
-  font-size: 15px;
-  font-weight: 800;
-}
-
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.moment {
-  overflow: hidden;
-  border-radius: 18px;
-  background: white;
-  color: var(--ink);
-}
-
-.moment.is-current {
-  box-shadow: inset 4px 0 0 var(--accent);
-}
-
-.moment-top {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  text-align: left;
-}
-
-.moment-top em {
-  display: inline-block;
-  margin-left: 8px;
-  color: var(--accent);
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 800;
-}
-
-.moment-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  font-size: 14px;
-  line-height: 1.45;
-  transition: grid-template-rows var(--dur-drop-out) var(--ease-leave);
-}
-
-.moment.is-open .moment-body {
-  grid-template-rows: 1fr;
-  transition-duration: var(--dur-drop);
-  transition-timing-function: var(--ease-out);
-}
-
-.moment-copy {
-  min-height: 0;
-  overflow: hidden;
-  padding: 0 16px 14px;
-  opacity: 0;
-  clip-path: inset(0 0 100% 0);
-  transition:
-    opacity 120ms linear,
-    clip-path var(--dur-drop-out) var(--ease-leave);
-}
-
-.moment.is-open .moment-copy {
-  opacity: 1;
-  clip-path: inset(0);
-  transition:
-    opacity 160ms linear 40ms,
-    clip-path var(--dur-drop) var(--ease-out);
-}
-
-.moment.is-open .moment-copy > p {
-  animation: settle-in var(--dur-enter) var(--ease-out) both;
-}
-
-.moment.is-open .moment-copy > p:nth-child(2) { animation-delay: 30ms; }
-.moment.is-open .moment-copy > p:nth-child(3) { animation-delay: 60ms; }
-.moment.is-open .moment-copy > p:nth-child(4) { animation-delay: 90ms; }
-
-.moment-body p {
-  margin-bottom: 8px;
-}
-
-.moment-window {
-  color: var(--quiet);
-}
 
 .history-block {
   margin-top: 8px;
@@ -2597,7 +2389,6 @@ input.field-control {
 }
 
 .card :focus-visible,
-.moment :focus-visible,
 .field-control:focus-visible,
 .list-row:focus-visible,
 .route-item:focus-visible {
@@ -2637,7 +2428,7 @@ input.field-control {
 }
 
 .stagger > * {
-  animation: settle-in var(--dur-list) var(--ease-out) both;
+  animation: fade-in var(--dur-list) var(--ease-out) both;
 }
 
 .stagger > *:nth-child(2) { animation-delay: 30ms; }
@@ -2669,33 +2460,35 @@ button:not(:disabled):active,
   scale: 0.97;
 }
 
-html.is-vt::view-transition-group(root),
-html.is-vt::view-transition-old(root),
-html.is-vt::view-transition-new(root) {
+html[data-route-transition]::view-transition-group(root),
+html[data-route-transition]::view-transition-old(root),
+html[data-route-transition]::view-transition-new(root),
+html[data-route-transition]::view-transition-group(pane),
+html[data-route-transition]::view-transition-group(screen) {
   animation: none;
   mix-blend-mode: normal;
 }
 
-html.is-vt::view-transition-old(pane),
-html.is-vt::view-transition-old(screen) {
-  animation: route-leave var(--dur-exit) var(--ease-leave) both;
+html[data-route-transition]::view-transition-old(pane),
+html[data-route-transition]::view-transition-old(screen) {
+  animation: fade-in var(--dur-exit) var(--ease-out) reverse both;
 }
 
-html.is-vt::view-transition-new(pane),
-html.is-vt::view-transition-new(screen) {
-  animation: route-enter var(--dur-enter) var(--ease-out) both;
+html[data-route-transition]::view-transition-new(pane),
+html[data-route-transition]::view-transition-new(screen) {
+  animation: fade-in var(--dur-enter) var(--ease-out) both;
 }
 
-html.is-vt::view-transition-group(shared-attempt) {
+html[data-route-transition]::view-transition-group(shared-attempt) {
   animation-duration: 340ms;
   animation-timing-function: var(--ease-in-out);
 }
 
-html.is-vt::view-transition-old(shared-attempt) {
+html[data-route-transition]::view-transition-old(shared-attempt) {
   display: none;
 }
 
-html.is-vt::view-transition-new(shared-attempt) {
+html[data-route-transition]::view-transition-new(shared-attempt) {
   animation: none;
 }
 

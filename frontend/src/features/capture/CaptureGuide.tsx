@@ -1,4 +1,8 @@
-import { createContext, useCallback, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useSession } from '../../app/session'
+import { attemptHref } from '../../entities/attempt'
+import type { CreateAttemptInput } from '../../shared/api'
 import { SvgIcon } from '../../shared/ui/SvgIcon'
 
 const GUIDE_KEY = 'beta-climb.capture-guide'
@@ -74,65 +78,86 @@ export function useSourceHandoff() {
   return { leaving, source, openSource, reset }
 }
 
-export function CaptureSource() {
+export function CaptureSource({ onBack }: { onBack: () => void }) {
+  const navigate = useNavigate()
+  const { startAttempt } = useSession()
   const [entered, setEntered] = useState(false)
   const galleryRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
+  const [selected, setSelected] = useState<CreateAttemptInput | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  const inFlight = useRef(false)
+  const mounted = useRef(true)
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setEntered(true))
-    return () => cancelAnimationFrame(id)
+    mounted.current = true
+    return () => { mounted.current = false; cancelAnimationFrame(id) }
   }, [])
 
-  function openGallery() {
-    const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif', '.mp4', '.mov', '.m4v', '.webm', '.mkv']
-    const picker = (window as Window & {
-      showOpenFilePicker?: (options: {
-        multiple?: boolean
-        excludeAcceptAllOption?: boolean
-        types?: { description?: string; accept: Record<string, string[]> }[]
-      }) => Promise<unknown>
-    }).showOpenFilePicker
-
-    if (picker) {
-      void picker({
-        multiple: false,
-        excludeAcceptAllOption: true,
-        types: [
-          {
-            description: 'Фото и видео',
-            accept: { 'application/octet-stream': extensions },
-          },
-        ],
-      }).catch(() => {
-        /* отмена выбора */
-      })
+  function selectVideo(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (file.type && !file.type.startsWith('video/') && file.type !== 'application/octet-stream') {
+      setError('Выбери видео попытки.')
       return
     }
+    setError('')
+    setSelected({ file, idempotencyKey: crypto.randomUUID() })
+  }
 
-    const input = galleryRef.current
-    if (!input) return
-    input.value = ''
-    input.click()
+  async function upload() {
+    if (!selected || inFlight.current) return
+    inFlight.current = true
+    setUploading(true)
+    setError('')
+    try {
+      const attempt = await startAttempt(selected)
+      if (mounted.current) navigate(attemptHref(attempt), { replace: true })
+    } catch (reason) {
+      if (mounted.current) setError(reason instanceof Error ? reason.message : 'Не удалось загрузить видео.')
+    } finally {
+      inFlight.current = false
+      if (mounted.current) setUploading(false)
+    }
   }
 
   return (
     <div className={entered ? 'capture-source is-in' : 'capture-source'}>
-      <button type="button" className="capture-source-gallery" onClick={openGallery}>
-        <SvgIcon src="/gallery.svg" size={100} />
-        <span>Из галереи</span>
-      </button>
-      <button type="button" className="capture-source-camera" onClick={() => cameraRef.current?.click()}>
-        <SvgIcon src="/Camera.svg" size={100} />
-        <span>Снять новое</span>
-      </button>
-      <input
-        ref={galleryRef}
-        type="file"
-        accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.mp4,.mov,.m4v,.webm,.mkv"
-        hidden
-      />
-      <input ref={cameraRef} type="file" accept="video/*" capture="environment" hidden />
+      {selected ? (
+        <div className="screen screen-center capture-upload">
+          <h1 className="page-title">{uploading ? 'Загружаем видео' : 'Видео попытки'}</h1>
+          <p>{selected.file.name}</p>
+          {error ? <p role="alert">{error}</p> : null}
+          <button type="button" className="btn btn-orange" disabled={uploading} onClick={() => void upload()}>
+            {uploading ? 'Идёт загрузка…' : error ? 'Повторить загрузку' : 'Отправить на разбор'}
+          </button>
+          <button type="button" className="btn btn-ghost" disabled={uploading} onClick={() => { setError(''); setSelected(null) }}>
+            Выбрать другое видео
+          </button>
+        </div>
+      ) : <>
+        <button type="button" className="capture-back btn-text" onClick={onBack}>Назад</button>
+        {error ? <p role="alert" className="capture-file-error">{error}</p> : null}
+        <button type="button" className="capture-source-gallery" onClick={() => galleryRef.current?.click()}>
+          <SvgIcon src="/gallery.svg" size={100} />
+          <span>Из галереи</span>
+        </button>
+        <button type="button" className="capture-source-camera" onClick={() => cameraRef.current?.click()}>
+          <SvgIcon src="/Camera.svg" size={100} />
+          <span>Снять новое</span>
+        </button>
+        <input
+          ref={galleryRef}
+          type="file"
+          accept="video/*,.mp4,.mov,.m4v,.webm,.mkv"
+          onChange={selectVideo}
+          hidden
+        />
+        <input ref={cameraRef} type="file" accept="video/*" capture="environment" onChange={selectVideo} hidden />
+      </>}
     </div>
   )
 }
@@ -196,7 +221,7 @@ export function CaptureGuide({ onLeave }: { onDone: () => void; onLeave: () => v
           Далее
         </button>
       </nav>
-      {handoff.source ? <CaptureSource /> : null}
+      {handoff.source ? <CaptureSource onBack={handoff.reset} /> : null}
     </div>
   )
 }

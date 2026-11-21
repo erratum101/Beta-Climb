@@ -20,7 +20,7 @@ export interface AthleteProfile {
 
 export type AttemptResult = 'sent' | 'failed' | 'unknown'
 
-export type AnalysisStatus = 'processing' | 'ready' | 'rejected'
+export type AnalysisStatus = 'processing' | 'ready' | 'limited' | 'rejected' | 'failed'
 
 export type AnalysisStage = 'holds' | 'movement' | 'rules' | 'done'
 
@@ -28,6 +28,7 @@ export interface RouteHold {
   id: string
   x: number
   y: number
+  polygon?: [number, number][]
 }
 
 export type MomentCategory = 'feet' | 'body' | 'sequence' | 'balance' | 'setup'
@@ -43,7 +44,30 @@ export interface AnalysisMoment {
   happened: string
   action: string
   primary: boolean
-  improved?: boolean
+  holdIds?: string[]
+  sources?: { title: string; url: string }[]
+}
+
+export interface Attempt {
+  id: string
+  createdAt: string
+  fileName: string
+  gradeLabel?: string | null
+  discipline: Discipline
+  result: AttemptResult
+  durationSec: number
+  status: AnalysisStatus
+  stage: AnalysisStage
+  rejectReason?: string
+  mediaUrl?: string
+  thumbnailUrl?: string
+  limitations?: string[]
+  holds: RouteHold[]
+  route?: { status: 'unknown' | 'hypothesis'; color?: string | null; holdIds?: string[] }
+  moments: AnalysisMoment[]
+  primaryAction: string
+  previousAttemptId?: string
+  change?: MovementChange
 }
 
 export interface MovementChange {
@@ -54,31 +78,9 @@ export interface MovementChange {
   note: string
 }
 
-export interface Attempt {
-  id: string
-  createdAt: string
-  fileName: string
-  gradeLabel: string
-  discipline: Discipline
-  result: AttemptResult
-  durationSec: number
-  status: AnalysisStatus
-  stage: AnalysisStage
-  rejectReason?: string
-  wallVariant: number
-  holds: RouteHold[]
-  moments: AnalysisMoment[]
-  primaryAction: string
-  previousAttemptId?: string
-  change?: MovementChange
-}
-
 export interface CreateAttemptInput {
-  fileName?: string
-  previousAttemptId?: string
-  reject?: boolean
-  gradeLabel: string
-  discipline: Discipline
+  file: File
+  idempotencyKey: string
 }
 
 export interface ClimbApi {
@@ -87,7 +89,5 @@ export interface ClimbApi {
   listAttempts(): Promise<Attempt[]>
   getAttempt(id: string): Promise<Attempt | null>
   createAttempt(input: CreateAttemptInput): Promise<Attempt>
-  loadDemo(): Promise<void>
   reset(): Promise<void>
-  subscribe(listener: () => void): () => void
 }

@@ -1,4 +1,4 @@
-export { climbApi } from './climbApi'
+export { attemptMediaUrl, climbApi } from './climbApi'
 export { endpoints } from './endpoints'
 export type {
   AnalysisMoment,

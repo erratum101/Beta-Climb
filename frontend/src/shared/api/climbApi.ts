@@ -1,4 +1,3 @@
-import { mockClimbApi } from './mockClient'
 import { endpoints } from './endpoints'
 import type { AthleteProfile, ClimbApi } from './types'
 
@@ -11,14 +10,22 @@ interface SavedProfile {
 
 async function request(url: string, options?: RequestInit): Promise<Response> {
   try {
-    return await fetch(url, options)
+    return await fetch(url, { credentials: 'same-origin', ...options })
   } catch {
     throw new Error('Не удалось связаться с сервером. Проверь соединение и попробуй ещё раз.')
   }
 }
 
+function forProfile(url: string, profileId: string) {
+  return `${url}?${new URLSearchParams({ profileId })}`
+}
+
+export function attemptMediaUrl(id: string) {
+  const profileId = localStorage.getItem(PROFILE_ID_KEY)
+  return profileId ? forProfile(`${endpoints.attempt(id)}/media`, profileId) : undefined
+}
+
 export const climbApi: ClimbApi = {
-  ...mockClimbApi,
   async getProfile() {
     const id = localStorage.getItem(PROFILE_ID_KEY)
     if (!id) return null
@@ -48,6 +55,34 @@ export const climbApi: ClimbApi = {
   },
   async reset() {
     localStorage.removeItem(PROFILE_ID_KEY)
-    await mockClimbApi.reset()
+  },
+  async listAttempts() {
+    const id = localStorage.getItem(PROFILE_ID_KEY)
+    if (!id) return []
+    const response = await request(forProfile(endpoints.attempts, id))
+    if (!response.ok) throw new Error('Не удалось загрузить историю попыток.')
+    return response.json()
+  },
+  async getAttempt(id) {
+    const profileId = localStorage.getItem(PROFILE_ID_KEY)
+    if (!profileId) return null
+    const response = await request(forProfile(endpoints.attempt(id), profileId))
+    if (response.status === 404) return null
+    if (!response.ok) throw new Error('Не удалось обновить разбор.')
+    return response.json()
+  },
+  async createAttempt({ file, idempotencyKey }) {
+    const profileId = localStorage.getItem(PROFILE_ID_KEY)
+    if (!profileId) throw new Error('Для загрузки видео нужен профиль.')
+    const body = new FormData()
+    body.append('profileId', profileId)
+    body.append('file', file)
+    const response = await request(endpoints.attempts, {
+      method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body,
+    })
+    if (response.status === 413) throw new Error('Видео слишком большое. Выбери более короткую запись.')
+    if ([400, 415, 422].includes(response.status)) throw new Error('Сервер не принял файл. Проверь, что выбрано видео попытки.')
+    if (!response.ok) throw new Error('Загрузить видео не удалось. Попробуй ещё раз.')
+    return response.json()
   },
 }

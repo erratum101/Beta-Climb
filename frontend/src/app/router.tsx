@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Navigate, Outlet, Route, Routes, useLocation, useOutlet } from 'react-router-dom'
 import { useSession } from './session'
 import { CAPTURE_GUIDE_STEPS, CaptureGuideBody, CaptureSource, HomeGuideContext, useSourceHandoff } from '../features/capture/CaptureGuide'
 import { BottomNav } from '../shared/ui/BottomNav'
@@ -28,23 +28,25 @@ function RequireProfile() {
 
 function TabsLayout() {
   const location = useLocation()
-  const navigate = useNavigate()
+  const outlet = useOutlet()
   const [guideOpen, setGuideOpen] = useState(false)
   const [guideStep, setGuideStep] = useState(0)
   const sourceHandoff = useSourceHandoff()
-  const [fromSplash] = useState(() => {
-    const flagged = sessionStorage.getItem(SPLASH_ENTER_KEY) === '1'
-    if (flagged) sessionStorage.removeItem(SPLASH_ENTER_KEY)
-    return flagged || Boolean((location.state as { fromSplash?: boolean } | null)?.fromSplash)
-  })
-  const [splashEnter, setSplashEnter] = useState(fromSplash)
+  const [splashPath, setSplashPath] = useState(() =>
+    sessionStorage.getItem(SPLASH_ENTER_KEY) === '1' ? location.pathname : null,
+  )
+  const splashEnter = splashPath === location.pathname
 
   useEffect(() => {
-    if (!fromSplash) return
-    navigate(location.pathname, { replace: true, state: null })
-    const timer = window.setTimeout(() => setSplashEnter(false), 1100)
+    if (splashPath === null) return
+    sessionStorage.removeItem(SPLASH_ENTER_KEY)
+    if (location.pathname !== splashPath) {
+      setSplashPath(null)
+      return
+    }
+    const timer = window.setTimeout(() => setSplashPath(null), 1100)
     return () => window.clearTimeout(timer)
-  }, [fromSplash, location.pathname, navigate])
+  }, [splashPath, location.pathname])
 
   useEffect(() => {
     setGuideOpen(false)
@@ -93,8 +95,8 @@ function TabsLayout() {
       <div className={shellClass}>
         <div className="app-field" inert={sourceHandoff.leaving}>
           <div className={guide.open ? 'field-stage is-guide' : 'field-stage'}>
-            <RouteTransition transitionKey={location.pathname} animate={!fromSplash} name="pane">
-              <Outlet />
+            <RouteTransition transitionKey={location.pathname} animate={!splashEnter} name="pane">
+              {outlet}
             </RouteTransition>
             <div className="home-guide" aria-hidden={!guide.open} inert={!guide.open}>
               <CaptureGuideBody step={guide.step} />
@@ -104,7 +106,7 @@ function TabsLayout() {
         <div inert={sourceHandoff.leaving}>
           <BottomNav guide={guide} />
         </div>
-        {sourceHandoff.source ? <CaptureSource /> : null}
+        {sourceHandoff.source ? <CaptureSource onBack={sourceHandoff.reset} /> : null}
       </div>
     </HomeGuideContext.Provider>
   )
@@ -119,20 +121,15 @@ export function AppRouter() {
   const location = useLocation()
   const kind = useClientKind()
   const key = routeTransitionKey(location.pathname)
-  const fromSplash = Boolean((location.state as { fromSplash?: boolean } | null)?.fromSplash)
-  const skipTabsEnter = useRef(false)
 
   if (kind === 'desktop' || (kind === 'mobile' && location.pathname === '/')) {
     return <LandingPage mode={kind === 'desktop' ? 'desktop' : 'mobile'} />
   }
 
-  if ((fromSplash || sessionStorage.getItem(SPLASH_ENTER_KEY) === '1') && key === 'tabs') {
-    skipTabsEnter.current = true
-  }
-  if (key !== 'tabs') skipTabsEnter.current = false
+  const enteringFromSplash = key === 'tabs' && sessionStorage.getItem(SPLASH_ENTER_KEY) === '1'
 
   return (
-    <RouteTransition transitionKey={key} animate={!(key === 'tabs' && (fromSplash || skipTabsEnter.current))} name="screen">
+    <RouteTransition transitionKey={key} animate={!enteringFromSplash} name="screen">
       <Routes location={location}>
         <Route path="/" element={<SplashPage />} />
         <Route path="/app" element={<SplashPage />} />

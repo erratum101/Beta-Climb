@@ -12,7 +12,7 @@ interface SessionValue {
   setNight: (next: boolean | ((current: boolean) => boolean)) => void
   saveProfile: (profile: AthleteProfile) => Promise<void>
   startAttempt: (input: CreateAttemptInput) => Promise<Attempt>
-  loadDemo: () => Promise<void>
+  statusError: boolean
   resetLocal: () => Promise<void>
 }
 
@@ -117,6 +117,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [profile, setProfile] = useState<AthleteProfile | null>(null)
   const [attempts, setAttempts] = useState<Attempt[]>([])
+  const [statusError, setStatusError] = useState(false)
   const [night, setNightState] = useState(() => {
     const on = readNightPreference()
     applyNightTheme(on)
@@ -144,27 +145,46 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let alive = true
-    let ticket = 0
-    const refresh = () => {
-      const current = ++ticket
-      void Promise.all([climbApi.getProfile(), climbApi.listAttempts()]).then(([nextProfile, nextAttempts]) => {
-        if (!alive || current !== ticket) return
+    const refresh = async () => {
+      try {
+        const nextProfile = await climbApi.getProfile()
+        const nextAttempts = nextProfile ? await climbApi.listAttempts() : []
+        if (!alive) return
         setProfile(nextProfile)
         setAttempts(nextAttempts)
         setLoadError(null)
         setReady(true)
-      }).catch((error: unknown) => {
-        if (!alive || current !== ticket) return
-        setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить профиль.')
-      })
+      } catch (error) {
+        if (alive) setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить данные.')
+      }
     }
-    refresh()
-    const unsubscribe = climbApi.subscribe(refresh)
+    void refresh()
     return () => {
       alive = false
-      unsubscribe()
     }
   }, [])
+
+  const pending = attempts.filter((attempt) => attempt.status === 'processing').map((attempt) => attempt.id).join(',')
+  useEffect(() => {
+    setStatusError(false)
+    if (!pending) return
+    let active = true
+    let timer: number
+    async function poll() {
+      const results = await Promise.allSettled(pending.split(',').map((id) => climbApi.getAttempt(id)))
+      if (!active) return
+      setStatusError(results.some((result) => result.status === 'rejected'))
+      const updates = new Map<string, Attempt | null>()
+      const ids = pending.split(',')
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') updates.set(ids[index], result.value)
+      })
+      setAttempts((items) => items.flatMap((item) => updates.has(item.id) ? updates.get(item.id) ?? [] : item))
+      timer = window.setTimeout(poll, 2500)
+    }
+    timer = window.setTimeout(poll, 2000)
+    return () => { active = false; window.clearTimeout(timer) }
+  }, [pending])
 
   const value: SessionValue = {
     ready,
@@ -180,11 +200,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     saveProfile: async (next) => {
       const saved = { ...next, nickname: next.nickname.trim() }
       await climbApi.saveProfile(saved)
+      if (!profile) setAttempts(await climbApi.listAttempts())
       setProfile(saved)
     },
-    startAttempt: (input) => climbApi.createAttempt(input),
-    loadDemo: () => climbApi.loadDemo(),
-    resetLocal: () => climbApi.reset(),
+    startAttempt: async (input) => {
+      const attempt = await climbApi.createAttempt(input)
+      setAttempts((items) => [attempt, ...items.filter((item) => item.id !== attempt.id)])
+      return attempt
+    },
+    statusError,
+    resetLocal: async () => {
+      await climbApi.reset()
+      setProfile(null)
+      setAttempts([])
+    },
   }
 
   return (

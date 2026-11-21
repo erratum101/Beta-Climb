@@ -19,9 +19,9 @@ export function ComparePage() {
       {!previous || !attempt.change ? (
         <article className="card">
           <p className="card-kicker">Пока не с чем сравнить</p>
-          <p className="lead">Снимите следующую попытку на эту трассу.</p>
-          <button type="button" className="btn btn-orange" onClick={() => navigate(`/attempt/new?from=${attempt.id}`)}>
-            Попробовать ещё раз
+          <p className="lead">Для этой попытки нет сопоставленных эпизодов.</p>
+          <button type="button" className="btn btn-orange" onClick={() => navigate(`/attempt/${attempt.id}`)}>
+            К разбору
           </button>
         </article>
       ) : (
@@ -41,9 +41,6 @@ export function ComparePage() {
           <p>{attempt.change.note}</p>
         </article>
       )}
-      <p className="template-note">
-        Это сравнение одного движения между двумя попытками. Общей оценки техники здесь нет.
-      </p>
     </div>
   )
 }

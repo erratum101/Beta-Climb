@@ -15,25 +15,20 @@ export function RouteTransition({
 }: {
   transitionKey: string
   animate?: boolean
-  name?: string
+  name: 'screen' | 'pane'
   children: ReactNode
 }) {
-  const childrenRef = useRef(children)
-  childrenRef.current = children
   const [shownKey, setShownKey] = useState(transitionKey)
-  const [shownNode, setShownNode] = useState(children)
+  const previousView = useRef(children)
   const live = shownKey === transitionKey
+
+  // A group of tabs keeps the same outer key while its visible route changes.
+  useLayoutEffect(() => {
+    if (live) previousView.current = children
+  }, [live, children])
 
   useLayoutEffect(() => {
     if (shownKey === transitionKey) return
-    const nextKey = transitionKey
-    const nextNode = childrenRef.current
-    const commit = () => {
-      flushSync(() => {
-        setShownKey(nextKey)
-        setShownNode(nextNode)
-      })
-    }
     const canTransition =
       animate &&
       !prefersReducedMotion() &&
@@ -41,29 +36,32 @@ export function RouteTransition({
       !transitionLock
 
     if (!canTransition) {
-      commit()
+      setShownKey(transitionKey)
       return
     }
 
     transitionLock = true
-    document.documentElement.classList.add('is-vt')
+    const root = document.documentElement
+    root.dataset.routeTransition = name
+    let current = true
     const transition = document.startViewTransition(() => {
-      commit()
+      if (current) flushSync(() => setShownKey(transitionKey))
     })
     transition.finished.finally(() => {
       transitionLock = false
-      document.documentElement.classList.remove('is-vt')
+      delete root.dataset.routeTransition
     })
-  }, [animate, shownKey, transitionKey])
+    return () => { current = false }
+  }, [animate, name, shownKey, transitionKey])
 
   return (
-    <div className={animate ? 'route-transition' : 'route-transition is-static'}>
+    <div className="route-transition">
       <div
         className="route-enter-layer"
         key={shownKey}
-        style={name ? { viewTransitionName: name } : undefined}
+        data-route-layer={name}
       >
-        {live ? children : shownNode}
+        {live ? children : previousView.current}
       </div>
     </div>
   )

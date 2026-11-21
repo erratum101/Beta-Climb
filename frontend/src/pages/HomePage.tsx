@@ -4,7 +4,7 @@ import { useSession } from '../app/session'
 import { attemptHref, attemptStatusLabel, dayKey, formatSeconds, plural } from '../entities/attempt'
 import { HomeGuideContext } from '../features/capture/CaptureGuide'
 import { sharedNavigate } from '../shared/ui/motion'
-import { WallThumb } from '../shared/ui/WallThumb'
+import { SvgIcon } from '../shared/ui/SvgIcon'
 import { Wordmark } from '../shared/ui/Wordmark'
 
 export function HomePage() {
@@ -13,8 +13,6 @@ export function HomePage() {
   const recent = [...attempts].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 4)
   const todayKey = dayKey(new Date().toISOString())
   const today = attempts.filter((attempt) => dayKey(attempt.createdAt) === todayKey)
-  const followed = today.filter((attempt) => attempt.change?.improved).length
-  const routes = new Set(today.map((attempt) => attempt.gradeLabel)).size
 
   const guide = useContext(HomeGuideContext)
 
@@ -38,11 +36,6 @@ export function HomePage() {
       {today.length > 0 ? (
         <p className="summary">
           {plural(today.length, 'попытка', 'попытки', 'попыток')}
-          {' · '}
-          {plural(routes, 'трасса', 'трассы', 'трасс')}
-          {followed > 0
-            ? ` · ${plural(followed, 'рекомендация выполнена', 'рекомендации выполнены', 'рекомендаций выполнено')}`
-            : ''}
         </p>
       ) : (
         <p className="summary">Сними попытку и получи разбор по моментам</p>
@@ -55,19 +48,15 @@ export function HomePage() {
             className="list-row"
             onClick={(event) => sharedNavigate(navigate, attemptHref(attempt), event.currentTarget)}
           >
-            <span className="thumb-slot">
-              <WallThumb variant={attempt.wallVariant} />
+            <span className="thumb-slot attempt-thumb">
+              <SvgIcon src="/Camera.svg" size={24} />
             </span>
             <span>
               <strong>
-                {attempt.gradeLabel} · {attemptStatusLabel(attempt)}
+                {attempt.fileName}
               </strong>
               <em>
-                {attempt.status === 'processing'
-                  ? 'Определяем трассу и движение'
-                  : attempt.status === 'rejected'
-                    ? 'Кадр не подошёл для разбора'
-                    : attempt.primaryAction}
+                {attemptStatusLabel(attempt)}
               </em>
             </span>
             {attempt.durationSec > 0 ? <small>{formatSeconds(attempt.durationSec)}</small> : null}

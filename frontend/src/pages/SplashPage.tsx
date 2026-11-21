@@ -23,7 +23,7 @@ export function SplashPage() {
     const timer = window.setTimeout(() => {
       if (profile) {
         sessionStorage.setItem(SPLASH_ENTER_KEY, '1')
-        navigate('/climbs', { replace: true, state: { fromSplash: true } })
+        navigate('/climbs', { replace: true })
       } else {
         navigate('/onboarding', { replace: true })
       }

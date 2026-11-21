@@ -1,122 +1,195 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { useSession } from '../app/session'
-import { RESULT_LABEL, formatSeconds, plural } from '../entities/attempt'
-import { AttemptStage, usePlayback } from '../features/analysis/AttemptStage'
-import type { AnalysisMoment } from '../shared/api'
+import { AttemptStage } from '../features/analysis/AttemptStage'
+import { climbApi, type AnalysisMoment, type Attempt } from '../shared/api'
 import { ScreenHeader } from '../shared/ui/ScreenHeader'
+import { ChipButton } from '../shared/ui/ChipButton'
+import { IconChevron, IconEye, IconPlus } from '../shared/ui/icons'
+import '../features/analysis/review.css'
 
 export function AnalysisPage() {
   const { id } = useParams()
+  return id ? <AnalysisDetail key={id} id={id} /> : <Navigate to="/climbs" replace />
+}
+
+function AnalysisDetail({ id }: { id: string }) {
+  const [attempt, setAttempt] = useState<Attempt | null>()
+  const [error, setError] = useState('')
+  const [retry, setRetry] = useState(0)
+  useEffect(() => {
+    let active = true
+    setError('')
+    void climbApi.getAttempt(id).then((data) => { if (active) setAttempt(data) }).catch((reason) => {
+      if (active) setError(reason instanceof Error ? reason.message : 'Не удалось загрузить разбор.')
+    })
+    return () => { active = false }
+  }, [id, retry])
+  if (error) return (
+    <div className="screen screen-center">
+      <p role="alert">{error}</p>
+      <button className="btn btn-light" onClick={() => setRetry((value) => value + 1)}>Попробовать снова</button>
+    </div>
+  )
+  if (attempt === undefined) return <div className="screen screen-center" role="status">Загружаем разбор…</div>
+  if (attempt === null) return <Navigate to="/climbs" replace />
+  if (attempt.status !== 'ready' && attempt.status !== 'limited') return <Navigate to={`/attempt/${id}/processing`} replace />
+  return <Analysis attempt={attempt} />
+}
+
+const ROUTE_COLORS: Record<string, [string, string]> = {
+  red: ['Красный', 'var(--hold-red)'], orange: ['Оранжевый', 'var(--accent)'], yellow: ['Жёлтый', '#f5c83e'],
+  green: ['Зелёный', 'var(--hold-green)'], cyan: ['Голубой', '#51c4da'], blue: ['Синий', '#427be4'],
+  purple: ['Фиолетовый', '#a16bda'], pink: ['Розовый', 'var(--hold-pink)'],
+}
+
+function timestamp(seconds: number) {
+  const tenths = Math.round(seconds * 10)
+  const whole = Math.floor(tenths / 10)
+  const fraction = tenths % 10
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}${fraction ? ',' + fraction : ''}`
+}
+
+function Analysis({ attempt }: { attempt: Attempt }) {
   const navigate = useNavigate()
-  const { attempts, ready } = useSession()
-  const attempt = attempts.find((item) => item.id === id)
-  const initial = attempt?.moments.find((moment) => moment.primary)?.timeSec ?? attempt?.moments[0]?.timeSec ?? 0
-  const playback = usePlayback(attempt?.durationSec || 1, initial)
-  const [opened, setOpened] = useState<string | null>(attempt?.moments.find((moment) => moment.primary)?.id ?? null)
+  const moments = [...attempt.moments].sort((a, b) => a.startSec - b.startSec)
+  const initial = moments.find((moment) => moment.primary) ?? moments[0]
+  const [selectedId, setSelectedId] = useState(initial?.id)
+  const selected = moments.find((moment) => moment.id === selectedId)
+  const [time, setTime] = useState(initial?.timeSec ?? 0)
+  const [routePreview, setRoutePreview] = useState(false)
+  const [mediaReady, setMediaReady] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const seekTarget = useRef(time)
+  const episodeEnd = useRef<number | null>(null)
+  const previousTime = useRef(0)
+  const route = attempt.route?.status === 'hypothesis' ? attempt.route : undefined
+  const routeColor = route?.color ? ROUTE_COLORS[route.color] : undefined
+  const current = moments.find((m) => m.id === selectedId && time >= m.startSec && time < m.endSec)
+    ?? moments.find((m) => time >= m.startSec && time < m.endSec)
+  const holdIds = (routePreview && time <= 0.05 ? route?.holdIds : current?.holdIds) ?? []
 
-  if (!ready) return null
-  if (!attempt) return <Navigate to="/climbs" replace />
-  if (attempt.status !== 'ready') return <Navigate to={`/attempt/${attempt.id}/processing`} replace />
-
-  const primary = attempt.moments.find((moment) => moment.primary)
-  const others = attempt.moments.filter((moment) => !moment.primary)
-
-  function openMoment(moment: AnalysisMoment) {
-    playback.seek(moment.timeSec)
-    setOpened(moment.id)
+  function seek(seconds: number) {
+    seekTarget.current = seconds
+    const player = videoRef.current
+    if (player && player.readyState >= 1) {
+      player.currentTime = Number.isFinite(player.duration) ? Math.min(player.duration, seconds) : seconds
+    }
+    setTime(seconds)
   }
 
+  function openMoment(moment: AnalysisMoment) {
+    setRoutePreview(false)
+    setSelectedId(moment.id)
+    episodeEnd.current = moment.endSec
+    seek(moment.timeSec)
+    const player = videoRef.current
+    if (player) {
+      revealVideo(player)
+      void player.play().catch(() => { episodeEnd.current = null })
+    }
+  }
+
+  function playbackTime(seconds: number) {
+    setTime(seconds)
+    if (episodeEnd.current !== null || routePreview || videoRef.current?.paused) return
+    const next = moments.find((m) => seconds >= m.startSec && seconds < m.endSec)
+    if (next) setSelectedId(next.id)
+  }
+
+  function scrub(seconds: number) {
+    setRoutePreview(false)
+    episodeEnd.current = null
+    seek(seconds)
+    const next = moments.find((m) => seconds >= m.startSec && seconds < m.endSec)
+    if (next) setSelectedId(next.id)
+  }
+
+  function toggleRoute() {
+    const player = videoRef.current
+    if (!player || player.readyState < 1) return
+    episodeEnd.current = null
+    player.pause()
+    if (routePreview) {
+      seek(previousTime.current)
+    } else {
+      previousTime.current = player.currentTime
+      seek(0)
+      revealVideo(player)
+    }
+    setRoutePreview(!routePreview)
+  }
+
+  const limits = attempt.limitations?.length ? attempt.limitations
+    : attempt.status === 'limited' ? ['Данных хватило для частичного разбора.'] : []
+  const colorStyle = routeColor ? { '--review-route-color': routeColor[1] } as CSSProperties : undefined
+
   return (
-    <div className="screen">
-      <ScreenHeader title="Разбор" onBack={() => navigate('/climbs')} />
-      <AttemptStage
-        attempt={attempt}
-        time={playback.time}
-        playing={playback.playing}
-        onTime={playback.seek}
-        onToggle={playback.toggle}
-      />
-      <div className="meta-row stagger">
-        <span className="pill">Трасса {attempt.gradeLabel}</span>
-        <span className="pill">{RESULT_LABEL[attempt.result]}</span>
-        <span className="pill">{formatSeconds(attempt.durationSec)}</span>
+    <main className="screen review-screen" style={colorStyle}>
+      <div className="review-content">
+        <ScreenHeader title="Разбор попытки" onBack={() => navigate('/climbs')} trailing={
+          <button type="button" className="icon-btn" onClick={() => navigate('/attempt/new')}
+            aria-label="Добавить попытку" title="Добавить попытку"><IconPlus size={20} /></button>
+        } />
+        <div className="card review-sheet">
+          <AttemptStage attempt={attempt} videoRef={videoRef} episodeEnd={episodeEnd} time={time} holdIds={holdIds}
+            onTime={playbackTime} onResume={() => setRoutePreview(false)} onScrub={scrub}
+            onMediaReady={(ready) => {
+              setMediaReady(ready)
+              if (ready) seek(seekTarget.current)
+              else setRoutePreview(false)
+            }}>
+            <section className="review-panel" aria-label="Разбор эпизодов">
+              {selected ? <>
+                <div className="review-checkpoints" role="group" aria-label="Эпизоды по времени">
+                  <span aria-hidden="true">Эпизоды</span>
+                  {moments.map((moment) => (
+                    <ChipButton key={moment.id} className="review-checkpoint"
+                      selected={selected.id === moment.id} aria-controls="review-note"
+                      aria-label={`Эпизод ${timestamp(moment.timeSec)}. ${moment.title}`}
+                      onClick={() => openMoment(moment)}>
+                      {timestamp(moment.timeSec)}
+                    </ChipButton>
+                  ))}
+                </div>
+                <article className="review-note" id="review-note" key={selected.id}>
+                  <h2>{selected.title}</h2>
+                  {selected.action && <div className="review-action">
+                    <h3>Что попробовать</h3>
+                    <p>{selected.action}</p>
+                  </div>}
+                  {(selected.happened || selected.problem) && <details className="review-evidence">
+                    <summary>Разобрать движение <IconChevron /></summary>
+                    {selected.happened && <div><h3>Что видно на записи</h3><p>{selected.happened}</p></div>}
+                    {selected.problem && <div><h3>Возможное объяснение</h3><p>{selected.problem}</p></div>}
+                  </details>}
+                </article>
+              </> : <p className="review-empty">На этой записи не удалось уверенно выделить эпизод для совета.</p>}
+              {routeColor && <div className="review-route">
+                <div><span>Вероятный цвет трассы</span>
+                  <strong><i aria-hidden="true" />{routeColor[0]}</strong>
+                </div>
+                {Boolean(route?.holdIds?.length) && <button type="button" className="filter-btn review-route-button"
+                  disabled={!mediaReady} aria-pressed={routePreview} onClick={toggleRoute}
+                  aria-label={routePreview ? 'Скрыть зацепки и вернуться к эпизоду' : 'Показать зацепки на первом кадре'}
+                  title={routePreview ? 'Скрыть зацепки' : 'Показать зацепки на первом кадре'}>
+                  <IconEye crossed={routePreview} />
+                </button>}
+              </div>}
+            </section>
+          </AttemptStage>
+          {attempt.previousAttemptId && attempt.change && <button type="button" className="review-compare"
+            onClick={() => navigate(`/compare/${attempt.id}`)}>Сравнить попытки</button>}
+          {limits.length > 0 && <details className="review-limits">
+            <summary>Ограничения разбора <IconChevron /></summary>
+            <ul>{limits.map((reason) => <li key={reason}>{reason}</li>)}</ul>
+          </details>}
+        </div>
       </div>
-      <p className="section-label">
-        Найдено {plural(attempt.moments.length, 'момент', 'момента', 'моментов')} для разбора
-      </p>
-      {primary ? (
-        <article className="card">
-          <p className="card-kicker">Главное в следующей попытке</p>
-          <p className="lead">{attempt.primaryAction}</p>
-        </article>
-      ) : null}
-      {attempt.change ? (
-        <article className="card delta">
-          <p className="card-kicker">Что изменилось</p>
-          <p className="lead">{attempt.change.title}: {attempt.change.after.toLowerCase()}</p>
-          <p>{attempt.change.note}</p>
-        </article>
-      ) : null}
-      <div className="stack stagger">
-        {primary ? <MomentCard moment={primary} current={playback.time} open={opened === primary.id} onOpen={() => openMoment(primary)} /> : null}
-        {others.length > 0 ? <p className="section-label">Другие наблюдения</p> : null}
-        {others.map((moment) => (
-          <MomentCard
-            key={moment.id}
-            moment={moment}
-            current={playback.time}
-            open={opened === moment.id}
-            onOpen={() => openMoment(moment)}
-          />
-        ))}
-      </div>
-      <div className="actions">
-        <button type="button" className="btn btn-light" onClick={() => navigate(`/attempt/new?from=${attempt.id}`)}>
-          Попробовать ещё раз
-        </button>
-        {attempt.previousAttemptId ? (
-          <button type="button" className="btn btn-ghost" onClick={() => navigate(`/compare/${attempt.id}`)}>
-            Сравнить попытки
-          </button>
-        ) : null}
-      </div>
-      <p className="template-note">
-        Текст привязан к секундам как в готовом разборе. Это пример содержания, а не результат модели.
-      </p>
-    </div>
+    </main>
   )
 }
 
-function MomentCard({
-  moment,
-  current,
-  open,
-  onOpen,
-}: {
-  moment: AnalysisMoment
-  current: number
-  open: boolean
-  onOpen: () => void
-}) {
-  const active = current >= moment.startSec && current <= moment.endSec
-  return (
-    <article className={['moment', active ? 'is-current' : '', open ? 'is-open' : ''].filter(Boolean).join(' ')}>
-      <button type="button" className="moment-top" onClick={onOpen}>
-        <span>
-          <strong>{moment.title}</strong>
-          {moment.improved ? <em>изменилось</em> : null}
-        </span>
-        <b>{formatSeconds(moment.timeSec)}</b>
-      </button>
-      <div className="moment-body" inert={open ? undefined : true}>
-        <div className="moment-copy">
-          <p><b>Что не так.</b> {moment.problem}</p>
-          <p><b>Что произошло.</b> {moment.happened}</p>
-          <p><b>Что сделать.</b> {moment.action}</p>
-          <p className="moment-window">{formatSeconds(moment.startSec)} – {formatSeconds(moment.endSec)}</p>
-        </div>
-      </div>
-    </article>
-  )
+function revealVideo(player: HTMLVideoElement) {
+  const picture = player.getBoundingClientRect()
+  if (picture.top < 0 || picture.bottom > window.innerHeight) player.scrollIntoView({ block: 'nearest' })
 }

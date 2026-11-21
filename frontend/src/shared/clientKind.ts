@@ -27,6 +27,12 @@ export function readClientKind(): ClientKind {
     window.matchMedia('(display-mode: standalone)').matches ||
     (handheld && window.matchMedia('(display-mode: fullscreen)').matches)
   const fromHome = handheld && new URLSearchParams(window.location.search).get('source') === 'home'
+  if (!handheld) {
+    if (window.location.pathname === '/app' && new URLSearchParams(window.location.search).get('source') === 'home') {
+      sessionStorage.setItem('beta-climb.desktop-app', '1')
+    }
+    if (window.location.pathname !== '/' && sessionStorage.getItem('beta-climb.desktop-app') === '1') return 'installed'
+  }
   if (standalone || displayMode || fromHome) return 'installed'
   if (handheld) return 'mobile'
   return 'desktop'

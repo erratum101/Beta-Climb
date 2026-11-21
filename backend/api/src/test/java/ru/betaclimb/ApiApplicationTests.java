@@ -52,8 +52,8 @@ class ApiApplicationTests {
     void appliesMigrationToPostgres() {
         assertThat(jdbcTemplate.queryForObject("select 1", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject(
-                "select count(*) from flyway_schema_history where version in ('1', '2', '3', '4') and success", Integer.class
-        )).isEqualTo(4);
+                "select count(*) from flyway_schema_history where version in ('1', '2', '3', '4', '5') and success", Integer.class
+        )).isEqualTo(5);
         assertThat(jdbcTemplate.queryForObject("select current_schema()", String.class)).isEqualTo("betaclimb");
         assertThat(jdbcTemplate.queryForObject(
                 "select count(*) from pg_tables where schemaname = 'betaclimb' and tablename <> 'flyway_schema_history'",

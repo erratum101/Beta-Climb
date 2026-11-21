@@ -18,6 +18,17 @@ export function IconChevron() {
   )
 }
 
+export function IconEye({ crossed }: { crossed: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="2.8" />
+      {crossed && <path d="m3 3 18 18" />}
+    </svg>
+  )
+}
+
 export function IconHome() {
   return (
     <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">

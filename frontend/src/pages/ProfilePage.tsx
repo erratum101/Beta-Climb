@@ -28,9 +28,9 @@ export function OnboardingPage() {
   )
 }
 
-function sendRate(attempts: Attempt[]): number {
+function sendRate(attempts: Attempt[]): number | null {
   const scored = attempts.filter((item) => item.result === 'sent' || item.result === 'failed')
-  if (scored.length === 0) return 0
+  if (scored.length === 0) return null
   const sent = scored.filter((item) => item.result === 'sent').length
   return Math.round((sent / scored.length) * 100)
 }
@@ -147,9 +147,9 @@ export function ProfilePage() {
     <div className={night ? 'profile-view is-night' : 'profile-view'}>
       <h1>Профиль</h1>
       <div className="profile-cluster stagger">
-        <div className="profile-bubble profile-rate" aria-label={`Доля удачных пролазов ${rate}%`}>
+        <div className="profile-bubble profile-rate" aria-label={rate === null ? 'Пока нет попыток с известным результатом' : `Доля удачных пролазов ${rate}%`}>
           <SvgIcon src="/male-climbing-icon.svg" size={28} />
-          <span>{rate}%</span>
+          <span>{rate === null ? '—' : `${rate}%`}</span>
         </div>
         <button type="button" className="profile-bubble profile-info" aria-label="Изменить профиль" onClick={() => setEditing(true)}>
           <InfoMark />
