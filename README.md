@@ -30,19 +30,19 @@ ffmpeg -version
 ffprobe -version
 ```
 
-В `--models-dir` передаётся папка с тремя файлами весов — `holds.pt`, `mobile_sam.pt` и `pose_landmarker_heavy.task`. Можно указать абсолютный путь к уже скачанной папке `web_services/ratpoc/assets/models`. Для новой копии проекта скрипт RatPoC скачает веса и три размеченных демонстрационных ролика. Адреса источников и контрольные суммы SHA-256 приведены в [манифесте](frontend/ratpoc/sources.json).
+В `MODELS_DIR` передаётся папка с тремя файлами весов — `holds.pt`, `mobile_sam.pt` и `pose_landmarker_heavy.task`. Можно указать абсолютный путь к уже скачанной папке `web_services/ratpoc/assets/models`. Для новой копии проекта скрипт RatPoC скачает веса и три размеченных демонстрационных ролика. Адреса источников и контрольные суммы SHA-256 приведены в [манифесте](frontend/ratpoc/sources.json).
 
 ```sh
 poetry run python ../../frontend/ratpoc/fetch_assets.py
 ```
 
-Запустите воркер из той же папки `backend/worker`. `PGSSLROOTCERT` указывает путь на хосте и заменяет путь контейнера в строке подключения. `--concurrency 1` ограничивает этот процесс одним одновременно исполняющимся этапом. На машине с достаточной памятью значение можно увеличить для обработки независимых задач.
+Запустите воркер из той же папки `backend/worker`. Все настройки воркер читает из окружения. `ENV_FILES` перечисляет dotenv-файлы через двоеточие, уже экспортированные переменные имеют приоритет. `PGSSLROOTCERT` указывает путь на хосте и заменяет путь контейнера в строке подключения. `CONCURRENCY=1` ограничивает этот процесс одним одновременно исполняющимся этапом. На машине с достаточной памятью значение можно увеличить для обработки независимых задач.
 
 ```sh
 DB_SCHEMA=betaclimb PGSSLROOTCERT="$HOME/.cloud-certs/root.crt" \
-  poetry run python -m core.worker \
-    --env ../../.env --env ../../docker/.env.managed \
-    --models-dir ../../frontend/ratpoc/assets/models --concurrency 1
+  ENV_FILES=../../.env:../../docker/.env.managed \
+  MODELS_DIR=../../frontend/ratpoc/assets/models CONCURRENCY=1 \
+  poetry run python -m core.worker
 ```
 
 ## Разработка с локальными PostgreSQL и S3
@@ -60,7 +60,7 @@ export S3__BUCKET_NAME=betaclimb S3__ACCESS_KEY=localtest S3__SECRET_KEY=localte
 ```
 
 3. Создайте бакет при первом запуске Moto. Из `backend/worker` выполните `poetry run python -c 'from service.storage import ObjectStorage; s = ObjectStorage(); s.client.create_bucket(Bucket=s.bucket)'`.
-4. Запустите Java API из `backend/api` командой `./gradlew bootRun` с JDK 25. Flyway подготовит локальную схему. Из `backend/worker` запустите `poetry run python -m core.worker --env ../../.env --models-dir ../../frontend/ratpoc/assets/models`. В этом режиме из корневого `.env` берутся настройки модели, а экспортированные переменные задают рабочие БД и бакет.
+4. Запустите Java API из `backend/api` командой `./gradlew bootRun` с JDK 25. Flyway подготовит локальную схему. Из `backend/worker` запустите `ENV_FILES=../../.env MODELS_DIR=../../frontend/ratpoc/assets/models poetry run python -m core.worker`. В этом режиме из корневого `.env` берутся настройки модели, а экспортированные переменные задают рабочие БД и бакет.
 5. В `frontend` выполните `npm ci`, затем `npm run dev -- --host 127.0.0.1`. Откройте [локальный интерфейс разработки](http://127.0.0.1:5173/app?source=home). Чтобы сменить хранилище, один и тот же адрес S3 и бакет нужно задать и API, и воркеру.
 
 ## Проверка в браузере
@@ -73,7 +73,7 @@ export S3__BUCKET_NAME=betaclimb S3__ACCESS_KEY=localtest S3__SECRET_KEY=localte
 
 ## Как изменить разбор
 
-Восемь этапов очереди описаны в [зависимостях видеоанализа](backend/worker/src/service/video/__init__.py) и [этапе генерации советов](backend/worker/src/core/stages.py). После нормализации видео могут параллельно выполняться поиск зацепок и отслеживание позы. Маски зацепок и координаты конечностей сопоставляются по времени. Затем воркер оценивает цвет трассы, собирает наблюдения за весь пролаз и передаёт их модели. Асинхронный [DBManager](backend/worker/src/database/manager.py) распределяет задачи через PostgreSQL, используя [типизированные модели SQLAlchemy](backend/worker/src/database/models.py). Структуру таблиц задают миграции Flyway, общие для Java API и воркера.
+Каждый из восьми этапов очереди — отдельная периодическая задача в [core/tasks](backend/worker/src/core/tasks). Класс этапа объявляет `inputs` — этапы, чьи результаты он читает, — и берёт из очереди только свои строки, когда все входы готовы. Общий цикл запуска задан в [IntervalTask](backend/worker/src/core/tasks/interval_task.py), захват строки, аренда и публикация — в [StageTask](backend/worker/src/core/tasks/stage_task.py), а зависимости воркера собирает [core/worker.py](backend/worker/src/core/worker.py). Период опроса и число параллельных циклов задаются для этапа через окружение, например `TRACK_POSE_TASK__PERIOD=2`. После нормализации видео могут параллельно выполняться поиск зацепок и отслеживание позы. Маски зацепок и координаты конечностей сопоставляются по времени. Затем воркер оценивает цвет трассы, собирает наблюдения за весь пролаз и передаёт их модели. Асинхронный [DBManager](backend/worker/src/database/manager.py) распределяет задачи через PostgreSQL, используя [типизированные модели SQLAlchemy](backend/worker/src/database/models.py). Структуру таблиц задают миграции Flyway, общие для Java API и воркера.
 
 Ожидания от тренера, ограничения ракурса и формат ответа задаёт [системный промпт](backend/worker/src/service/prompts/climbing_coach.ru.md). [Библиотека техники](backend/worker/src/service/knowledge/climbing.ru.json) содержит принципы и реестр публикаций. Для каждого принципа указаны фаза движения, условия применения, видимый признак, альтернативное объяснение и ограничения камеры. Можно добавить принцип и его источники в JSON без изменений в коде. LLM выбирает эпизод, интерпретацию и упражнение по данным конкретного видео. Идентификаторы принципов связывают объяснение с публикациями.
 

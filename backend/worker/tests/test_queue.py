@@ -12,12 +12,24 @@ import psycopg
 from psycopg import sql
 from sqlalchemy import inspect, make_url, select
 
-from core.stages import DEPENDENCIES, display_stage
+from core.tasks.build_feedback import BuildFeedbackTask
+from core.tasks.detect_holds import DetectHoldsTask
+from core.tasks.find_episodes import FindEpisodesTask
+from core.tasks.infer_route import InferRouteTask
+from core.tasks.match_contacts import MatchContactsTask
+from core.tasks.prepare_video import PrepareVideoTask
+from core.tasks.segment_holds import SegmentHoldsTask
+from core.tasks.track_pose import TrackPoseTask
+from database.enums import Stage, VideoStatus
 from database.manager import DBManager
+from database.settings import DBSettings
 from database.models import AthleteProfileModel, Base, TaskModel, VideoAnalysisCommentModel, VideoModel
 
 
 MIGRATIONS = Path(__file__).resolve().parents[2] / "migrations"
+STAGE_TASKS = (PrepareVideoTask, DetectHoldsTask, SegmentHoldsTask, TrackPoseTask, MatchContactsTask,
+               InferRouteTask, FindEpisodesTask, BuildFeedbackTask)
+NEXT_STAGES = [stage for stage in Stage if stage != Stage.PREPARE_VIDEO]
 
 
 class QueueConfigurationTests(unittest.TestCase):
@@ -25,7 +37,7 @@ class QueueConfigurationTests(unittest.TestCase):
         settings = {"DB_URL": "jdbc:postgresql://localhost/test?currentSchema=driver_only&sslmode=require"}
         for override, expected in (({}, "public"), ({"DB_SCHEMA": "betaclimb"}, "betaclimb")):
             with self.subTest(schema=expected), patch.dict(os.environ, settings | override, clear=True), patch(
-                "database.manager.create_async_engine"
+                "database.connection.create_async_engine"
             ) as create_engine:
                 DBManager()
                 url = create_engine.call_args.args[0]
@@ -50,8 +62,7 @@ class QueueTests(unittest.IsolatedAsyncioTestCase):
         for migration in sorted(MIGRATIONS.glob("V*__*.sql"), key=lambda path: int(path.name[1:].split("__")[0])):
             self.conn.execute(migration.read_text())
         worker_url = url.set(drivername="postgresql+psycopg").update_query_dict({"application_name": schema})
-        with patch.dict(os.environ, {"DB_SCHEMA": schema}), patch("database.manager.connection_url", return_value=worker_url):
-            self.db = DBManager()
+        self.db = DBManager(DBSettings(url=worker_url.render_as_string(hide_password=False), schema_name=schema))
         self.application_name = schema
         self.addAsyncCleanup(self.db.engine.dispose)
         profile_id, self.video = uuid4(), uuid4()
@@ -67,6 +78,19 @@ class QueueTests(unittest.IsolatedAsyncioTestCase):
             INSERT INTO tasks(id, video_id, payload, type, status, next_attempt_at, created_at, updated_at)
             VALUES (%s, %s, '{}', 'prepare_video', 'pending', now(), now(), now())
         """, (uuid4(), self.video))
+
+    async def claim(self, stage=None):
+        """Claim like the stage tasks do: each asks only for its own stage and declares its inputs."""
+        for task in STAGE_TASKS:
+            if stage in (None, task.stage) and (claimed := await self.db.claim(task.stage, task.inputs)):
+                return claimed
+        return None
+
+    def prepared(self, task, key="prepared.mp4", cover="cover.jpg"):
+        return self.db.finish_prepare_video(task, key, thumbnail_key=cover, next_stages=NEXT_STAGES)
+
+    def test_every_stage_has_one_task(self):
+        self.assertEqual([task.stage for task in STAGE_TASKS], list(Stage))
 
     async def test_model_registry_matches_migrated_tables(self):
         models = {mapper.local_table.name: mapper.local_table for mapper in Base.registry.mappers}
@@ -92,74 +116,80 @@ class QueueTests(unittest.IsolatedAsyncioTestCase):
         async with self.db.engine.connect() as connection:
             await connection.run_sync(compare_schema)
 
-    async def test_claim_reads_video_input_and_dependencies_from_mapped_rows(self):
+    async def test_claim_reads_video_input_and_waits_for_input_stages(self):
         async with self.db.session.begin() as session:
             video = await session.get(VideoModel, self.video)
             profile = await session.get(AthleteProfileModel, video.profile_id)
             video.url = "attempts/uploaded.mp4"
             video.profile_snapshot = {"experience": profile.experience, "disciplines": profile.disciplines}
-            pending = (await session.scalars(select(TaskModel).where(TaskModel.video_id == video.id))).one()
-            pending.payload = {"dependsOn": ["custom-stage"]}
-        self.assertIsNone(await self.db.claim())
-        async with self.db.session.begin() as session:
-            pending = await session.get(TaskModel, pending.id)
-            pending.payload = {"dependsOn": []}
-        claimed = await self.db.claim()
+        self.assertIsNone(await self.db.claim(Stage.DETECT_HOLDS))
+        self.assertIsNone(await self.db.claim(Stage.PREPARE_VIDEO, (Stage.DETECT_HOLDS,)))
+        claimed = await self.db.claim(Stage.PREPARE_VIDEO)
         self.assertEqual(claimed.url, "attempts/uploaded.mp4")
         self.assertEqual(claimed.profile_snapshot, {"experience": "gt1y", "disciplines": ["bouldering"]})
 
     async def test_lease_expiration_fences_old_owner(self):
-        first = await self.db.claim()
+        first = await self.claim()
         self.assertEqual(first.tries, 1)
         self.assertTrue(await self.db.heartbeat(first))
         self.conn.execute("UPDATE tasks SET lease_until=now()-interval '1 second' WHERE id=%s", (first.id,))
         self.assertFalse(await self.db.heartbeat(first))
-        self.assertFalse(await self.db.finish(first, "expired-artifact", thumbnail_key="expired.jpg"))
+        self.assertFalse(await self.prepared(first, "expired-artifact", "expired.jpg"))
 
-        second = await self.db.claim()
+        second = await self.claim()
         self.assertEqual(second.id, first.id)
         self.assertEqual(second.tries, 2)
         self.assertNotEqual(first.lease_token, second.lease_token)
         await self.db.fail(first, "expired failure", retryable=False)
-        self.assertFalse(await self.db.finish(first, "stale-artifact", thumbnail_key="stale.jpg"))
+        self.assertFalse(await self.prepared(first, "stale-artifact", "stale.jpg"))
         self.assertTrue(await self.db.heartbeat(second))
-        self.assertTrue(await self.db.finish(second, "normalized.mp4", thumbnail_key="normalized.jpg"))
-        self.assertFalse(await self.db.finish(second, "duplicate.mp4", thumbnail_key="duplicate.jpg"))
+        self.assertTrue(await self.prepared(second, "normalized.mp4", "normalized.jpg"))
+        self.assertFalse(await self.prepared(second, "duplicate.mp4", "duplicate.jpg"))
         self.assertEqual(self.conn.execute("SELECT result_data FROM videos").fetchone()[0],
                          {"playbackKey": "normalized.mp4", "thumbnailKey": "normalized.jpg"})
         self.assertEqual(await self.db.artifacts(second), {"prepare_video": "normalized.mp4"})
-        self.assertEqual(self.conn.execute("SELECT count(*) FROM tasks").fetchone()[0], len(DEPENDENCIES))
+        self.assertEqual(self.conn.execute("SELECT count(*) FROM tasks").fetchone()[0], len(Stage))
+
+    async def test_release_returns_the_row_without_spending_an_attempt(self):
+        first = await self.claim()
+        await self.db.release(first)
+        self.assertFalse(await self.db.heartbeat(first))
+        second = await self.claim()
+        self.assertEqual((second.id, second.tries), (first.id, 1))
+        await self.db.release(first)
+        self.assertTrue(await self.db.heartbeat(second))
 
     async def test_parallel_claims_dependency_join_and_single_publication(self):
-        claims = await asyncio.gather(self.db.claim(), self.db.claim())
+        claims = await asyncio.gather(self.claim(), self.claim())
         self.assertEqual(sum(task is not None for task in claims), 1)
         root = next(task for task in claims if task is not None)
-        self.assertTrue(await self.db.finish(root, "prepared.mp4", thumbnail_key="cover.jpg"))
+        self.assertTrue(await self.prepared(root))
 
-        branches = {task.type: task for task in await asyncio.gather(self.db.claim(), self.db.claim())}
+        branches = {task.type: task for task in await asyncio.gather(self.claim(Stage.DETECT_HOLDS),
+                                                                      self.claim(Stage.TRACK_POSE))}
         self.assertEqual(set(branches), {"detect_holds", "track_pose"})
-        self.assertIsNone(await self.db.claim())
+        self.assertIsNone(await self.claim())
         self.assertTrue(await self.db.finish(branches["detect_holds"], "boxes"))
-        masks = await self.db.claim()
+        masks = await self.claim()
         self.assertEqual(masks.type, "segment_holds")
         self.assertEqual(self.conn.execute("SELECT stage FROM videos").fetchone(), ("movement",))
-        self.assertIsNone(await self.db.claim())
+        self.assertIsNone(await self.claim())
         results = await asyncio.gather(self.db.finish(masks, "masks"), self.db.finish(branches["track_pose"], "pose"))
         self.assertEqual(results, [True, True])
         for expected in ("match_contacts", "infer_route", "find_episodes"):
-            task = await self.db.claim()
+            task = await self.claim()
             self.assertEqual(task.type, expected)
-            self.assertIsNone(await self.db.claim())
+            self.assertIsNone(await self.claim())
             self.assertTrue(await self.db.finish(task, expected))
             self.assertFalse(await self.db.finish(task, "duplicate"))
 
-        last = await self.db.claim()
+        last = await self.claim()
         self.assertEqual(last.type, "build_feedback")
         feedback = {"durationSec": 12, "limitations": [], "moments": [{"timeSec": 4.5, "action": "one"}]}
-        outcomes = await asyncio.gather(self.db.finish(last, "feedback-1", feedback),
-                                        self.db.finish(last, "feedback-2", feedback))
+        outcomes = await asyncio.gather(self.db.finish_build_feedback(last, "feedback-1", feedback),
+                                        self.db.finish_build_feedback(last, "feedback-2", feedback))
         self.assertEqual(sorted(outcomes), [False, True])
-        self.assertIsNone(await self.db.claim())
+        self.assertIsNone(await self.claim())
         async with self.db.session() as session:
             video = await session.get(VideoModel, self.video)
             self.assertEqual((video.status, video.stage, video.duration_sec), ("ready", "done", 12))
@@ -168,30 +198,30 @@ class QueueTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((comment.video_id, comment.profile_id, comment.comment, comment.timecode),
                              (self.video, video.profile_id, "one", timedelta(seconds=4.5)))
         self.assertEqual(self.conn.execute("SELECT count(*), sum(tries) FROM tasks WHERE status='succeeded'").fetchone(),
-                         (len(DEPENDENCIES), len(DEPENDENCIES)))
+                         (len(Stage), len(Stage)))
 
     async def test_retry_backoff_then_terminal_failure_cancels_other_leases(self):
-        root = await self.db.claim()
-        await self.db.finish(root, "prepared.mp4", thumbnail_key="cover.jpg")
-        first, sibling = await asyncio.gather(self.db.claim(), self.db.claim())
+        root = await self.claim()
+        await self.prepared(root)
+        first, sibling = await asyncio.gather(self.claim(Stage.DETECT_HOLDS), self.claim(Stage.TRACK_POSE))
         await self.db.fail(first, "temporary")
-        self.assertIsNone(await self.db.claim())
+        self.assertIsNone(await self.claim())
         self.conn.execute("UPDATE tasks SET next_attempt_at=now() WHERE id=%s", (first.id,))
-        retry = await self.db.claim()
+        retry = await self.claim()
         self.assertEqual((retry.id, retry.tries), (first.id, 2))
         await self.db.fail(retry, "invalid input", rejected=True)
         self.assertFalse(await self.db.finish(sibling, "late"))
         self.assertFalse(await self.db.heartbeat(sibling))
-        self.assertIsNone(await self.db.claim())
+        self.assertIsNone(await self.claim())
         self.assertEqual(self.conn.execute("SELECT status, stage FROM videos").fetchone(),
-                         ("rejected", display_stage(retry.type)))
+                         (VideoStatus.REJECTED, retry.type.video_stage))
         self.assertEqual(self.conn.execute("SELECT status FROM tasks WHERE id=%s", (sibling.id,)).fetchone(),
                          ("cancelled",))
 
     async def test_concurrent_terminal_failures_do_not_deadlock(self):
-        root = await self.db.claim()
-        await self.db.finish(root, "prepared.mp4", thumbnail_key="cover.jpg")
-        first, second = await asyncio.gather(self.db.claim(), self.db.claim())
+        root = await self.claim()
+        await self.prepared(root)
+        first, second = await asyncio.gather(self.claim(Stage.DETECT_HOLDS), self.claim(Stage.TRACK_POSE))
         # Release both publishers together after they reach the video's row lock.
         with self.conn.transaction():
             self.conn.execute("SELECT id FROM videos WHERE id=%s FOR UPDATE", (self.video,))
@@ -205,8 +235,8 @@ class QueueTests(unittest.IsolatedAsyncioTestCase):
                     self.conn.execute("SELECT pg_stat_clear_snapshot()")
                     await asyncio.sleep(0.01)
         await asyncio.gather(*failures)
-        self.assertIsNone(await self.db.claim())
+        self.assertIsNone(await self.claim())
         failed_type = self.conn.execute("SELECT type FROM tasks WHERE status='failed'").fetchone()[0]
         self.assertEqual(self.conn.execute("SELECT status, stage FROM videos").fetchone(),
-                         ("failed", display_stage(failed_type)))
+                         (VideoStatus.FAILED, Stage(failed_type).video_stage))
         self.assertEqual(self.conn.execute("SELECT count(*) FROM tasks WHERE status='running'").fetchone(), (0,))

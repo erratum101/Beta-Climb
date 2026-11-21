@@ -7,6 +7,8 @@ from sqlalchemy import Double, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ARRAY, INTERVAL, JSONB, TIMESTAMP
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from database.enums import TaskStatus
+
 
 class Base(DeclarativeBase):
     pass
@@ -70,9 +72,9 @@ class TaskModel(Base):
     __table_args__ = (
         UniqueConstraint("video_id", "type", name="tasks_video_stage_unique"),
         Index("idx_tasks_video_pending", next_attempt_at,
-              postgresql_where=and_(video_id.is_not(None), status == "pending")),
+              postgresql_where=and_(video_id.is_not(None), status == TaskStatus.PENDING)),
         Index("idx_tasks_video_running", lease_until,
-              postgresql_where=and_(video_id.is_not(None), status == "running")),
+              postgresql_where=and_(video_id.is_not(None), status == TaskStatus.RUNNING)),
     )
 
 

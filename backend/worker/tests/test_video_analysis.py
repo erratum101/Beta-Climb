@@ -6,7 +6,9 @@ from pathlib import Path
 
 import numpy as np
 
-from service.video import VideoRejected, run_stage
+from core.tasks.find_episodes import FindEpisodesTask
+from core.tasks.prepare_video import PrepareVideoTask
+from service.video import VideoRejected
 from service.video.analysis import find_episodes, infer_route, match_contacts
 from service.video.vision import CameraReference
 
@@ -95,7 +97,7 @@ class VideoAnalysisTests(unittest.TestCase):
             for name, data in artifacts.items():
                 paths[name].write_text(json.dumps(data))
             output = tmp / "report.json"
-            run_stage("find_episodes", tmp / "absent-video.mp4", paths, output, tmp)
+            FindEpisodesTask.run(tmp / "absent-video.mp4", paths, output, tmp)
             events = json.loads(output.read_text())["events"]
             self.assertFalse(events[0]["usableForAdvice"])
             self.assertTrue(any(e["type"] == "movementWindow" and e["usableForAdvice"] for e in events))
@@ -138,7 +140,7 @@ class VideoAnalysisTests(unittest.TestCase):
             output.write_bytes(b"previous artifact")
             output.with_suffix(".jpg").write_bytes(b"previous cover")
             with self.assertRaises(VideoRejected):
-                run_stage("prepare_video", source, {}, output, tmp)
+                PrepareVideoTask.run(source, {}, output, tmp)
             self.assertEqual(output.read_bytes(), b"previous artifact")
             self.assertEqual(output.with_suffix(".jpg").read_bytes(), b"previous cover")
 
@@ -152,7 +154,7 @@ class VideoAnalysisTests(unittest.TestCase):
                                 f"color=c=red:size={source_size}:rate=30:duration=0.2",
                                 "-vf", "drawbox=color=blue:t=fill:enable='gt(n,0)'",
                                 "-c:v", "libx264", str(source)], check=True)
-                run_stage("prepare_video", source, {}, output, tmp)
+                PrepareVideoTask.run(source, {}, output, tmp)
                 cover = output.with_suffix(".jpg")
                 self.assertTrue(cover.read_bytes().startswith(b"\xff\xd8\xff"))
                 frame = cv2.imread(str(cover))
