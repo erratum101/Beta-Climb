@@ -733,12 +733,19 @@ function PlainHeroTitle({ label }: { label: string }) {
       heading.style.fontSize = `${best}px`
     }
 
-    fit()
-    const observer = new ResizeObserver(fit)
+    let alive = true
+    const run = () => {
+      if (alive) fit()
+    }
+    run()
+    const observer = new ResizeObserver(run)
     observer.observe(copy)
     const fonts = document.fonts
-    if (fonts) void fonts.ready.then(fit)
-    return () => observer.disconnect()
+    if (fonts) void fonts.ready.then(run)
+    return () => {
+      alive = false
+      observer.disconnect()
+    }
   }, [label])
 
   return (

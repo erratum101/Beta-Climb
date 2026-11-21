@@ -822,7 +822,7 @@ html:not(.is-night) .screen.landing:not(.is-desktop).is-lowered:not(.is-closing)
   flex-direction: column;
   align-items: center;
   width: 100%;
-  line-height: 0.96;
+  line-height: 1;
   white-space: normal;
   text-align: center;
 }
@@ -1838,7 +1838,7 @@ html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-t
     align-self: center;
     width: 100%;
     font-size: clamp(44px, 12vw, 76px);
-    line-height: 0.96;
+    line-height: 1;
     white-space: normal;
   }
 
@@ -1968,7 +1968,7 @@ html.is-night .screen.landing:not(.is-desktop) .landing-hero-frame {
   align-self: center;
   width: 100%;
   font-size: clamp(44px, 12vw, 76px);
-  line-height: 0.96;
+  line-height: 1;
   white-space: normal;
 }
 

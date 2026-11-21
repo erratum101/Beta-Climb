@@ -65,8 +65,8 @@ export type ScrollFloatProps = {
   /** Pause before the pieces move, in seconds. */
   startDelay?: number
   /**
-   * Fade the whole line in with ease-out, and start the per-character move
-   * only after that fade has finished.
+   * Fade the whole line in as one piece. Used when the copy is swapped in
+   * place, so the letters are not pulled apart and the fade is not reversed.
    */
   fadeFirst?: boolean
   /**
@@ -146,7 +146,6 @@ const ScrollFloat = ({
   useEffect(() => setMounted(true), [])
 
   useIsomorphicLayoutEffect(() => {
-    ;(window as unknown as { __gsap?: typeof gsap }).__gsap = gsap
     const el = containerRef.current
     const textEl = textRef.current
     if (!el || !textEl) return
@@ -307,32 +306,14 @@ const ScrollFloat = ({
         add({ rotation: 0 }, { ease: sway, rotation: -16 * sign })
         add({ opacity: 0 }, { ease: (progress: number) => clamp01(timing(progress) * 2.5), opacity: 1 })
       } else if (fadeFirst) {
-        const fadeDuration = 0.42
-        const letterDuration = 0.4
-        gsap.set(targets, {
-          willChange: 'opacity, transform',
-          opacity: 0,
-          y: 14 * sign,
-          yPercent: 0,
-          scaleX: 1,
-          scaleY: 1,
-          rotation: 0,
-          transformOrigin: '50% 100%',
-        })
-        timeline.to(
-          targets,
-          { opacity: 1, duration: fadeDuration, ease: 'power2.out', stagger: 0 },
-          0,
-        )
-        timeline.to(
-          targets,
-          {
-            y: 0,
-            duration: letterDuration,
-            ease: 'power2.out',
-            stagger: (index: number) => delays[index] || 0,
-          },
-          fadeDuration,
+        // A platform swap rebuilds the letters. Per-letter offsets tear the line
+        // apart and a scroll reverse leaves them half-transparent, so the whole
+        // line fades in as one piece and then stays put.
+        gsap.set(targets, { clearProps: 'opacity,transform,translate,rotate,scale,filter' })
+        timeline.fromTo(
+          textEl,
+          { opacity: 0, y: 8 * sign },
+          { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out', clearProps: 'transform' },
         )
       } else {
         add(
@@ -354,7 +335,9 @@ const ScrollFloat = ({
         )
       }
 
-      if (playOnEnter) {
+      if (playOnEnter && fadeFirst) {
+        arm()
+      } else if (playOnEnter) {
         const root = scroller instanceof Element ? scroller : window
         const match = /^top\s+(\d+(?:\.\d+)?)%$/.exec(scrollStart.trim())
         const ratio = match ? Number(match[1]) / 100 : 0.65
