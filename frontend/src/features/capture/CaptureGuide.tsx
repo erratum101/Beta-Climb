@@ -7,6 +7,16 @@ import { SvgIcon } from '../../shared/ui/SvgIcon'
 
 const GUIDE_KEY = 'beta-climb.capture-guide'
 
+function createId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
+
 async function captureFrame(file: File): Promise<{ frame?: Blob; durationSec?: number }> {
   const url = URL.createObjectURL(file)
   const video = document.createElement('video')
@@ -14,10 +24,20 @@ async function captureFrame(file: File): Promise<{ frame?: Blob; durationSec?: n
   video.muted = true
   video.playsInline = true
   video.src = url
+  video.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0'
+  document.body.appendChild(video)
   try {
     await new Promise<void>((resolve, reject) => {
-      video.onloadeddata = () => resolve()
-      video.onerror = () => reject(new Error('frame'))
+      const timer = window.setTimeout(() => reject(new Error('frame')), 2500)
+      video.onloadeddata = () => {
+        window.clearTimeout(timer)
+        resolve()
+      }
+      video.onerror = () => {
+        window.clearTimeout(timer)
+        reject(new Error('frame'))
+      }
+      video.load()
     })
     const durationSec = Number.isFinite(video.duration) ? video.duration : 0
     const target = durationSec > 1 ? Math.min(durationSec * 0.35, Math.max(0, durationSec - 0.05)) : 0
@@ -45,6 +65,7 @@ async function captureFrame(file: File): Promise<{ frame?: Blob; durationSec?: n
   } catch {
     return {}
   } finally {
+    video.remove()
     URL.revokeObjectURL(url)
   }
 }
@@ -147,7 +168,7 @@ export function CaptureSource({ onBack }: { onBack: () => void }) {
       return
     }
     setError('')
-    setSelected({ file, idempotencyKey: crypto.randomUUID() })
+    setSelected({ file, idempotencyKey: createId() })
   }
 
   async function upload() {
