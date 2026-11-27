@@ -1,5 +1,6 @@
 package ru.betaclimb.controllers;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -90,6 +91,10 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         );
     }
 
-    private record ApiError(ApplicationStatus status, String message) {
+    @Schema(description = "Ошибка API: машинный код и сообщение для пользователя.")
+    public record ApiError(
+            @Schema(description = "Код ошибки приложения.") ApplicationStatus status,
+            @Schema(description = "Описание ошибки.") String message
+    ) {
     }
 }
