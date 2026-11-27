@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -105,7 +104,8 @@ class AttemptApiTests {
                 .andExpect(jsonPath("$.owner_key").doesNotExist())
                 .andExpect(jsonPath("$.fileName").value("climb.mp4"));
         mvc.perform(get(url).param("profileId", profile.toString()))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value("ATTEMPT_NOT_FOUND"));
         mvc.perform(get(url + "/media").param("profileId", profile.toString()))
                 .andExpect(status().isNotFound());
         mvc.perform(get("/api/attempts").param("profileId", profile.toString()))
@@ -241,6 +241,24 @@ class AttemptApiTests {
     }
 
     @Test
+    void rejectsEmptyVideoWithApplicationStatus() throws Exception {
+        MockMultipartHttpServletRequestBuilder form = multipart("/api/attempts");
+        form.file(new MockMultipartFile(
+                "file",
+                "empty.mp4",
+                "video/mp4",
+                new byte[0]
+        ));
+
+        mvc.perform(form.param("profileId", UUID.randomUUID().toString())
+                .header("Idempotency-Key", UUID.randomUUID()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("EMPTY_VIDEO"))
+                .andExpect(jsonPath("$.message").value("Видео пустое."))
+                .andExpect(jsonPath("$.httpStatus").doesNotHaveJsonPath());
+    }
+
+    @Test
     void failedEnqueueRollsBackVideoAndDiscardsItsObject() throws Exception {
         UUID profile = profile();
         UUID requestId = UUID.randomUUID();
@@ -248,12 +266,14 @@ class AttemptApiTests {
 
         db.execute("ALTER TABLE tasks ADD CONSTRAINT test_reject_prepare CHECK (type <> 'prepare_video') NOT VALID");
         try {
-            assertThatThrownBy(() -> upload(
+            mvc.perform(uploadRequest(
                     profile,
                     requestId,
                     owner
             ))
-                    .hasRootCauseInstanceOf(java.sql.SQLException.class);
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.status").value("INTERNAL_ERROR"))
+                    .andExpect(jsonPath("$.message").value("Произошла внутренняя ошибка. Попробуй ещё раз."));
         } finally {
             db.execute("ALTER TABLE tasks DROP CONSTRAINT test_reject_prepare");
         }
@@ -295,16 +315,11 @@ class AttemptApiTests {
             UUID requestId,
             Cookie owner
     ) throws Exception {
-        MockMultipartHttpServletRequestBuilder form = multipart("/api/attempts");
-        form.file(new MockMultipartFile(
-                "file",
-                "climb.mp4",
-                "video/mp4",
-                new byte[]{1, 2, 3}
-        ));
-        var response = mvc.perform(form.param("profileId", profile.toString())
-                .header("Idempotency-Key", requestId)
-                .cookie(owner))
+        var response = mvc.perform(uploadRequest(
+                profile,
+                requestId,
+                owner
+        ))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.status").value("processing"))
                 .andReturn()
@@ -313,5 +328,22 @@ class AttemptApiTests {
         return json.readTree(response.getContentAsString())
                 .get("id")
                 .asString();
+    }
+
+    private MockMultipartHttpServletRequestBuilder uploadRequest(
+            UUID profile,
+            UUID requestId,
+            Cookie owner
+    ) {
+        MockMultipartHttpServletRequestBuilder form = multipart("/api/attempts");
+        form.file(new MockMultipartFile(
+                "file",
+                "climb.mp4",
+                "video/mp4",
+                new byte[]{1, 2, 3}
+        ));
+        return form.param("profileId", profile.toString())
+                .header("Idempotency-Key", requestId)
+                .cookie(owner);
     }
 }
