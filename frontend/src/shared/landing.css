@@ -51,51 +51,99 @@ html.is-night {
   transition: background-color var(--theme-fade) var(--ease-in-out);
 }
 
+/* Safari shows the page through its toolbars only when the document itself
+   scrolls, so the phone landing scrolls the page instead of .landing-scroll. */
 html.is-landing,
 html.is-landing body,
 html.is-landing #root {
-  height: 100%;
-  height: 100lvh;
+  height: auto;
+  min-height: 100lvh;
   max-height: none;
-  overflow: hidden;
+  overflow: visible;
+  overscroll-behavior-y: auto;
   background: transparent;
+}
+
+html.is-landing {
+  --landing-overhang: 200px;
+}
+
+/* Safari paints the strip under its bottom bar with the colour of the root
+   element, not with the page. Transparent there shows up as white. */
+html.is-landing {
+  background-color: var(--bg);
+  transition: background-color var(--theme-fade) var(--ease-in-out);
+}
+
+html.is-landing:has(.landing.is-intro),
+html.is-landing:has(.landing.is-intro) body {
+  overflow: hidden;
 }
 
 html.is-landing:not(.is-landing-menu) {
   color-scheme: normal !important;
 }
 
-.screen.landing:not(.is-desktop) {
+#root > .screen.landing:not(.is-desktop) {
   --landing-corner: 35px;
   --safe-area-max-inset-bottom: env(safe-area-max-inset-bottom, 0px);
-  height: 100%;
+  height: auto;
   max-height: none;
-  min-height: 0;
+  min-height: 100lvh;
   padding: 0;
+  overflow: clip;
   background: transparent;
 }
 
-.landing-safari-bleed {
-  display: none;
+.screen.landing:not(.is-desktop) .landing-sheet {
+  position: relative;
+  inset: auto;
+  min-height: 100lvh;
+  overflow: clip;
+  clip-path: inset(0 round 0);
+  transition:
+    transform var(--chrome-move) var(--chrome-ease),
+    border-radius var(--chrome-move) var(--chrome-ease),
+    clip-path var(--chrome-move) var(--chrome-ease),
+    background-color var(--theme-fade) var(--ease-in-out);
 }
 
-html.is-landing .landing-safari-bleed {
+/* The open menu sits where the video overhang would land.
+   At the bottom, the same clip drops the trailing overhang so the sheet
+   can move up and leave the menu clear. */
+.screen.landing:not(.is-desktop).is-lowered:not(.is-closing) .landing-sheet {
+  clip-path: inset(var(--landing-overhang, 0px) 0 0 round var(--landing-corner) var(--landing-corner) 0 0);
+}
+
+.screen.landing:not(.is-desktop).is-raised:not(.is-closing) .landing-sheet {
+  clip-path: inset(0 0 var(--landing-overhang, 0px) 0 round 0 0 var(--landing-corner) var(--landing-corner));
+}
+
+.screen.landing:not(.is-desktop) .landing-scroll {
+  flex: none;
+  overflow: visible;
+  overscroll-behavior: auto;
+}
+
+/* Past the end of the document Safari paints its bottom bar as a solid strip.
+   Page-coloured overhang keeps content under it, like the video above the hero. */
+.screen.landing:not(.is-desktop) .landing-scroll::after {
+  content: "";
   display: block;
+  height: var(--landing-overhang, 0px);
+}
+
+.screen.landing:not(.is-desktop) .landing-frame {
+  min-height: 100lvh;
+}
+
+/* Safari tints its toolbars from fixed edge elements, even empty or hidden ones,
+   so the menu backdrops are pinned only while the menu moves or stays open. */
+.screen.landing:not(.is-desktop):is(.is-raised, .is-lowered, .is-closing) .landing-reveal,
+.screen.landing:not(.is-desktop) .landing-nav,
+.screen.landing:not(.is-desktop) .landing-logo,
+.screen.landing:not(.is-desktop) .landing-theme.is-pin {
   position: fixed;
-  left: 0;
-  right: 0;
-  z-index: 2147483646;
-  height: 5px;
-  pointer-events: none;
-  background: transparent;
-}
-
-html.is-landing .landing-safari-bleed.is-top {
-  top: 0;
-}
-
-html.is-landing .landing-safari-bleed.is-bottom {
-  bottom: 0;
 }
 
 .screen.landing.is-closing {
@@ -519,22 +567,29 @@ html.is-landing-menu #root {
 .landing-hero-media {
   position: absolute;
   z-index: 0;
-  inset: 0;
   overflow: hidden;
   pointer-events: none;
   background: #141414;
   border-radius: calc(var(--hero-shrink) * 120px);
   corner-shape: squircle;
-  transform: scale(calc(1 - var(--hero-shrink) * 0.16));
+  inset: calc(var(--hero-shrink) * 8%);
+  --hero-blur: 6px;
+}
+
+.landing-hero-video {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .landing-hero-media video {
+  position: absolute;
+  inset: -4%;
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 108%;
+  height: 108%;
   object-fit: cover;
-  filter: blur(6px);
-  transform: scale(1.08);
   pointer-events: none;
 }
 
@@ -543,9 +598,13 @@ html.is-landing-menu #root {
 .landing-hero-media video::-webkit-media-controls-panel,
 .landing-hero-media video::-webkit-media-controls-play-button,
 .landing-hero-media video::-webkit-media-controls-start-playback-button,
-.landing-hero-media video::-webkit-media-controls-overlay-play-button {
+.landing-hero-media video::-webkit-media-controls-overlay-play-button,
+.landing-hero-media video::-webkit-media-controls-overlay-enclosure {
   display: none !important;
   opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
   -webkit-appearance: none;
   appearance: none;
 }
@@ -553,8 +612,10 @@ html.is-landing-menu #root {
 .landing-hero-media::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -4%;
   background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(var(--hero-blur));
+  -webkit-backdrop-filter: blur(var(--hero-blur));
 }
 
 .landing-hero-copy {
@@ -761,8 +822,8 @@ html:not(.is-night) .screen.landing:not(.is-desktop).is-lowered:not(.is-closing)
   color: #fff;
 }
 
-.screen.landing.is-raised:not(.is-closing) .landing-logo,
-.screen.landing.is-raised:not(.is-closing) .landing-theme.is-pin {
+.screen.landing.is-desktop.is-raised:not(.is-closing) .landing-logo,
+.screen.landing.is-desktop.is-raised:not(.is-closing) .landing-theme.is-pin {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -822,13 +883,22 @@ html:not(.is-night) .screen.landing:not(.is-desktop).is-lowered:not(.is-closing)
   flex-direction: column;
   align-items: center;
   width: 100%;
-  line-height: 1;
-  white-space: normal;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
   text-align: center;
+  text-transform: none;
+  white-space: normal;
 }
 
 .landing-title.is-lines > span {
   display: block;
+  width: 100%;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-align: center;
   white-space: nowrap;
 }
 
@@ -1235,6 +1305,45 @@ html:not(.is-night) .apple-step-shot img.is-dark {
   display: none;
 }
 
+/* Scroll morph draws one flying copy. The page images stay in flow but hide
+   so the same screenshot is not seen twice. */
+.apple-step-shot.is-shot-ghost img {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.install-shot-morph {
+  position: fixed;
+  z-index: 5;
+  left: 0;
+  top: 0;
+  margin: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transform-origin: 0 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.install-shot-morph img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  user-select: none;
+  -webkit-user-drag: none;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install-shot-morph {
+    display: none;
+  }
+}
+
 .landing-switch {
   --switch-pad: 2px;
   --switch-gap: 4px;
@@ -1577,10 +1686,19 @@ html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-t
 .screen.landing:not(.is-desktop) .install-page.has-shot.is-shot-right {
   height: 100%;
   min-height: 0;
-  grid-template-rows: minmax(0, 1fr) auto;
-  align-items: stretch;
-  align-content: stretch;
+  grid-template-rows: auto auto;
+  align-items: center;
+  align-content: start;
   justify-items: center;
+  gap: 20px;
+  box-sizing: border-box;
+  padding-top: clamp(32px, 10svh, 88px);
+}
+
+.screen.landing.is-hint-closed:not(.is-desktop) .install-page.has-shot.is-shot-left,
+.screen.landing.is-hint-closed:not(.is-desktop) .install-page.has-shot.is-shot-right {
+  align-content: center;
+  padding-top: 0;
 }
 
 .screen.landing:not(.is-desktop) .install-page .apple-step-shot,
@@ -1590,24 +1708,22 @@ html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-t
 
 .screen.landing:not(.is-desktop) .install-page .apple-step-shot {
   position: relative;
-  align-self: stretch;
+  align-self: center;
   justify-self: center;
-  width: min(280px, 72vw);
-  height: 100%;
+  width: auto;
+  height: auto;
   min-height: 0;
   max-width: none;
   max-height: none;
 }
 
 .screen.landing:not(.is-desktop) .install-page .apple-step-shot img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
+  position: static;
+  width: auto;
+  height: auto;
+  max-width: min(300px, 78vw);
+  max-height: min(42svh, 360px);
   margin: 0 auto;
-  object-fit: contain;
 }
 
 .screen.landing:not(.is-desktop) .install-page-copy {
@@ -1621,7 +1737,7 @@ html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-t
 
 .screen.landing:not(.is-desktop) .install-page p.scroll-float,
 .screen.landing:not(.is-desktop) .install-page-copy p {
-  margin-top: 10px;
+  margin: 10px auto 0;
   font-size: 15px;
 }
 
@@ -1799,20 +1915,11 @@ html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-t
   }
 
   .landing-hero-media {
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    inset: calc(var(--hero-shrink) * 3.25%);
+    width: auto;
+    height: auto;
     border-radius: calc(var(--hero-shrink) * 52px);
-    transform: scale(calc(1 - var(--hero-shrink) * 0.065));
-  }
-
-  .landing-hero-media video {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    filter: blur(1px);
-    transform: scale(1.01);
+    --hero-blur: 1px;
   }
 
   .landing-hero-copy {
@@ -1840,6 +1947,18 @@ html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-t
     font-size: clamp(44px, 12vw, 76px);
     line-height: 1;
     white-space: normal;
+  }
+
+  .landing-hero-copy .landing-title.is-plain {
+    align-self: center;
+    justify-self: stretch;
+    width: 100%;
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    text-align: center;
   }
 
   .landing-hero-actions {
@@ -1915,39 +2034,24 @@ html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-t
   background: var(--bg);
 }
 
-html.is-night .screen.landing:not(.is-desktop) .landing-sheet,
-html.is-night .screen.landing:not(.is-desktop) .landing-hero-frame {
-  background: #141414;
-}
-
 .screen.landing:not(.is-desktop) .landing-hero-frame {
   width: 100%;
-  height: 100%;
+  height: calc(100lvh + var(--landing-overhang, 0px));
   max-height: none;
-  min-height: 100%;
+  min-height: calc(100lvh + var(--landing-overhang, 0px));
 }
 
 .screen.landing:not(.is-desktop) .landing-hero-media {
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  inset: calc(var(--hero-shrink) * 3.25%);
+  width: auto;
+  height: auto;
   border-radius: calc(var(--hero-shrink) * 52px);
-  transform: scale(calc(1 - var(--hero-shrink) * 0.065));
-}
-
-.screen.landing:not(.is-desktop) .landing-hero-media video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: blur(6px);
-  transform: scale(1.08);
+  --hero-blur: 6px;
 }
 
 .screen.landing:not(.is-desktop) .landing-hero-copy {
   position: absolute;
-  inset: 0;
+  inset: var(--landing-overhang, 0px) 0 0;
   display: grid;
   grid-template-rows: 1fr auto;
   grid-template-columns: minmax(0, 1fr);
@@ -1970,6 +2074,18 @@ html.is-night .screen.landing:not(.is-desktop) .landing-hero-frame {
   font-size: clamp(44px, 12vw, 76px);
   line-height: 1;
   white-space: normal;
+}
+
+.screen.landing:not(.is-desktop) .landing-hero-copy .landing-title.is-plain {
+  align-self: center;
+  justify-self: stretch;
+  width: 100%;
+  margin: 0;
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-align: center;
 }
 
 .screen.landing:not(.is-desktop) .landing-hero-actions {
@@ -2008,6 +2124,108 @@ html.is-night .screen.landing:not(.is-desktop) .landing-hero-actions .btn.is-ios
 .screen.landing:not(.is-desktop) .landing-store-icon {
   width: 18px;
   height: 18px;
+}
+
+.ios-share-hint {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  margin: 0;
+  color: var(--accent);
+  pointer-events: none;
+  user-select: none;
+  transform: translateX(calc(-50% - 5px));
+}
+
+.ios-share-hint-pill {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 28px 10px;
+  border-radius: 18px;
+  background: var(--accent);
+  color: #fff;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: -0.02em;
+}
+
+.ios-share-hint-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: #fff;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.ios-share-hint-close svg {
+  display: block;
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.ios-share-hint-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.ios-share-hint-text {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.ios-share-hint-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.ios-share-hint-tip {
+  display: block;
+  width: 19px;
+  height: 8px;
+  margin-top: -1px;
+}
+
+html:not(.is-night) .ios-share-hint-pill {
+  background: #fff;
+  color: var(--accent);
+}
+
+html:not(.is-night) .ios-share-hint-close {
+  color: var(--accent);
+}
+
+html:not(.is-night) .ios-share-hint-tip {
+  color: #fff;
 }
 
 .screen.landing:not(.is-desktop) .landing-nav.is-top {
@@ -2055,6 +2273,71 @@ html.is-night .screen.landing:not(.is-desktop) .landing-hero-actions .btn.is-ios
   font-size: 22px;
 }
 
+.screen.landing:not(.is-desktop) .landing-nav:not(.is-top) {
+  --nav-tuck: 30dvh;
+  top: auto;
+  bottom: 0;
+  height: 50dvh;
+}
+
+.screen.landing:not(.is-desktop).is-raised .landing-nav:not(.is-top) {
+  background: var(--bg);
+}
+
+.screen.landing:not(.is-desktop) .landing-nav:not(.is-top) .landing-nav-slide {
+  grid-template-columns: 1fr;
+  grid-template-areas: 'links';
+  place-items: center;
+  padding: 0 0 env(safe-area-inset-bottom);
+  transform: translateY(calc((1 - var(--menu-bottom)) * var(--nav-tuck)));
+}
+
+.screen.landing:not(.is-desktop) .landing-nav:not(.is-top) .landing-brand,
+.screen.landing:not(.is-desktop) .landing-nav:not(.is-top) .landing-theme {
+  visibility: hidden;
+}
+
+.screen.landing:not(.is-desktop) .landing-nav:not(.is-top) .landing-nav-track {
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  transform: translateY(-2.5vh);
+  width: auto;
+  max-width: none;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+}
+
+.screen.landing:not(.is-desktop) .landing-nav:not(.is-top) .landing-nav-track > button {
+  font-size: 22px;
+}
+
+.screen.landing:not(.is-desktop).is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button {
+  animation: landing-nav-in 0.42s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.screen.landing:not(.is-desktop).is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(1) { animation-delay: 0.38s; }
+.screen.landing:not(.is-desktop).is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(2) { animation-delay: 0.54s; }
+.screen.landing:not(.is-desktop).is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(3) { animation-delay: 0.7s; }
+.screen.landing:not(.is-desktop).is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(4) { animation-delay: 0.86s; }
+
+.screen.landing:not(.is-desktop).is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-bar {
+  animation: landing-nav-bar-in 0.36s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both;
+}
+
+.screen.landing:not(.is-desktop).is-raised.is-closing .landing-nav:not(.is-top) .landing-nav-track > button {
+  animation: landing-nav-out 0.28s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.screen.landing:not(.is-desktop).is-raised.is-closing .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(1) { animation-delay: 0.24s; }
+.screen.landing:not(.is-desktop).is-raised.is-closing .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(2) { animation-delay: 0.16s; }
+.screen.landing:not(.is-desktop).is-raised.is-closing .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(3) { animation-delay: 0.08s; }
+.screen.landing:not(.is-desktop).is-raised.is-closing .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(4) { animation-delay: 0s; }
+
 html:not(.is-night) .screen.landing:not(.is-desktop) .landing-nav {
   --nav-fill: #fff;
 }
@@ -2072,7 +2355,8 @@ html:not(.is-night) .screen.landing:not(.is-desktop) .landing-nav-bar {
     font-size: 11px;
   }
 
-  .screen.landing:not(.is-desktop) .landing-nav.is-top .landing-nav-track > button {
+  .screen.landing:not(.is-desktop) .landing-nav.is-top .landing-nav-track > button,
+  .screen.landing:not(.is-desktop) .landing-nav:not(.is-top) .landing-nav-track > button {
     font-size: 18px;
   }
 }
@@ -2338,7 +2622,10 @@ button.site-intro-hit:active {
   .screen.landing:not(.is-desktop).is-lowered:not(.is-closing) .landing-nav.is-top .landing-theme,
   .screen.landing:not(.is-desktop).is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button,
   .screen.landing:not(.is-desktop).is-lowered.is-closing .landing-nav.is-top .landing-nav-track > button,
-  .screen.landing:not(.is-desktop).is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-bar {
+  .screen.landing:not(.is-desktop).is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-bar,
+  .screen.landing:not(.is-desktop).is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button,
+  .screen.landing:not(.is-desktop).is-raised.is-closing .landing-nav:not(.is-top) .landing-nav-track > button,
+  .screen.landing:not(.is-desktop).is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-bar {
     animation: none;
     opacity: 1;
   }

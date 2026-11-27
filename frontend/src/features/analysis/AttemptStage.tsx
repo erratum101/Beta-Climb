@@ -30,23 +30,27 @@ export function AttemptStage({ attempt, videoRef, episodeEnd, time, holdIds, onT
   const [playing, setPlaying] = useState(false)
   const ready = size.width > 0 && !error
   const visibleHolds = attempt.holds.filter((hold) => holdIds.includes(hold.id))
+  const liveId = attempt.moments.find((moment) => time >= moment.startSec && time < moment.endSec)?.id
   const value = Math.min(Math.max(0, time), duration)
   const playLabel = playing ? 'Приостановить видео' : 'Воспроизвести видео'
   const expandLabel = expanded ? 'Выйти из полноэкранного режима' : 'На весь экран'
+
+  const origin = attempt.trimStartSec ?? 0
+  const trimEnd = attempt.trimEndSec
 
   function finishEpisode(video: HTMLVideoElement, end: number) {
     episodeEnd.current = null
     video.pause()
     // The interval excludes its end. Leave the last frame of the episode on screen.
-    video.currentTime = Math.max(0, end - 0.001)
-    onTime(video.currentTime)
+    video.currentTime = Math.max(origin, origin + end - 0.001)
+    onTime(Math.max(0, video.currentTime - origin))
   }
 
   const checkFrame = useEffectEvent((video: HTMLVideoElement, mediaTime: number) => {
     const end = episodeEnd.current
     // The worker produces constant 30fps. A timeupdate alone can lag by several frames.
     const nextFrame = 1 / 30 + 0.00001
-    if (end !== null && !video.seeking && mediaTime + nextFrame >= end && video.currentTime + nextFrame >= end) {
+    if (end !== null && !video.seeking && mediaTime + nextFrame >= origin + end && video.currentTime + nextFrame >= origin + end) {
       finishEpisode(video, end)
     }
   })
@@ -80,15 +84,23 @@ export function AttemptStage({ attempt, videoRef, episodeEnd, time, holdIds, onT
             playsInline preload="metadata" aria-label={attempt.fileName}
             onLoadedMetadata={({ currentTarget: video }) => {
               setSize({ width: video.videoWidth, height: video.videoHeight })
-              if (Number.isFinite(video.duration)) setDuration(video.duration)
+              if (trimEnd != null) {
+                setDuration(Math.max(0.1, trimEnd - origin))
+                if (video.currentTime < origin) video.currentTime = origin
+              } else if (Number.isFinite(video.duration)) setDuration(video.duration)
               setError(false)
               onMediaReady(true)
             }}
             onTimeUpdate={({ currentTarget: video }) => {
+              if (trimEnd != null && video.currentTime >= trimEnd) {
+                video.pause()
+                video.currentTime = Math.max(origin, trimEnd - 0.001)
+              }
               const end = episodeEnd.current
-              if (end !== null && !video.seeking && video.currentTime >= end) finishEpisode(video, end)
-              else onTime(video.currentTime)
+              if (end !== null && !video.seeking && video.currentTime >= origin + end) finishEpisode(video, end)
+              else onTime(Math.max(0, video.currentTime - origin))
             }}
+            onClick={togglePlayback}
             onPlay={() => { setPlaying(true); onResume() }}
             onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
             onEmptied={() => {
@@ -99,7 +111,7 @@ export function AttemptStage({ attempt, videoRef, episodeEnd, time, holdIds, onT
             }}
             onError={() => { setPlaying(false); setError(true); onMediaReady(false) }} />
           {ready && visibleHolds.length > 0 && (
-            <svg className="review-masks" viewBox={`0 0 ${size.width} ${size.height}`}
+            <svg key={holdIds.join('|')} className="review-masks" viewBox={`0 0 ${size.width} ${size.height}`}
               preserveAspectRatio="xMidYMid meet" aria-hidden="true">
               {visibleHolds.map((hold) => hold.polygon && hold.polygon.length >= 3 ? (
                 <polygon key={hold.id} points={hold.polygon.map(([x, y]) => `${x * size.width},${y * size.height}`).join(' ')} />
@@ -115,7 +127,11 @@ export function AttemptStage({ attempt, videoRef, episodeEnd, time, holdIds, onT
         </div>
         <div className="review-controls" role="group" aria-label="Управление видео">
           <button type="button" className="review-icon-button review-play" aria-label={playLabel} title={playLabel}
-            disabled={!ready} onClick={togglePlayback}>{playing ? <IconPause /> : <IconPlay />}</button>
+            disabled={!ready} onClick={togglePlayback}>
+            <span className="review-play-glyph" key={playing ? 'pause' : 'play'}>
+              {playing ? <IconPause /> : <IconPlay />}
+            </span>
+          </button>
           <span className="review-clock">{videoTime(value)}</span>
           <div className="review-seek">
             <input type="range" className="review-scrubber" min="0" max={duration || 1} step="0.1" value={value}
@@ -124,6 +140,7 @@ export function AttemptStage({ attempt, videoRef, episodeEnd, time, holdIds, onT
               onChange={(event) => onScrub(event.currentTarget.valueAsNumber)} />
             {duration > 0 && <div className="review-ticks" aria-hidden="true">
               {attempt.moments.map((moment) => <i key={moment.id}
+                className={[moment.timeSec <= value + 0.05 ? 'is-passed' : '', moment.id === liveId ? 'is-now' : ''].filter(Boolean).join(' ') || undefined}
                 style={{ left: `${Math.min(100, Math.max(0, moment.timeSec / duration * 100))}%` }} />)}
             </div>}
           </div>

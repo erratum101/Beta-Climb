@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { climbApi } from '../shared/api'
 import { readClientKind } from '../shared/clientKind'
 import type { AthleteProfile, Attempt, CreateAttemptInput } from '../shared/api'
+import { clipOf, rememberTrim } from '../entities/attempt'
 
 interface SessionValue {
   ready: boolean
@@ -90,16 +91,42 @@ function applyNightTheme(on: boolean) {
   const landing =
     root.classList.contains('is-landing') ||
     (readClientKind() === 'mobile' && window.location.pathname === '/')
+  document.querySelectorAll('meta[name="theme-color"]').forEach((node) => node.remove())
   if (landing && !menuOpen) {
     root.style.colorScheme = 'normal'
-    document.querySelectorAll('meta[name="theme-color"], meta[name="color-scheme"]').forEach((node) => node.remove())
+    document.querySelectorAll('meta[name="color-scheme"]').forEach((node) => node.remove())
+    return
+  }
+  if (root.dataset.clearStatusBar === '1') {
+    root.style.colorScheme = 'dark'
+    document.querySelectorAll('meta[name="color-scheme"]').forEach((node) => node.remove())
     return
   }
   root.style.colorScheme = scheme
   replaceMeta('color-scheme', scheme)
-  const bg = getComputedStyle(root).getPropertyValue('--bg').trim()
-  const chrome = bg || (on ? '#1e1e1e' : '#fd7115')
-  replaceMeta('theme-color', chrome)
+}
+
+export function syncDocumentChrome() {
+  applyNightTheme(document.documentElement.classList.contains('is-night'))
+}
+
+function releaseCover(url?: string) {
+  if (url?.startsWith('blob:')) URL.revokeObjectURL(url)
+}
+
+function withOpeningCover(attempt: Attempt, frame?: Blob): Attempt {
+  if (attempt.thumbnailUrl || !frame) return attempt
+  return { ...attempt, thumbnailUrl: URL.createObjectURL(frame) }
+}
+
+function mergeCover(previous: Attempt, next: Attempt): Attempt {
+  const local = previous.thumbnailUrl?.startsWith('blob:') ? previous.thumbnailUrl : ''
+  if (!local) return next
+  if (next.thumbnailUrl) {
+    releaseCover(local)
+    return next
+  }
+  return { ...next, thumbnailUrl: local }
 }
 
 function replaceMeta(name: string, content: string) {
@@ -151,7 +178,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         const nextAttempts = nextProfile ? await climbApi.listAttempts() : []
         if (!alive) return
         setProfile(nextProfile)
-        setAttempts(nextAttempts)
+        setAttempts(nextAttempts.map(clipOf))
         setLoadError(null)
         setReady(true)
       } catch (error) {
@@ -177,9 +204,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       const updates = new Map<string, Attempt | null>()
       const ids = pending.split(',')
       results.forEach((result, index) => {
-        if (result.status === 'fulfilled') updates.set(ids[index], result.value)
+        if (result.status === 'fulfilled') updates.set(ids[index], result.value ? clipOf(result.value) : result.value)
       })
-      setAttempts((items) => items.flatMap((item) => updates.has(item.id) ? updates.get(item.id) ?? [] : item))
+      setAttempts((items) => items.flatMap((item) => {
+        if (!updates.has(item.id)) return item
+        const next = updates.get(item.id)
+        if (!next) {
+          releaseCover(item.thumbnailUrl)
+          return []
+        }
+        return mergeCover(item, next)
+      }))
       timer = window.setTimeout(poll, 2500)
     }
     timer = window.setTimeout(poll, 2000)
@@ -200,13 +235,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     saveProfile: async (next) => {
       const saved = { ...next, nickname: next.nickname.trim() }
       await climbApi.saveProfile(saved)
-      if (!profile) setAttempts(await climbApi.listAttempts())
+      if (!profile) setAttempts((await climbApi.listAttempts()).map(clipOf))
       setProfile(saved)
     },
     startAttempt: async (input) => {
       const attempt = await climbApi.createAttempt(input)
-      setAttempts((items) => [attempt, ...items.filter((item) => item.id !== attempt.id)])
-      return attempt
+      if (input.trim && input.trim.end > input.trim.start) rememberTrim(attempt.id, input.trim.start, input.trim.end)
+      const clipped = withOpeningCover(clipOf(attempt), input.frame)
+      setAttempts((items) => [clipped, ...items.filter((item) => item.id !== clipped.id)])
+      return clipped
     },
     statusError,
     resetLocal: async () => {

@@ -56,6 +56,8 @@ export interface Attempt {
   discipline: Discipline
   result: AttemptResult
   durationSec: number
+  trimStartSec?: number
+  trimEndSec?: number
   status: AnalysisStatus
   stage: AnalysisStage
   rejectReason?: string
@@ -83,6 +85,7 @@ export interface CreateAttemptInput {
   idempotencyKey: string
   frame?: Blob
   durationSec?: number
+  trim?: { start: number; end: number }
 }
 
 export interface ClimbApi {

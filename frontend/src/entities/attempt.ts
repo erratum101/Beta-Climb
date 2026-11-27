@@ -14,6 +14,26 @@ export function plural(count: number, one: string, few: string, many: string): s
   return `${count} ${many}`
 }
 
+export function rememberTrim(id: string, start: number, end: number) {
+  try {
+    sessionStorage.setItem(`beta-climb.trim.${id}`, JSON.stringify({ start, end }))
+  } catch {
+    /* private mode */
+  }
+}
+
+export function clipOf(attempt: Attempt): Attempt {
+  try {
+    const raw = sessionStorage.getItem(`beta-climb.trim.${attempt.id}`)
+    if (!raw) return attempt
+    const clip = JSON.parse(raw) as { start?: number; end?: number }
+    if (clip.start == null || clip.end == null || !(clip.end > clip.start)) return attempt
+    return { ...attempt, trimStartSec: clip.start, trimEndSec: clip.end, durationSec: clip.end - clip.start }
+  } catch {
+    return attempt
+  }
+}
+
 export function formatSeconds(value: number): string {
   return `${value.toFixed(1)} с`
 }

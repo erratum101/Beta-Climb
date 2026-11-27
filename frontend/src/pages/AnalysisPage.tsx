@@ -1,11 +1,110 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { syncDocumentChrome } from '../app/session'
 import { AttemptStage } from '../features/analysis/AttemptStage'
-import { climbApi, type AnalysisMoment, type Attempt } from '../shared/api'
-import { ScreenHeader } from '../shared/ui/ScreenHeader'
-import { ChipButton } from '../shared/ui/ChipButton'
-import { IconChevron, IconEye, IconPlus } from '../shared/ui/icons'
+import { attemptMediaUrl, climbApi, type AnalysisMoment, type Attempt } from '../shared/api'
 import '../features/analysis/review.css'
+
+const STRIP_FRAMES = 8
+
+function waitForPaint(video: HTMLVideoElement) {
+  return new Promise<void>((resolve) => {
+    const timer = window.setTimeout(resolve, 400)
+    const finish = () => {
+      window.clearTimeout(timer)
+      resolve()
+    }
+    if (typeof video.requestVideoFrameCallback === 'function') {
+      video.requestVideoFrameCallback(() => finish())
+      return
+    }
+    requestAnimationFrame(() => requestAnimationFrame(finish))
+  })
+}
+
+function seekVideo(video: HTMLVideoElement, time: number) {
+  const target = Math.max(0, time)
+  if (Math.abs(video.currentTime - target) < 0.02 && video.readyState >= 2) return waitForPaint(video)
+  return new Promise<void>((resolve) => {
+    const timer = window.setTimeout(finish, 1200)
+    function finish() {
+      window.clearTimeout(timer)
+      video.removeEventListener('seeked', finish)
+      void waitForPaint(video).then(resolve)
+    }
+    video.addEventListener('seeked', finish)
+    try {
+      video.currentTime = target
+    } catch {
+      finish()
+    }
+  })
+}
+
+function frameBlob(video: HTMLVideoElement): Promise<string | 'blocked' | null> {
+  if (video.videoWidth < 2 || video.videoHeight < 2) return Promise.resolve(null)
+  const canvas = document.createElement('canvas')
+  canvas.width = 240
+  canvas.height = Math.max(1, Math.round(240 * video.videoHeight / video.videoWidth))
+  const context = canvas.getContext('2d', { willReadFrequently: true })
+  if (!context) return Promise.resolve(null)
+  try {
+    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+    context.getImageData(0, 0, 1, 1)
+  } catch {
+    return Promise.resolve('blocked')
+  }
+  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob ? URL.createObjectURL(blob) : null), 'image/jpeg', 0.72))
+}
+
+async function captureFilm(src: string, origin: number, span: number, alive: () => boolean, onFrame: (url: string) => void) {
+  const host = document.createElement('div')
+  host.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;overflow:hidden;opacity:0.02;pointer-events:none'
+  const video = document.createElement('video')
+  video.muted = true
+  video.defaultMuted = true
+  video.playsInline = true
+  video.preload = 'auto'
+  video.setAttribute('playsinline', '')
+  video.style.cssText = 'width:320px;height:180px'
+  if (new URL(src, window.location.href).origin !== window.location.origin) video.crossOrigin = 'anonymous'
+  host.appendChild(video)
+  document.body.appendChild(host)
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const timer = window.setTimeout(() => reject(new Error('film')), 8000)
+      const ready = () => {
+        if (video.videoWidth < 2) return
+        window.clearTimeout(timer)
+        resolve()
+      }
+      video.onloadeddata = ready
+      video.onerror = () => {
+        window.clearTimeout(timer)
+        reject(new Error('film'))
+      }
+      video.src = src
+    })
+    if (!alive()) return false
+    for (let index = 0; index < STRIP_FRAMES; index += 1) {
+      if (!alive()) return false
+      const local = span * (index / Math.max(1, STRIP_FRAMES - 1))
+      const at = origin + Math.min(local, Math.max(0, span - 0.05))
+      await seekVideo(video, at)
+      if (!alive()) return false
+      const frame = await frameBlob(video)
+      if (frame === 'blocked') return false
+      if (frame) onFrame(frame)
+    }
+    return true
+  } catch {
+    return false
+  } finally {
+    video.removeAttribute('src')
+    video.load()
+    host.remove()
+  }
+}
 
 export function AnalysisPage() {
   const { id } = useParams()
@@ -30,23 +129,15 @@ function AnalysisDetail({ id }: { id: string }) {
       <button className="btn btn-light" onClick={() => setRetry((value) => value + 1)}>Попробовать снова</button>
     </div>
   )
-  if (attempt === undefined) return <div className="screen screen-center" role="status">Загружаем разбор…</div>
+  if (attempt === undefined) return (
+    <div className="screen screen-center review-loading" role="status">
+      <span className="review-loading-dot" aria-hidden="true" />
+      Загружаем разбор…
+    </div>
+  )
   if (attempt === null) return <Navigate to="/climbs" replace />
   if (attempt.status !== 'ready' && attempt.status !== 'limited') return <Navigate to={`/attempt/${id}/processing`} replace />
   return <Analysis attempt={attempt} />
-}
-
-const ROUTE_COLORS: Record<string, [string, string]> = {
-  red: ['Красный', 'var(--hold-red)'], orange: ['Оранжевый', 'var(--accent)'], yellow: ['Жёлтый', '#f5c83e'],
-  green: ['Зелёный', 'var(--hold-green)'], cyan: ['Голубой', '#51c4da'], blue: ['Синий', '#427be4'],
-  purple: ['Фиолетовый', '#a16bda'], pink: ['Розовый', 'var(--hold-pink)'],
-}
-
-function timestamp(seconds: number) {
-  const tenths = Math.round(seconds * 10)
-  const whole = Math.floor(tenths / 10)
-  const fraction = tenths % 10
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}${fraction ? ',' + fraction : ''}`
 }
 
 function Analysis({ attempt }: { attempt: Attempt }) {
@@ -56,140 +147,156 @@ function Analysis({ attempt }: { attempt: Attempt }) {
   const [selectedId, setSelectedId] = useState(initial?.id)
   const selected = moments.find((moment) => moment.id === selectedId)
   const [time, setTime] = useState(initial?.timeSec ?? 0)
-  const [routePreview, setRoutePreview] = useState(false)
-  const [mediaReady, setMediaReady] = useState(false)
+  const [frames, setFrames] = useState<string[]>([])
+  const [showVideoFrames, setShowVideoFrames] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const seekTarget = useRef(time)
   const episodeEnd = useRef<number | null>(null)
-  const previousTime = useRef(0)
-  const route = attempt.route?.status === 'hypothesis' ? attempt.route : undefined
-  const routeColor = route?.color ? ROUTE_COLORS[route.color] : undefined
   const current = moments.find((m) => m.id === selectedId && time >= m.startSec && time < m.endSec)
     ?? moments.find((m) => time >= m.startSec && time < m.endSec)
-  const holdIds = (routePreview && time <= 0.05 ? route?.holdIds : current?.holdIds) ?? []
+  const holdIds = current?.holdIds ?? []
+  const duration = attempt.durationSec && attempt.durationSec > 0
+    ? attempt.durationSec
+    : Math.max(1, ...moments.map((moment) => moment.endSec))
+
+  const origin = attempt.trimStartSec ?? 0
 
   function seek(seconds: number) {
+    const absolute = Math.max(0, origin + seconds)
     seekTarget.current = seconds
     const player = videoRef.current
     if (player && player.readyState >= 1) {
-      player.currentTime = Number.isFinite(player.duration) ? Math.min(player.duration, seconds) : seconds
+      player.currentTime = Number.isFinite(player.duration) ? Math.min(player.duration, absolute) : absolute
     }
     setTime(seconds)
   }
 
   function openMoment(moment: AnalysisMoment) {
-    setRoutePreview(false)
     setSelectedId(moment.id)
     episodeEnd.current = moment.endSec
     seek(moment.timeSec)
     const player = videoRef.current
-    if (player) {
-      revealVideo(player)
-      void player.play().catch(() => { episodeEnd.current = null })
-    }
+    if (player) void player.play().catch(() => { episodeEnd.current = null })
   }
 
   function playbackTime(seconds: number) {
     setTime(seconds)
-    if (episodeEnd.current !== null || routePreview || videoRef.current?.paused) return
+    if (episodeEnd.current !== null || videoRef.current?.paused) return
     const next = moments.find((m) => seconds >= m.startSec && seconds < m.endSec)
     if (next) setSelectedId(next.id)
   }
 
   function scrub(seconds: number) {
-    setRoutePreview(false)
     episodeEnd.current = null
     seek(seconds)
     const next = moments.find((m) => seconds >= m.startSec && seconds < m.endSec)
     if (next) setSelectedId(next.id)
   }
 
-  function toggleRoute() {
-    const player = videoRef.current
-    if (!player || player.readyState < 1) return
-    episodeEnd.current = null
-    player.pause()
-    if (routePreview) {
-      seek(previousTime.current)
-    } else {
-      previousTime.current = player.currentTime
-      seek(0)
-      revealVideo(player)
-    }
-    setRoutePreview(!routePreview)
+  function stepMoment(direction: -1 | 1) {
+    if (!moments.length) return
+    const index = Math.max(0, moments.findIndex((moment) => moment.id === selected?.id))
+    openMoment(moments[(index + direction + moments.length) % moments.length])
   }
 
-  const limits = attempt.limitations?.length ? attempt.limitations
-    : attempt.status === 'limited' ? ['Данных хватило для частичного разбора.'] : []
-  const colorStyle = routeColor ? { '--review-route-color': routeColor[1] } as CSSProperties : undefined
+  const advice = selected?.action || selected?.title
+  const adviceIndex = selected ? moments.findIndex((moment) => moment.id === selected.id) + 1 : 0
+  const mediaSrc = attempt.mediaUrl || attemptMediaUrl(attempt.id)
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.dataset.clearStatusBar = '1'
+    syncDocumentChrome()
+    return () => {
+      delete root.dataset.clearStatusBar
+      syncDocumentChrome()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!mediaSrc || duration <= 0) return
+    let alive = true
+    const urls: string[] = []
+    setFrames([])
+    setShowVideoFrames(false)
+    void captureFilm(mediaSrc, origin, duration, () => alive, (url) => {
+      if (!alive) {
+        URL.revokeObjectURL(url)
+        return
+      }
+      urls.push(url)
+      setFrames(urls.slice())
+    }).then((painted) => {
+      if (alive && !painted && urls.length === 0) setShowVideoFrames(true)
+    })
+    return () => {
+      alive = false
+      urls.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [mediaSrc, origin, duration])
+
+  const markLeft = selected && duration > 0 ? (selected.startSec / duration) * 100 : 0
+  const markWidth = selected && duration > 0
+    ? Math.max(1.5, ((selected.endSec - selected.startSec) / duration) * 100)
+    : 0
 
   return (
-    <main className="screen review-screen" style={colorStyle}>
-      <div className="review-content">
-        <ScreenHeader title="Разбор попытки" onBack={() => navigate('/climbs')} trailing={
-          <button type="button" className="icon-btn" onClick={() => navigate('/attempt/new')}
-            aria-label="Добавить попытку" title="Добавить попытку"><IconPlus size={20} /></button>
-        } />
-        <div className="card review-sheet">
-          <AttemptStage attempt={attempt} videoRef={videoRef} episodeEnd={episodeEnd} time={time} holdIds={holdIds}
-            onTime={playbackTime} onResume={() => setRoutePreview(false)} onScrub={scrub}
-            onMediaReady={(ready) => {
-              setMediaReady(ready)
-              if (ready) seek(seekTarget.current)
-              else setRoutePreview(false)
-            }}>
-            <section className="review-panel" aria-label="Разбор эпизодов">
-              {selected ? <>
-                <div className="review-checkpoints" role="group" aria-label="Эпизоды по времени">
-                  <span aria-hidden="true">Эпизоды</span>
-                  {moments.map((moment) => (
-                    <ChipButton key={moment.id} className="review-checkpoint"
-                      selected={selected.id === moment.id} aria-controls="review-note"
-                      aria-label={`Эпизод ${timestamp(moment.timeSec)}. ${moment.title}`}
-                      onClick={() => openMoment(moment)}>
-                      {timestamp(moment.timeSec)}
-                    </ChipButton>
-                  ))}
-                </div>
-                <article className="review-note" id="review-note" key={selected.id}>
-                  <h2>{selected.title}</h2>
-                  {selected.action && <div className="review-action">
-                    <h3>Что попробовать</h3>
-                    <p>{selected.action}</p>
-                  </div>}
-                  {(selected.happened || selected.problem) && <details className="review-evidence">
-                    <summary>Разобрать движение <IconChevron /></summary>
-                    {selected.happened && <div><h3>Что видно на записи</h3><p>{selected.happened}</p></div>}
-                    {selected.problem && <div><h3>Возможное объяснение</h3><p>{selected.problem}</p></div>}
-                  </details>}
-                </article>
-              </> : <p className="review-empty">На этой записи не удалось уверенно выделить эпизод для совета.</p>}
-              {routeColor && <div className="review-route">
-                <div><span>Вероятный цвет трассы</span>
-                  <strong><i aria-hidden="true" />{routeColor[0]}</strong>
-                </div>
-                {Boolean(route?.holdIds?.length) && <button type="button" className="filter-btn review-route-button"
-                  disabled={!mediaReady} aria-pressed={routePreview} onClick={toggleRoute}
-                  aria-label={routePreview ? 'Скрыть зацепки и вернуться к эпизоду' : 'Показать зацепки на первом кадре'}
-                  title={routePreview ? 'Скрыть зацепки' : 'Показать зацепки на первом кадре'}>
-                  <IconEye crossed={routePreview} />
-                </button>}
-              </div>}
-            </section>
-          </AttemptStage>
-          {attempt.previousAttemptId && attempt.change && <button type="button" className="review-compare"
-            onClick={() => navigate(`/compare/${attempt.id}`)}>Сравнить попытки</button>}
-          {limits.length > 0 && <details className="review-limits">
-            <summary>Ограничения разбора <IconChevron /></summary>
-            <ul>{limits.map((reason) => <li key={reason}>{reason}</li>)}</ul>
-          </details>}
+    <main className="flow-analysis flow-edit">
+      <div className="flow-stage">
+        <button type="button" className="flow-close" aria-label="Закрыть" onClick={() => navigate('/climbs')}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+        <AttemptStage attempt={attempt} videoRef={videoRef} episodeEnd={episodeEnd} time={time} holdIds={holdIds}
+          onTime={playbackTime} onResume={() => {}} onScrub={scrub}
+          onMediaReady={(ready) => { if (ready) seek(seekTarget.current) }}>
+          {null}
+        </AttemptStage>
+      </div>
+      <p className="flow-advice">
+        {advice ? `${adviceIndex}. ${advice}` : 'На этой записи не удалось выделить совет.'}
+      </p>
+      <div className="flow-trimbar">
+        <button type="button" className="flow-round" aria-label="Предыдущий совет" disabled={!moments.length} onClick={() => stepMoment(-1)}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+            <path d="M14 6l-6 6 6 6" />
+          </svg>
+        </button>
+        <div className="flow-film">
+          {frames.length > 0 ? (
+            <div className="flow-film-frames" aria-hidden="true">
+              {frames.map((src) => <img key={src} src={src} alt="" />)}
+            </div>
+          ) : showVideoFrames && mediaSrc ? (
+            <div className="flow-film-frames" aria-hidden="true">
+              {Array.from({ length: STRIP_FRAMES }, (_, index) => {
+                const local = duration * (index / Math.max(1, STRIP_FRAMES - 1))
+                const at = origin + Math.min(local, Math.max(0, duration - 0.05))
+                return <video key={at} src={`${mediaSrc.split('#')[0]}#t=${at.toFixed(3)}`} muted playsInline preload="auto" />
+              })}
+            </div>
+          ) : null}
+          {selected && duration > 0 ? (
+            <div className="flow-film-window" style={{ left: `${markLeft}%`, width: `${markWidth}%` }} />
+          ) : null}
+          <div className="flow-film-playhead" style={{ left: `${duration > 0 ? Math.min(100, (time / duration) * 100) : 0}%` }} />
+          <input
+            type="range"
+            min={0}
+            max={duration}
+            step={0.1}
+            value={Math.min(time, duration)}
+            aria-label="Позиция видео"
+            onChange={(event) => scrub(event.currentTarget.valueAsNumber)}
+          />
         </div>
+        <button type="button" className="flow-round" aria-label="Следующий совет" disabled={!moments.length} onClick={() => stepMoment(1)}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+            <path d="M10 6l6 6-6 6" />
+          </svg>
+        </button>
       </div>
     </main>
   )
-}
-
-function revealVideo(player: HTMLVideoElement) {
-  const picture = player.getBoundingClientRect()
-  if (picture.top < 0 || picture.bottom > window.innerHeight) player.scrollIntoView({ block: 'nearest' })
 }

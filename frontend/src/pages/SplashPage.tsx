@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
+import { isResumeEntry, readRememberedRoute } from '../shared/routeMemory'
 import { SvgIcon } from '../shared/ui/SvgIcon'
 
 const HOLD_MS = 760
@@ -21,6 +22,11 @@ export function SplashPage() {
   useEffect(() => {
     if (!exiting) return
     const timer = window.setTimeout(() => {
+      const saved = readRememberedRoute()
+      if (saved && isResumeEntry(window.location.pathname)) {
+        navigate(saved, { replace: true })
+        return
+      }
       if (profile) {
         sessionStorage.setItem(SPLASH_ENTER_KEY, '1')
         navigate('/climbs', { replace: true })

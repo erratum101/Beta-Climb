@@ -364,17 +364,78 @@ function AppleMark() {
   )
 }
 
+function IosShareHint({ russian, onClose }: { russian: boolean; onClose: () => void }) {
+  const [open, setOpen] = useState(true)
+  const copy = russian
+    ? { tap: 'Нажмите', then: 'затем', add: 'На экран «Домой»', close: 'Закрыть', label: 'Нажмите «Поделиться», затем «На экран Домой»' }
+    : { tap: 'Tap', then: ', then', add: 'Add to Home Screen', close: 'Close', label: 'Tap Share, then Add to Home Screen' }
+  if (!open) return null
+  return createPortal(
+    <div className="ios-share-hint" role="note" aria-label={copy.label} lang={russian ? 'ru' : 'en'}>
+      <div className="ios-share-hint-pill">
+        <button
+          type="button"
+          className="ios-share-hint-close"
+          aria-label={copy.close}
+          onClick={() => {
+            onClose()
+            setOpen(false)
+          }}
+        >
+          <svg viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M1.2 1.2l9.6 9.6M10.8 1.2L1.2 10.8" />
+          </svg>
+        </button>
+        <span className="ios-share-hint-line">
+          <span className="ios-share-hint-text">{copy.tap}</span>
+          <svg className="ios-share-hint-icon" viewBox="2.5 3.8 15.2 19.1" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M5.22 22.81h9.55c1.8 0 2.73-.92 2.73-2.69V11.95c0-1.77-.93-2.69-2.73-2.69h-2.4v1.63h2.3c.77 0 1.2.39 1.2 1.2v7.89c0 .81-.43 1.21-1.2 1.21H5.32c-.77 0-1.2-.4-1.2-1.21V12.09c0-.81.43-1.2 1.2-1.2H7.63V9.26H5.22c-1.79 0-2.72.92-2.72 2.69v8.17c0 1.77.93 2.69 2.72 2.69ZM9.99 16.2c.42 0 .77-.35.77-.76V7.08L10.7 5.85l.51.6L12.38 7.7c.14.15.33.22.52.22.37 0 .68-.27.68-.66 0-.2-.08-.35-.22-.49L10.57 4.09c-.19-.2-.37-.27-.58-.27-.2 0-.38.07-.57.27L6.63 6.77c-.14.14-.22.29-.22.49 0 .39.3.66.68.66.19 0 .39-.07.52-.22L8.77 6.45l.52-.6-.06 1.23v8.36c0 .41.35.76.76.76Z"
+            />
+          </svg>
+          <span className="ios-share-hint-text">{copy.then}</span>
+        </span>
+        <span className="ios-share-hint-line">
+          <svg className="ios-share-hint-icon" viewBox="2 6 16 16" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M16.72 7.28c.86.86 1.02 2.03 1.02 3.54v6.37c0 1.52-.16 2.69-1.02 3.54-.85.85-2.03 1.01-3.54 1.01H6.81c-1.51 0-2.69-.16-3.55-1.01-.85-.85-1-2.02-1-3.54V10.8c0-1.49.15-2.66 1.01-3.52.84-.84 2.03-1.01 3.52-1.01h6.39c1.51 0 2.69.16 3.54 1.01Zm-.61 3.32c0-.87-.11-1.66-.57-2.12-.47-.47-1.27-.59-2.13-.59H6.6c-.87 0-1.69.12-2.15.58-.46.47-.57 1.26-.57 2.14v6.81c0 .86.11 1.65.58 2.12.46.46 1.27.58 2.12.58h6.83c.86 0 1.66-.12 2.13-.58.45-.47.57-1.26.57-2.12V10.6ZM6.17 14.01c0-.47.31-.79.78-.79H9.22V10.94c0-.46.32-.78.77-.78.46 0 .79.32.79.78v2.28h2.28c.46 0 .78.32.78.79 0 .45-.33.76-.78.76H10.78v2.28c0 .46-.33.78-.79.78-.45 0-.77-.32-.77-.78V14.77H6.95c-.46 0-.78-.31-.78-.76Z"
+            />
+          </svg>
+          <span className="ios-share-hint-text">{copy.add}</span>
+        </span>
+      </div>
+      <svg className="ios-share-hint-tip" viewBox="0 0 19 8" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M0 1c2.1 0 5.41 3.11 7.5 5.33.74.78 1.1 1.17 1.46 1.28.33.12.62.12.96.01.35-.12.72-.51 1.46-1.29C13.48 4.11 16.82 1 19 1V0H0Z"
+        />
+      </svg>
+    </div>,
+    document.body,
+  )
+}
+
 function PhoneInstall({
   russian,
   onGuide,
+  onHintClose,
 }: {
   russian: boolean
   onGuide: (platform: GuideId) => void
+  onHintClose: () => void
 }) {
   const platform = useState(readPhonePlatform)[0]
   const [done, setDone] = useState(isAppInstalled)
 
   useEffect(() => subscribeInstallPrompt(() => setDone(isAppInstalled())), [])
+
+  if (platform === 'ios' && !done) {
+    return (
+      <IosShareHint russian={russian} onClose={onHintClose} />
+    )
+  }
 
   async function onClick() {
     if (done) return
@@ -437,7 +498,7 @@ function LandingFloat({
   as?: 'h2' | 'h3' | 'p' | 'span'
   id?: string
   className?: string
-  scrollContainerRef: { readonly current: HTMLElement | null }
+  scrollContainerRef: { readonly current: HTMLElement | null } | null
   triggerRef: { readonly current: HTMLElement | null }
   fadeFirst?: boolean
   children: string
@@ -485,7 +546,7 @@ function InstallStep({
   anchor: boolean
   showQr: boolean
   swap: GuideId | null
-  scrollContainerRef: { readonly current: HTMLElement | null }
+  scrollContainerRef: { readonly current: HTMLElement | null } | null
 }) {
   const pageRef = useRef<HTMLElement>(null)
   const shot = pageShot(page)
@@ -512,7 +573,6 @@ function InstallStep({
             id={anchor ? 'install-title' : undefined}
             scrollContainerRef={scrollContainerRef}
             triggerRef={pageRef}
-            fadeFirst={swap != null}
           >
             {page.title}
           </LandingFloat>
@@ -521,7 +581,6 @@ function InstallStep({
             className="install-page-lead"
             scrollContainerRef={scrollContainerRef}
             triggerRef={pageRef}
-            fadeFirst={swap != null}
           >
             {page.text}
           </LandingFloat>
@@ -544,7 +603,7 @@ function InstallSteps({
   russian: boolean
   omitIntro: boolean
   onPlatform: (platform: GuideId) => void
-  scrollContainerRef: { readonly current: HTMLElement | null }
+  scrollContainerRef: { readonly current: HTMLElement | null } | null
 }) {
   const pages = INSTALL_PAGES[copyLang(russian)][platform]
   const start = omitIntro ? 1 : 0
@@ -554,6 +613,11 @@ function InstallSteps({
     prevPlatform.current = platform
     setSwap(platform)
   }
+  useEffect(() => {
+    if (swap == null) return
+    const id = window.setTimeout(() => setSwap(null), 520)
+    return () => window.clearTimeout(id)
+  }, [swap])
   return (
     <div className="install-steps">
       <div className="install-step-top">
@@ -574,55 +638,93 @@ function InstallSteps({
   )
 }
 
+const HERO_VIDEO_HTML =
+  '<video id="hero-bg" autoplay muted loop playsinline webkit-playsinline="true" preload="auto" disablepictureinpicture src="/bg.mp4"></video>'
+
+let heroVideo: HTMLVideoElement | null = null
+
+function ensureHeroVideo(host: HTMLElement) {
+  if (!heroVideo) {
+    const existing = document.getElementById('hero-bg')
+    if (existing instanceof HTMLVideoElement) heroVideo = existing
+  }
+  if (!heroVideo) {
+    const wrap = document.createElement('div')
+    wrap.innerHTML = HERO_VIDEO_HTML
+    const created = wrap.querySelector('video')
+    if (created instanceof HTMLVideoElement) heroVideo = created
+  }
+  const video = heroVideo
+  if (!video) return null
+  video.muted = true
+  video.defaultMuted = true
+  video.volume = 0
+  video.playsInline = true
+  video.autoplay = true
+  video.controls = false
+  video.removeAttribute('controls')
+  if (video.parentElement !== host) host.appendChild(video)
+  return video
+}
+
 function HeroVideo({ onReady }: { onReady: () => void }) {
-  const ref = useRef<HTMLVideoElement>(null)
+  const hostRef = useRef<HTMLDivElement>(null)
   const onReadyRef = useRef(onReady)
   onReadyRef.current = onReady
 
-  useEffect(() => {
-    const video = ref.current
+  useLayoutEffect(() => {
+    const host = hostRef.current
+    if (host) ensureHeroVideo(host)
+  })
+
+  useLayoutEffect(() => {
+    const host = hostRef.current
+    const video = host ? ensureHeroVideo(host) : null
     if (!video) return
     let alive = true
     let done = false
-    let painted = false
-    let timer = 0
-
-    video.muted = true
-    video.defaultMuted = true
-    video.playsInline = true
-    video.controls = false
-    video.setAttribute('playsinline', '')
-    video.setAttribute('webkit-playsinline', '')
+    let painted = !video.paused && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+    let pending = false
+    let blocked = false
 
     const finish = () => {
       if (!alive || done) return
       done = true
-      window.clearInterval(timer)
       onReadyRef.current()
     }
 
-    const coversAll = () => {
-      const duration = video.duration
-      if (!Number.isFinite(duration) || duration <= 0) return false
-      for (let index = 0; index < video.buffered.length; index += 1) {
-        const start = video.buffered.start(index)
-        const end = video.buffered.end(index)
-        if (start <= 0.25 && end >= duration - 0.35) return true
-      }
-      return false
-    }
-
     const sync = () => {
-      if (done) return
-      const frame = painted || video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
-      if (frame && coversAll()) finish()
+      if (!done && painted && !video.paused && !video.ended) finish()
     }
 
-    const start = () => {
+    const start = (force = false) => {
+      if (!alive) return
       video.muted = true
-      const pending = video.play()
-      if (pending) pending.catch(() => {})
-      sync()
+      video.defaultMuted = true
+      if (!video.paused && !video.ended) {
+        sync()
+        return
+      }
+      if (pending || (blocked && !force)) return
+      pending = true
+      const task = video.play()
+      if (!task) {
+        pending = false
+        return
+      }
+      task.then(() => {
+        pending = false
+        blocked = false
+        sync()
+      }).catch((error: unknown) => {
+        pending = false
+        if (error instanceof DOMException && error.name === 'NotAllowedError') blocked = true
+      })
+    }
+
+    const unlock = () => {
+      blocked = false
+      start(true)
     }
 
     const markPaint = () => {
@@ -630,50 +732,65 @@ function HeroVideo({ onReady }: { onReady: () => void }) {
       sync()
     }
 
+    const onPause = () => {
+      if (!alive || video.ended || document.visibilityState === 'hidden') return
+      start()
+    }
+
+    const onEnded = () => {
+      if (!alive) return
+      if (Number.isFinite(video.duration)) video.currentTime = 0
+      blocked = false
+      start(true)
+    }
+
+    const onVisible = () => {
+      if (document.visibilityState === 'hidden') return
+      blocked = false
+      start(true)
+    }
+
     if (typeof video.requestVideoFrameCallback === 'function') {
       video.requestVideoFrameCallback(() => markPaint())
     }
 
-    video.addEventListener('loadedmetadata', sync)
-    video.addEventListener('progress', sync)
-    video.addEventListener('loadeddata', start)
-    video.addEventListener('canplay', start)
-    video.addEventListener('canplaythrough', sync)
+    const kick = () => start(false)
+    video.addEventListener('loadeddata', kick)
+    video.addEventListener('canplay', kick)
     video.addEventListener('playing', markPaint)
-    video.addEventListener('suspend', sync)
-    video.addEventListener('error', finish)
-    window.addEventListener('pointerdown', start, { passive: true })
-    timer = window.setInterval(sync, 120)
-    start()
+    video.addEventListener('pause', onPause)
+    video.addEventListener('ended', onEnded)
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onVisible)
+    window.addEventListener('pointerdown', unlock, { capture: true, passive: true })
+    window.addEventListener('touchstart', unlock, { capture: true, passive: true })
+    const timer = window.setInterval(() => {
+      if (!alive || document.visibilityState === 'hidden') return
+      if (video.paused) start(false)
+      else {
+        painted = true
+        sync()
+        if (done) window.clearInterval(timer)
+      }
+    }, 300)
+    start(true)
 
     return () => {
       alive = false
       window.clearInterval(timer)
-      video.removeEventListener('loadedmetadata', sync)
-      video.removeEventListener('progress', sync)
-      video.removeEventListener('loadeddata', start)
-      video.removeEventListener('canplay', start)
-      video.removeEventListener('canplaythrough', sync)
+      video.removeEventListener('loadeddata', kick)
+      video.removeEventListener('canplay', kick)
       video.removeEventListener('playing', markPaint)
-      video.removeEventListener('suspend', sync)
-      video.removeEventListener('error', finish)
-      window.removeEventListener('pointerdown', start)
+      video.removeEventListener('pause', onPause)
+      video.removeEventListener('ended', onEnded)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onVisible)
+      window.removeEventListener('pointerdown', unlock, true)
+      window.removeEventListener('touchstart', unlock, true)
     }
   }, [])
 
-  return (
-    <video
-      ref={ref}
-      autoPlay
-      muted
-      loop
-      playsInline
-      preload="auto"
-      controls={false}
-      disablePictureInPicture
-      src="/bg.mp4"
-    />
-  )
+  return <div ref={hostRef} className="landing-hero-video" />
 }
 
 function usePhoneLayout(mode: 'mobile' | 'desktop') {
@@ -691,67 +808,12 @@ function usePhoneLayout(mode: 'mobile' | 'desktop') {
 }
 
 function PlainHeroTitle({ label }: { label: string }) {
-  const ref = useRef<HTMLHeadingElement>(null)
-  const words = label.split(/\s+/).filter(Boolean)
-
-  useLayoutEffect(() => {
-    const heading = ref.current
-    const copy = heading?.closest<HTMLElement>('.landing-hero-copy')
-    if (!heading || !copy) return
-
-    const fit = () => {
-      const width = heading.clientWidth
-      if (width < 8) return
-      const actions = copy.querySelector<HTMLElement>('.landing-hero-actions')
-      const styles = getComputedStyle(copy)
-      const padTop = Number.parseFloat(styles.paddingTop) || 0
-      const padBottom = Number.parseFloat(styles.paddingBottom) || 0
-      const gap = Number.parseFloat(styles.rowGap || styles.gap) || 0
-      const actionsHeight = actions?.offsetHeight ?? 0
-      const maxHeight = Math.max(120, copy.clientHeight - padTop - padBottom - actionsHeight - gap - 16)
-      const lines = [...heading.children] as HTMLElement[]
-      lines.forEach((line) => {
-        line.style.fontSize = ''
-      })
-      let low = 16
-      let high = 160
-      let best = low
-
-      for (let step = 0; step < 16; step += 1) {
-        const size = (low + high) / 2
-        heading.style.fontSize = `${size}px`
-        const widest = lines.reduce((max, line) => Math.max(max, line.scrollWidth), 0)
-        const fits = widest <= width + 0.5 && heading.scrollHeight <= maxHeight + 0.5
-        if (fits) {
-          best = size
-          low = size
-        } else {
-          high = size
-        }
-      }
-
-      heading.style.fontSize = `${best}px`
-    }
-
-    let alive = true
-    const run = () => {
-      if (alive) fit()
-    }
-    run()
-    const observer = new ResizeObserver(run)
-    observer.observe(copy)
-    const fonts = document.fonts
-    if (fonts) void fonts.ready.then(run)
-    return () => {
-      alive = false
-      observer.disconnect()
-    }
-  }, [label])
+  const lines = label.split('\n').map((line) => line.trim()).filter(Boolean)
 
   return (
-    <h1 className="landing-title is-plain is-lines" ref={ref}>
-      {words.map((word, index) => (
-        <span key={`${word}-${index}`}>{word}</span>
+    <h1 className="landing-title is-plain is-lines">
+      {lines.map((line) => (
+        <span key={line}>{line}</span>
       ))}
     </h1>
   )
@@ -794,14 +856,279 @@ function HeroTitle({ russian, night, plain }: { russian: boolean; night: boolean
   )
 }
 
-function currentSection(root: HTMLElement) {
-  const edge = root.getBoundingClientRect().top + 56
+/** Hero video above the first screen. It sits under Safari's top bar, so the page never rests above it. */
+function landingOverhang() {
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--landing-overhang')) || 0
+}
+
+/** On phones the document scrolls so Safari can show the page through its toolbars.
+    The same overhang sits below the last page, under Safari's bottom bar. */
+function landingView(el: HTMLElement, page: boolean) {
+  const height = () => (page ? window.innerHeight : el.clientHeight)
+  const overhang = page ? landingOverhang() : 0
+  return {
+    page,
+    min: () => overhang,
+    target: (page ? window : el) as EventTarget,
+    top: () => (page ? window.scrollY : el.scrollTop),
+    setTop: (value: number) => {
+      if (page) window.scrollTo({ top: value, behavior: 'instant' })
+      else el.scrollTop = value
+    },
+    height,
+    max: () => (page ? document.documentElement.scrollHeight - overhang : el.scrollHeight) - height(),
+    edge: () => el.getBoundingClientRect().top + (page ? window.scrollY : 0),
+  }
+}
+
+function currentSection(viewTop: number) {
+  const edge = viewTop + 56
   let current: SectionId = 'home'
   for (const item of NAV) {
     const node = document.getElementById(item.id)
     if (node && node.getBoundingClientRect().top <= edge) current = item.id
   }
   return current
+}
+
+type ShotBox = { left: number; top: number; width: number; height: number }
+
+function smoothRange(from: number, to: number, value: number) {
+  const span = to - from
+  if (span <= 0) return value >= to ? 1 : 0
+  const k = Math.min(1, Math.max(0, (value - from) / span))
+  return k * k * (3 - 2 * k)
+}
+
+/** Visual bounds of an object-fit: contain screenshot, in viewport pixels. */
+function containedShot(img: HTMLImageElement): ShotBox | null {
+  const box = img.getBoundingClientRect()
+  if (box.width < 2 || box.height < 2) return null
+  const nw = img.naturalWidth
+  const nh = img.naturalHeight
+  if (!nw || !nh) return { left: box.left, top: box.top, width: box.width, height: box.height }
+  const scale = Math.min(box.width / nw, box.height / nh)
+  const width = nw * scale
+  const height = nh * scale
+  return {
+    left: box.left + (box.width - width) / 2,
+    top: box.top + (box.height - height) / 2,
+    width,
+    height,
+  }
+}
+
+function visibleShot(figure: HTMLElement) {
+  return [...figure.querySelectorAll('img')].find((img) => getComputedStyle(img).display !== 'none') ?? null
+}
+
+/**
+ * While a page turn moves between two install screenshots, one copy leaves the
+ * settled slot of the old picture, arcs to the settled slot of the new one,
+ * and crossfades into it. It tips a few degrees downhill, then stands back up.
+ * The scroll position is already eased by the page turn.
+ */
+function InstallShotMorph({
+  scrollRef,
+  pageScroll,
+}: {
+  scrollRef: { readonly current: HTMLDivElement | null }
+  pageScroll: boolean
+}) {
+  const hostRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const host = hostRef.current
+    const scroll = scrollRef.current
+    if (!host || !scroll) return
+    const fromImg = host.querySelector<HTMLImageElement>('.is-from')
+    const toImg = host.querySelector<HTMLImageElement>('.is-to')
+    if (!fromImg || !toImg) return
+
+    const ghosts = new Set<HTMLElement>()
+    let raf = 0
+    let lastTop = Number.NaN
+    let alive = true
+
+    const clearGhosts = () => {
+      ghosts.forEach((node) => node.classList.remove('is-shot-ghost'))
+      ghosts.clear()
+    }
+
+    const hide = () => {
+      host.style.visibility = 'hidden'
+      host.style.filter = 'none'
+      clearGhosts()
+    }
+
+    const readTop = () => (pageScroll ? window.scrollY : scroll.scrollTop)
+
+    const paint = () => {
+      clearGhosts()
+      if (!alive || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        hide()
+        return
+      }
+
+      const port = scroll.getBoundingClientRect()
+      const top = readTop()
+      const pages = [...scroll.querySelectorAll<HTMLElement>('.landing-frame')]
+      const stops = pages.map((page) => {
+        const box = page.getBoundingClientRect()
+        const snap = pageScroll ? box.top - port.top : box.top - port.top + scroll.scrollTop
+        return { page, snap }
+      })
+
+      let index = -1
+      for (let i = 0; i < stops.length; i += 1) {
+        if (top + 1 >= stops[i].snap) index = i
+      }
+      const current = stops[index]
+      const next = stops[index + 1]
+      const span = current && next ? next.snap - current.snap : 0
+      const progress = span > 8 ? (top - current.snap) / span : 0
+      if (!current || !next || !(progress > 0.001 && progress < 0.999)) {
+        hide()
+        return
+      }
+
+      const fromFigure = current.page.querySelector<HTMLElement>('.apple-step-shot')
+      const toFigure = next.page.querySelector<HTMLElement>('.apple-step-shot')
+      const fromShot = fromFigure ? visibleShot(fromFigure) : null
+      const toShot = toFigure ? visibleShot(toFigure) : null
+      const fromLive = fromShot ? containedShot(fromShot) : null
+      const toLive = toShot ? containedShot(toShot) : null
+      if (!toFigure || !toShot || !toLive) {
+        hide()
+        return
+      }
+
+      const pageTop = pageScroll ? port.top + window.scrollY : port.top
+      const shiftOf = (page: HTMLElement) => pageTop - page.getBoundingClientRect().top
+      const park = (live: ShotBox, page: HTMLElement): ShotBox => {
+        const shift = shiftOf(page)
+        return { left: live.left, top: live.top + shift, width: live.width, height: live.height }
+      }
+      const to = park(toLive, next.page)
+      if (to.width < 2) {
+        hide()
+        return
+      }
+
+      if (!fromFigure || !fromShot || !fromLive) {
+        // The first picture stays hidden through the first part of the page
+        // turn, then drops straight down into its slot and fades in.
+        toFigure.classList.add('is-shot-ghost')
+        ghosts.add(toFigure)
+        const appearFrom = 0.46
+        if (progress < appearFrom) {
+          fromImg.style.opacity = '0'
+          toImg.style.opacity = '0'
+          host.style.visibility = 'hidden'
+          return
+        }
+        const local = (progress - appearFrom) / (1 - appearFrom)
+        const eased = local * local * (3 - 2 * local)
+        const drop = Math.max(120, Math.min(220, port.height * 0.28))
+        const cx = toLive.left + toLive.width / 2
+        const cy = toLive.top + toLive.height / 2 - (1 - eased) * drop
+        const src = toShot.currentSrc || toShot.src
+        if (toImg.src !== src) toImg.src = src
+        fromImg.style.opacity = '0'
+        toImg.style.opacity = String(eased)
+        host.style.visibility = 'visible'
+        host.style.width = `${toLive.width}px`
+        host.style.height = `${toLive.height}px`
+        host.style.filter = 'none'
+        host.style.transform = `translate(${cx}px, ${cy}px) translate(${-toLive.width / 2}px, ${-toLive.height / 2}px)`
+        return
+      }
+
+      const from = park(fromLive, current.page)
+      if (from.width < 2) {
+        hide()
+        return
+      }
+
+      const ax = from.left + from.width / 2
+      const ay = from.top + from.height / 2
+      const bx = to.left + to.width / 2
+      const by = to.top + to.height / 2
+      const len = Math.hypot(bx - ax, by - ay)
+      const lift = Math.max(72, Math.min(160, 36 + len * 0.28))
+      const side = (ax <= bx ? -1 : 1) * (len < 80 ? 28 : Math.min(42, Math.abs(by - ay) * 0.12))
+      // sin² starts and ends flat, so the flight leaves the slot and lands without a kink.
+      const bump = Math.sin(Math.PI * progress) ** 2
+      const x = ax + (bx - ax) * progress + side * bump
+      const y = ay + (by - ay) * progress - lift * bump
+      // A small downhill tip toward the way the picture is traveling, back to 0° at both slots.
+      const downhill = bx < ax - 24 ? 1 : bx > ax + 24 ? -1 : 1
+      const tilt = downhill * 8 * Math.sin(Math.PI * progress)
+      const w = from.width + (to.width - from.width) * progress
+      const h = from.height + (to.height - from.height) * progress
+      const pulse = 1 - Math.sin(Math.PI * progress) * 0.06
+      const fade = smoothRange(0.32, 0.68, progress)
+
+      const fromSrc = fromShot.currentSrc || fromShot.src
+      const toSrc = toShot.currentSrc || toShot.src
+      if (fromImg.src !== fromSrc) fromImg.src = fromSrc
+      if (toImg.src !== toSrc) toImg.src = toSrc
+      fromImg.style.opacity = String(1 - fade)
+      toImg.style.opacity = String(fade)
+
+      host.style.visibility = 'visible'
+      host.style.width = `${w}px`
+      host.style.height = `${h}px`
+      host.style.filter = 'none'
+      host.style.transform = `translate(${x}px, ${y}px) rotate(${tilt}deg) scale(${pulse}) translate(${-w / 2}px, ${-h / 2}px)`
+      fromFigure.classList.add('is-shot-ghost')
+      toFigure.classList.add('is-shot-ghost')
+      ghosts.add(fromFigure)
+      ghosts.add(toFigure)
+    }
+
+    const kick = () => {
+      if (raf || !alive) return
+      raf = window.requestAnimationFrame(() => {
+        raf = 0
+        if (!alive) return
+        const top = readTop()
+        paint()
+        if (top !== lastTop) {
+          lastTop = top
+          kick()
+        }
+      })
+    }
+
+    const onScroll = () => kick()
+    kick()
+    const scroller: EventTarget = pageScroll ? window : scroll
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    scroll.addEventListener('load', onScroll, true)
+    const observer = new MutationObserver(onScroll)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    observer.observe(scroll, { childList: true, subtree: true })
+
+    return () => {
+      alive = false
+      window.cancelAnimationFrame(raf)
+      scroller.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      scroll.removeEventListener('load', onScroll, true)
+      observer.disconnect()
+      clearGhosts()
+    }
+  }, [pageScroll, scrollRef])
+
+  return createPortal(
+    <div ref={hostRef} className="install-shot-morph" aria-hidden="true">
+      <img className="is-from" alt="" draggable={false} />
+      <img className="is-to" alt="" draggable={false} />
+    </div>,
+    document.body,
+  )
 }
 
 const INTRO_SEEN_KEY = 'beta-climb.intro-seen'
@@ -835,20 +1162,18 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     if (mode !== 'mobile') return
     const root = document.documentElement
     root.classList.add('is-landing')
+    window.scrollTo(0, landingOverhang())
     if (!root.classList.contains('is-landing-menu')) {
       root.style.colorScheme = 'normal'
       document.querySelectorAll('meta[name="theme-color"], meta[name="color-scheme"]').forEach((node) => node.remove())
     }
     return () => {
       root.classList.remove('is-landing')
+      window.scrollTo(0, 0)
       const on = root.classList.contains('is-night')
       const scheme = on ? 'dark' : 'light'
       root.style.colorScheme = scheme
       document.querySelectorAll('meta[name="theme-color"], meta[name="color-scheme"]').forEach((node) => node.remove())
-      const theme = document.createElement('meta')
-      theme.setAttribute('name', 'theme-color')
-      theme.setAttribute('content', on ? '#1e1e1e' : '#fd7115')
-      document.head.appendChild(theme)
       const colorScheme = document.createElement('meta')
       colorScheme.setAttribute('name', 'color-scheme')
       colorScheme.setAttribute('content', scheme)
@@ -866,14 +1191,64 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
   const [videoReady, setVideoReady] = useState(false)
   const [active, setActive] = useState<SectionId>('home')
   const [guidePlatform, setGuidePlatform] = useState<GuideId>(readPhonePlatform)
+  const [hintClosed, setHintClosed] = useState(false)
+  const hintShiftRef = useRef<number[] | null>(null)
+
+  function closeShareHint() {
+    const stage = stageRef.current
+    if (!stage || hintClosed) return
+    hintShiftRef.current = [...stage.querySelectorAll<HTMLElement>('.install-page.has-shot')].map(
+      (page) => page.querySelector('.apple-step-shot')?.getBoundingClientRect().top ?? 0,
+    )
+    setHintClosed(true)
+  }
+
+  useLayoutEffect(() => {
+    if (!hintClosed) return
+    const before = hintShiftRef.current
+    if (!before?.length) return
+    hintShiftRef.current = null
+    const stage = stageRef.current
+    if (!stage || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const pending: HTMLElement[] = []
+    stage.querySelectorAll<HTMLElement>('.install-page.has-shot').forEach((page, index) => {
+      const nodes = [...page.querySelectorAll<HTMLElement>('.apple-step-shot, .install-page-copy')]
+      const after = nodes[0]?.getBoundingClientRect().top ?? before[index] ?? 0
+      const dy = (before[index] ?? after) - after
+      if (Math.abs(dy) < 0.5) return
+      for (const node of nodes) {
+        node.style.transition = 'none'
+        node.style.transform = `translateY(${dy}px)`
+        pending.push(node)
+      }
+    })
+    if (!pending.length) return
+    const release = (event: TransitionEvent) => {
+      const node = event.currentTarget
+      if (!(node instanceof HTMLElement) || event.propertyName !== 'transform') return
+      node.style.transition = ''
+      node.style.transform = ''
+      node.removeEventListener('transitionend', release)
+    }
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        for (const node of pending) {
+          node.style.transition = 'transform 0.55s cubic-bezier(0.23, 1, 0.32, 1)'
+          node.style.transform = 'translateY(0)'
+          node.addEventListener('transitionend', release)
+        }
+      })
+    })
+  }, [hintClosed])
 
   useEffect(() => {
     const stage = stageRef.current
     const scroll = scrollRef.current
     if (!stage || !scroll) return
+    const view = landingView(scroll, mode === 'mobile')
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       glideRef.current = (top) => {
-        scroll.scrollTop = Math.max(0, top)
+        view.setTop(Math.max(view.min(), top))
       }
       return () => {
         glideRef.current = () => {}
@@ -921,7 +1296,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
       const raised = next < 0
       const lowered = next > 0
       const shift = raised ? band('bottom') : lowered ? band('top') : SHEET_SHIFT
-      const closeWait = mode === 'mobile' ? pageTurnMs(shift, scroll.clientHeight) + 80 : CHROME_CLOSE_MS
+      const closeWait = mode === 'mobile' ? pageTurnMs(shift, view.height()) + 80 : CHROME_CLOSE_MS
       window.clearTimeout(classTimer)
       if (next === 0) {
         if (wasOpen) stage.classList.add('is-closing')
@@ -936,7 +1311,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
         syncMenuChrome(lowered)
       }
       if (mode === 'mobile') {
-        stage.style.setProperty('--chrome-move', `${pageTurnMs(shift, scroll.clientHeight)}ms`)
+        stage.style.setProperty('--chrome-move', `${pageTurnMs(shift, view.height())}ms`)
         stage.style.setProperty('--chrome-ease', 'cubic-bezier(0.4, 0, 0.2, 1)')
       }
       stage.style.setProperty('--sheet-shift', next === 0 ? '0px' : `${next * shift}px`)
@@ -957,7 +1332,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     chromeRef.current = { open: () => openHeader() }
 
     const noteSection = () => {
-      const next = currentSection(scroll)
+      const next = currentSection(view.edge())
       if (next === activeId.current) return
       activeId.current = next
       setActive(next)
@@ -970,11 +1345,11 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     let snapToken = 0
 
     const frameStops = () => {
-      const root = scroll.getBoundingClientRect().top
-      const max = Math.max(0, scroll.scrollHeight - scroll.clientHeight)
+      const root = view.edge()
+      const max = Math.max(0, view.max())
       const stops = [...scroll.querySelectorAll<HTMLElement>('.landing-frame')].map((node) => {
-        const top = node.getBoundingClientRect().top - root + scroll.scrollTop
-        return Math.min(max, Math.max(0, Math.round(top)))
+        const top = node.getBoundingClientRect().top - root + view.top()
+        return Math.min(max, Math.max(view.min(), Math.round(top)))
       })
       return [...new Set(stops)].sort((a, b) => a - b)
     }
@@ -982,8 +1357,8 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     const syncShrink = () => {
       const frame = heroFrame()
       if (!frame) return
-      const end = frame.offsetHeight || scroll.clientHeight
-      const value = end <= 0 ? 0 : Math.min(1, Math.max(0, scroll.scrollTop / end))
+      const end = frame.offsetHeight - view.min() || view.height()
+      const value = end <= 0 ? 0 : Math.min(1, Math.max(0, (view.top() - view.min()) / end))
       frame.style.setProperty('--hero-shrink', value.toFixed(4))
     }
 
@@ -992,22 +1367,22 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
       snapToken += 1
       const token = snapToken
       snapping = true
-      const max = Math.max(0, scroll.scrollHeight - scroll.clientHeight)
-      const dest = Math.min(max, Math.max(0, top))
-      const from = scroll.scrollTop
+      const max = Math.max(0, view.max())
+      const dest = Math.min(max, Math.max(view.min(), top))
+      const from = view.top()
       if (Math.abs(dest - from) < 2) {
-        scroll.scrollTop = dest
+        view.setTop(dest)
         syncShrink()
         snapping = false
         return
       }
-      const duration = pageTurnMs(dest - from, scroll.clientHeight)
+      const duration = pageTurnMs(dest - from, view.height())
       const start = performance.now()
       let pending = 0
       const step = () => {
         if (token !== snapToken) return
         const t = Math.min(1, (performance.now() - start) / duration)
-        scroll.scrollTop = from + (dest - from) * easePage(t)
+        view.setTop(from + (dest - from) * easePage(t))
         syncShrink()
         if (t < 1) {
           schedule()
@@ -1038,8 +1413,8 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
       if (snapping) return true
       const stops = frameStops()
       if (stops.length < 2) return false
-      const y = scroll.scrollTop
-      const max = Math.max(0, scroll.scrollHeight - scroll.clientHeight)
+      const y = view.top()
+      const max = Math.max(0, view.max())
       let index = 0
       for (let i = 0; i < stops.length; i++) {
         if (y + 8 >= stops[i]) index = i
@@ -1075,14 +1450,23 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     const keepPinned = () => {
       if (performance.now() >= scrollLockRef.current) return false
       const pin = scrollPinRef.current
-      if (Math.abs(scroll.scrollTop - pin) > 1) scroll.scrollTop = pin
+      if (Math.abs(view.top() - pin) > 1) view.setTop(pin)
       return true
     }
 
     const settle = () => {
       if (snapping || keepPinned()) return
       const stops = frameStops()
-      const y = scroll.scrollTop
+      const y = view.top()
+      if (y < view.min() - 2) {
+        snapTo(view.min())
+        return
+      }
+      const max = Math.max(0, view.max())
+      if (y > max + 2) {
+        snapTo(max)
+        return
+      }
       if (stops.length === 0) {
         syncShrink()
         return
@@ -1113,9 +1497,9 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     let gestureTimer = 0
 
     const atEdges = () => {
-      const max = Math.max(0, scroll.scrollHeight - scroll.clientHeight)
-      const y = scroll.scrollTop
-      return { atTop: y <= 2, atBottom: y >= max - 2 }
+      const max = Math.max(0, view.max())
+      const y = view.top()
+      return { atTop: y <= view.min() + 2, atBottom: y >= max - 2 }
     }
 
     const beginGesture = () => {
@@ -1138,7 +1522,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
       }, 280)
     }
 
-    let last = scroll.scrollTop
+    let last = view.top()
 
     if (mode === 'mobile') {
       let latched = false
@@ -1186,15 +1570,15 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
       const onScroll = () => {
         syncShrink()
         if (keepPinned()) {
-          last = scroll.scrollTop
+          last = view.top()
           return
         }
-        const y = scroll.scrollTop
+        const y = view.top()
         const dy = y - last
         last = y
         if (Math.abs(dy) > 0.5) dir = dy > 0 ? 1 : -1
-        if (gestureAtTop && !latched && y < -12) openHeader()
-        if (latched && y > 1 && dy > 0) closeHeader()
+        if (gestureAtTop && !latched && y < view.min() - 12) openHeader()
+        if (latched && y > view.min() + 1 && dy > 0) closeHeader()
         if (held < 0 && dy < -0.5) closeFooter()
         noteSection()
         if (!latched) queueSettle()
@@ -1222,9 +1606,8 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
           event.preventDefault()
           return
         }
-        const atTop = scroll.scrollTop <= 1
-        const max = scroll.scrollHeight - scroll.clientHeight
-        const atBottom = scroll.scrollTop >= max - 1
+        const atTop = view.top() <= view.min() + 1
+        const atBottom = view.top() >= view.max() - 1
         if (held < 0) {
           if (dy < 0) {
             pull += -dy
@@ -1267,7 +1650,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
 
       const onWheel = (event: WheelEvent) => {
         if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
-        const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? scroll.clientHeight : 1
+        const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? view.height() : 1
         const delta = event.deltaY * unit
         beginGesture()
         endGestureSoon()
@@ -1275,9 +1658,8 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
           event.preventDefault()
           return
         }
-        const atTop = scroll.scrollTop <= 1
-        const max = scroll.scrollHeight - scroll.clientHeight
-        const atBottom = scroll.scrollTop >= max - 1
+        const atTop = view.top() <= view.min() + 1
+        const atBottom = view.top() >= view.max() - 1
         if (held > 0 && delta > 0) {
           closeHeader()
           spendGesture()
@@ -1301,13 +1683,10 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
         }
         if (!latched && maybeSnap(delta)) {
           event.preventDefault()
-          return
         }
-        const atEdge = max <= 1 || (atTop && delta < 0) || (atBottom && delta > 0)
-        if (!atEdge && !scroll.contains(event.target as Node)) scroll.scrollTop += delta
       }
 
-      scroll.addEventListener('scroll', onScroll, { passive: true })
+      view.target.addEventListener('scroll', onScroll, { passive: true })
       stage.addEventListener('wheel', onWheel, { passive: false })
       stage.addEventListener('touchstart', onTouchStart, { passive: true })
       stage.addEventListener('touchend', onTouchEnd, { passive: true })
@@ -1322,7 +1701,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
         window.clearTimeout(gestureTimer)
         sheet?.removeEventListener('transitionend', onSheetRest)
         navigator.vibrate?.(0)
-        scroll.removeEventListener('scroll', onScroll)
+        view.target.removeEventListener('scroll', onScroll)
         stage.removeEventListener('wheel', onWheel)
         stage.removeEventListener('touchstart', onTouchStart)
         stage.removeEventListener('touchend', onTouchEnd)
@@ -1504,14 +1883,15 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     const root = scrollRef.current
     const node = document.getElementById(id)
     if (!root || !node) return
-    const top = node.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop
+    const view = landingView(root, mode === 'mobile')
+    const top = node.getBoundingClientRect().top - view.edge() + view.top()
     glideRef.current(Math.max(0, top))
   }
 
   function selectGuide(platform: GuideId) {
     const scroll = scrollRef.current
     if (scroll) {
-      scrollPinRef.current = scroll.scrollTop
+      scrollPinRef.current = landingView(scroll, mode === 'mobile').top()
       scrollLockRef.current = performance.now() + 700
     }
     setGuidePlatform(platform)
@@ -1527,6 +1907,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     mode === 'desktop' ? 'is-desktop' : '',
     intro ? 'is-intro' : '',
     shown ? 'is-shown' : '',
+    hintClosed ? 'is-hint-closed' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -1535,14 +1916,6 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     <div className={screenClass} ref={stageRef}>
       <div className="landing-reveal is-top" aria-hidden="true" />
       <div className="landing-reveal is-bottom" aria-hidden="true" />
-      {mode === 'mobile' &&
-        createPortal(
-          <>
-            <div className="landing-safari-bleed is-top" aria-hidden="true" />
-            <div className="landing-safari-bleed is-bottom" aria-hidden="true" />
-          </>,
-          document.body,
-        )}
       <button type="button" className="landing-logo" aria-label="Открыть меню" onClick={() => chromeRef.current?.open()}>
         <SvgIcon src="/logo.svg" size={26} />
         <span>
@@ -1564,7 +1937,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
             <HeroTitle russian={russian} night={night} plain={phone} />
             <div className="landing-hero-actions">
               {mode === 'mobile' ? (
-                <PhoneInstall russian={russian} onGuide={showGuide} />
+                <PhoneInstall russian={russian} onGuide={showGuide} onHintClose={closeShareHint} />
               ) : (
                 <>
                   <Magnet
@@ -1606,11 +1979,12 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
           russian={russian}
           omitIntro={mode === 'mobile'}
           onPlatform={selectGuide}
-          scrollContainerRef={scrollRef}
+          scrollContainerRef={mode === 'mobile' ? null : scrollRef}
         />
       </div>
       </div>
 
+      <InstallShotMorph scrollRef={scrollRef} pageScroll={mode === 'mobile'} />
       <SectionNav placement="top" active={active} night={night} russian={russian} onSelect={scrollToId} onNight={setNight} />
       {mode === 'desktop' ? (
         <SectionNav placement="bottom" active={active} night={night} russian={russian} onSelect={scrollToId} onNight={setNight} />
