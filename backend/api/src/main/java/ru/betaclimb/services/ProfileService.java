@@ -1,5 +1,6 @@
 package ru.betaclimb.services;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.betaclimb.repositories.ProfileEntity;
@@ -11,13 +12,10 @@ import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class ProfileService {
 
     private final ProfileRepository repository;
-
-    public ProfileService(ProfileRepository repository) {
-        this.repository = repository;
-    }
 
     public Optional<SavedProfile> find(UUID id) {
         return repository.findById(id).map(this::toResponse);
@@ -26,16 +24,20 @@ public class ProfileService {
     @Transactional
     public SavedProfile create(ProfileData data) {
         ProfileEntity entity = new ProfileEntity();
+
         apply(entity, data);
+
         return toResponse(repository.save(entity));
     }
 
     @Transactional
     public Optional<SavedProfile> update(UUID id, ProfileData data) {
-        return repository.findById(id).map(entity -> {
-            apply(entity, data);
-            return toResponse(repository.save(entity));
-        });
+        return repository.findById(id)
+                .map(entity -> {
+                    apply(entity, data);
+
+                    return toResponse(repository.save(entity));
+                });
     }
 
     private void apply(ProfileEntity entity, ProfileData data) {
@@ -53,17 +55,17 @@ public class ProfileService {
     private SavedProfile toResponse(ProfileEntity entity) {
         return new SavedProfile(
                 entity.getId(),
-                new ProfileData(
-                        entity.getNickname(),
-                        entity.getHeightCm(),
-                        entity.getWeightKg(),
-                        entity.getAgeYears(),
-                        entity.getExperience(),
-                        List.of(entity.getDisciplines()),
-                        entity.getMaxGrade(),
-                        entity.getGender(),
-                        entity.getConsentAccepted()
-                )
+                ProfileData.builder()
+                        .nickname(entity.getNickname())
+                        .heightCm(entity.getHeightCm())
+                        .weightKg(entity.getWeightKg())
+                        .ageYears(entity.getAgeYears())
+                        .experience(entity.getExperience())
+                        .disciplines(List.of(entity.getDisciplines()))
+                        .maxGrade(entity.getMaxGrade())
+                        .gender(entity.getGender())
+                        .consentAccepted(entity.getConsentAccepted())
+                        .build()
         );
     }
 

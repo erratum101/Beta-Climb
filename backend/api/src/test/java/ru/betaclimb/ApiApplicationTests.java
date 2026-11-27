@@ -1,7 +1,7 @@
 package ru.betaclimb;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,25 +52,34 @@ class ApiApplicationTests {
     void appliesMigrationToPostgres() {
         assertThat(jdbcTemplate.queryForObject("select 1", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject(
-                "select count(*) from flyway_schema_history where version in ('1', '2', '3', '4', '5') and success", Integer.class
-        )).isEqualTo(5);
-        assertThat(jdbcTemplate.queryForObject("select current_schema()", String.class)).isEqualTo("betaclimb");
+                "select count(*) from flyway_schema_history where version in ('1', '2', '3', '4', '5') and success",
+                Integer.class
+        ))
+                .isEqualTo(5);
+        assertThat(jdbcTemplate.queryForObject("select current_schema()", String.class))
+                .isEqualTo("betaclimb");
         assertThat(jdbcTemplate.queryForObject(
                 "select count(*) from pg_tables where schemaname = 'betaclimb' and tablename <> 'flyway_schema_history'",
                 Integer.class
-        )).isEqualTo(4);
+        ))
+                .isEqualTo(4);
         assertThat(jdbcTemplate.queryForObject(
-                "select count(*) from pg_tables where schemaname = 'public'", Integer.class
-        )).isZero();
+                "select count(*) from pg_tables where schemaname = 'public'",
+                Integer.class
+        ))
+                .isZero();
     }
 
     @Test
     void createsReadsAndUpdatesProfile() throws Exception {
         String location = mvc.perform(post("/api/profiles")
-                        .contentType(MediaType.APPLICATION_JSON).content(PROFILE))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(PROFILE))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.profile.nickname").value("Test climber"))
-                .andReturn().getResponse().getHeader("Location");
+                .andReturn()
+                .getResponse()
+                .getHeader("Location");
 
         assertThat(location).isNotNull();
         mvc.perform(get(location))
@@ -86,15 +95,23 @@ class ApiApplicationTests {
                 .andExpect(jsonPath("$.profile.consentAccepted").value(true));
 
         String updated = PROFILE.replace("Test climber", "  Updated climber  ")
-                .replace("180", "181").replace("75", "76").replace("25", "26")
-                .replace("gt1y", "m1to3").replace("\"bouldering\",\"lead\"", "\"speed\"")
-                .replace("amateur", "advanced").replace("male", "female");
-        mvc.perform(put(location).contentType(MediaType.APPLICATION_JSON).content(updated))
+                .replace("180", "181")
+                .replace("75", "76")
+                .replace("25", "26")
+                .replace("gt1y", "m1to3")
+                .replace("\"bouldering\",\"lead\"", "\"speed\"")
+                .replace("amateur", "advanced")
+                .replace("male", "female");
+
+        mvc.perform(put(location)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updated))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.profile.nickname").value("Updated climber"));
 
         var saved = repository.findById(UUID.fromString(location.substring(location.lastIndexOf('/') + 1)))
                 .orElseThrow();
+
         assertThat(repository.count()).isEqualTo(1);
         assertThat(saved.getNickname()).isEqualTo("Updated climber");
         assertThat(saved.getHeightCm()).isEqualTo(181);
@@ -110,7 +127,9 @@ class ApiApplicationTests {
     @ParameterizedTest
     @MethodSource("invalidProfiles")
     void rejectsInvalidProfileWithoutSaving(String profile) throws Exception {
-        mvc.perform(post("/api/profiles").contentType(MediaType.APPLICATION_JSON).content(profile))
+        mvc.perform(post("/api/profiles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(profile))
                 .andExpect(status().isBadRequest());
         assertThat(repository.count()).isZero();
     }
@@ -140,8 +159,11 @@ class ApiApplicationTests {
     @Test
     void returnsNotFoundForUnknownProfile() throws Exception {
         String url = "/api/profiles/" + UUID.randomUUID();
+
         mvc.perform(get(url)).andExpect(status().isNotFound());
-        mvc.perform(put(url).contentType(MediaType.APPLICATION_JSON).content(PROFILE))
+        mvc.perform(put(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(PROFILE))
                 .andExpect(status().isNotFound());
         assertThat(repository.count()).isZero();
     }

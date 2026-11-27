@@ -1,5 +1,6 @@
 package ru.betaclimb.controllers;
 
+import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,25 +13,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import ru.betaclimb.services.ProfileData;
-import ru.betaclimb.services.ProfileService;
 import ru.betaclimb.services.ProfileService.SavedProfile;
+import ru.betaclimb.services.ProfileService;
 
 import java.net.URI;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/profiles")
+@RequiredArgsConstructor
 public class ProfileController {
 
     private final ProfileService service;
 
-    public ProfileController(ProfileService service) {
-        this.service = service;
-    }
-
     @PostMapping
     public ResponseEntity<SavedProfile> create(@Valid @RequestBody ProfileData profile) {
         SavedProfile saved = service.create(profile);
+
         return ResponseEntity.created(URI.create("/api/profiles/" + saved.id())).body(saved);
     }
 
