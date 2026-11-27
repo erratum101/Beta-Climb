@@ -1,5 +1,6 @@
 package ru.betaclimb.controllers;
 
+import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.io.Resource;
@@ -26,50 +27,90 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/attempts")
+@RequiredArgsConstructor
 public class AttemptController {
     private final AttemptService attempts;
 
-    public AttemptController(AttemptService attempts) {
-        this.attempts = attempts;
-    }
-
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<AttemptData> create(@RequestParam UUID profileId, @RequestParam MultipartFile file,
-            @RequestParam(required = false) String discipline, @RequestParam(required = false) MultipartFile frame,
+    public ResponseEntity<AttemptData> create(
+            @RequestParam UUID profileId,
+            @RequestParam MultipartFile file,
+            @RequestParam(required = false) String discipline,
+            @RequestParam(required = false) MultipartFile frame,
             @RequestParam(required = false) Double durationSec,
             @RequestParam(required = false, defaultValue = "false") boolean review,
             @RequestHeader("Idempotency-Key") UUID requestId,
-            HttpServletRequest request, HttpServletResponse response) {
-        var attempt = attempts.create(BrowserOwner.resolve(request, response), profileId, requestId, file, discipline,
-                frame, durationSec, review);
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        var attempt = attempts.create(
+                BrowserOwner.resolve(request, response),
+                profileId,
+                requestId,
+                file,
+                discipline,
+                frame,
+                durationSec,
+                review
+        );
+
         return ResponseEntity.accepted().body(attempt);
     }
 
     @GetMapping
-    public List<AttemptData> list(@RequestParam UUID profileId, HttpServletRequest request, HttpServletResponse response) {
+    public List<AttemptData> list(
+            @RequestParam UUID profileId,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
         return attempts.list(BrowserOwner.resolve(request, response), profileId);
     }
 
     @GetMapping("/{id}")
-    public AttemptData get(@PathVariable UUID id, @RequestParam UUID profileId, HttpServletRequest request,
-                           HttpServletResponse response) {
-        return attempts.get(BrowserOwner.resolve(request, response), profileId, id);
+    public AttemptData get(
+            @PathVariable UUID id,
+            @RequestParam UUID profileId,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        return attempts.get(
+                BrowserOwner.resolve(request, response),
+                profileId,
+                id
+        );
     }
 
     @GetMapping("/{id}/media")
-    public ResponseEntity<Resource> media(@PathVariable UUID id, @RequestParam UUID profileId, HttpServletRequest request,
-                                   HttpServletResponse response) throws IOException {
-        return inline(attempts.media(BrowserOwner.resolve(request, response), profileId, id));
+    public ResponseEntity<Resource> media(
+            @PathVariable UUID id,
+            @RequestParam UUID profileId,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws IOException {
+        return inline(attempts.media(
+                BrowserOwner.resolve(request, response),
+                profileId,
+                id
+        ));
     }
 
     @GetMapping("/{id}/thumbnail")
-    public ResponseEntity<Resource> thumbnail(@PathVariable UUID id, @RequestParam UUID profileId, HttpServletRequest request,
-                                       HttpServletResponse response) throws IOException {
-        return inline(attempts.thumbnail(BrowserOwner.resolve(request, response), profileId, id));
+    public ResponseEntity<Resource> thumbnail(
+            @PathVariable UUID id,
+            @RequestParam UUID profileId,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws IOException {
+        return inline(attempts.thumbnail(
+                BrowserOwner.resolve(request, response),
+                profileId,
+                id
+        ));
     }
 
     private static ResponseEntity<Resource> inline(StoredObject object) throws IOException {
         Resource body = object.body();
+
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(object.contentType()))
                 .contentLength(body.contentLength())

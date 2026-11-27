@@ -1,10 +1,10 @@
 package ru.betaclimb;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.mock.env.MockEnvironment;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class RailwayDatabaseEnvironmentPostProcessorTest {
 
@@ -12,8 +12,11 @@ class RailwayDatabaseEnvironmentPostProcessorTest {
 
     @Test
     void mapsRailwayUrlToJdbcWithoutRequiringSslInsideRailway() {
-        MockEnvironment environment = new MockEnvironment().withProperty(
-                "DATABASE_URL", "postgresql://postgres:secret]bl@postgres.railway.internal:5432/railway");
+        MockEnvironment environment = new MockEnvironment()
+                .withProperty(
+                        "DATABASE_URL",
+                        "postgresql://postgres:secret]bl@postgres.railway.internal:5432/railway"
+                );
 
         processor.postProcessEnvironment(environment, new SpringApplication());
 

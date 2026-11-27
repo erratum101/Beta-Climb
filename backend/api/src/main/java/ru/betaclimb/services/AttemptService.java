@@ -1,5 +1,6 @@
 package ru.betaclimb.services;
 
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -17,12 +18,28 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class AttemptService {
     private static final Logger LOG = LoggerFactory.getLogger(AttemptService.class);
-    private static final Set<String> DISCIPLINES = Set.of("bouldering", "lead", "speed");
+    private static final Set<String> DISCIPLINES = Set.of(
+            "bouldering",
+            "lead",
+            "speed"
+    );
     private static final Map<String, String> PHONE_FORMATS = Map.of(
-            "mp4", "video/mp4", "m4v", "video/mp4", "mov", "video/quicktime", "webm", "video/webm",
-            "mkv", "video/x-matroska", "3gp", "video/3gpp");
+            "mp4",
+            "video/mp4",
+            "m4v",
+            "video/mp4",
+            "mov",
+            "video/quicktime",
+            "webm",
+            "video/webm",
+            "mkv",
+            "video/x-matroska",
+            "3gp",
+            "video/3gpp"
+    );
 
     private final AttemptRepository attempts;
     private final ProfileService profiles;
@@ -30,67 +47,122 @@ public class AttemptService {
     private final ObjectMapper json;
     private final ClimbReview review;
 
-    public AttemptService(AttemptRepository attempts, ProfileService profiles, VideoStorage storage, ObjectMapper json,
-                          ClimbReview review) {
-        this.attempts = attempts;
-        this.profiles = profiles;
-        this.storage = storage;
-        this.json = json;
-        this.review = review;
-    }
-
     public List<AttemptData> list(String owner, UUID profileId) {
-        return attempts.list(owner, profileId).stream().map(AttemptData::from).toList();
+        return attempts.list(owner, profileId)
+                .stream()
+                .map(AttemptData::from)
+                .toList();
     }
 
-    public AttemptData get(String owner, UUID profileId, UUID id) {
-        return AttemptData.from(requireAttempt(owner, profileId, id));
+    public AttemptData get(
+            String owner,
+            UUID profileId,
+            UUID id
+    ) {
+        return AttemptData.from(requireAttempt(
+                owner,
+                profileId,
+                id
+        ));
     }
 
-    public VideoStorage.StoredObject media(String owner, UUID profileId, UUID id) {
-        StoredAttempt attempt = requireAttempt(owner, profileId, id);
-        String key = attempt.result().path("playbackKey").asString(attempt.sourceKey());
+    public VideoStorage.StoredObject media(
+            String owner,
+            UUID profileId,
+            UUID id
+    ) {
+        StoredAttempt attempt = requireAttempt(
+                owner,
+                profileId,
+                id
+        );
+        String key = attempt.result()
+                .path("playbackKey")
+                .asString(attempt.sourceKey());
+
         if (!key.startsWith("betaclimb/" + id + "/") || key.contains("..")) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
+
         return storage.open(key);
     }
 
-    public VideoStorage.StoredObject thumbnail(String owner, UUID profileId, UUID id) {
-        String key = requireAttempt(owner, profileId, id).thumbnailKey()
+    public VideoStorage.StoredObject thumbnail(
+            String owner,
+            UUID profileId,
+            UUID id
+    ) {
+        String key = requireAttempt(
+                owner,
+                profileId,
+                id
+        )
+                .thumbnailKey()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
         return storage.open(key);
     }
 
-    public AttemptData create(String owner, UUID profileId, UUID requestId, MultipartFile file, String discipline,
-                              MultipartFile frame, Double durationSec, boolean reviewRequested) {
+    public AttemptData create(
+            String owner,
+            UUID profileId,
+            UUID requestId,
+            MultipartFile file,
+            String discipline,
+            MultipartFile frame,
+            Double durationSec,
+            boolean reviewRequested
+    ) {
         var existing = attempts.findRequest(owner, requestId);
+
         if (existing.isPresent()) {
             return resultForProfile(existing.get(), profileId);
         }
         if (file.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Видео пустое");
         }
-        ProfileData profile = profiles.find(profileId).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Профиль не найден")).profile();
+
+        ProfileData profile = profiles.find(profileId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Профиль не найден"))
+                .profile();
+
         if (discipline == null) {
             discipline = profile.disciplines().getFirst();
         }
         if (!DISCIPLINES.contains(discipline)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неизвестная дисциплина");
         }
+
         String fileName = displayName(file.getOriginalFilename());
         String type = videoType(file.getContentType(), fileName);
         String snapshot = json.writeValueAsString(profile);
         UUID id = UUID.randomUUID();
         String key = "betaclimb/" + id + "/source";
-        storage.upload(key, file, type);
-        StoredAttempt stored = attempts.insertAndEnqueue(owner, requestId, id, profileId, key, fileName, discipline,
-                snapshot, () -> discardUnused(key, id));
+
+        storage.upload(
+                key,
+                file,
+                type
+        );
+
+        StoredAttempt stored = attempts.insertAndEnqueue(
+                owner,
+                requestId,
+                id,
+                profileId,
+                key,
+                fileName,
+                discipline,
+                snapshot,
+                () -> discardUnused(key, id)
+        );
+
         if (!stored.id().equals(id)) {
             discardUnused(key, id);
         } else if (reviewRequested) {
             byte[] jpeg = new byte[0];
+
             if (frame != null && !frame.isEmpty()) {
                 try {
                     jpeg = frame.getBytes();
@@ -98,8 +170,15 @@ public class AttemptService {
                     jpeg = new byte[0];
                 }
             }
-            review.start(stored.id(), jpeg, durationSec == null ? 0 : durationSec, profile);
+
+            review.start(
+                    stored.id(),
+                    jpeg,
+                    durationSec == null ? 0 : durationSec,
+                    profile
+            );
         }
+
         return resultForProfile(stored, profileId);
     }
 
@@ -107,11 +186,21 @@ public class AttemptService {
         if (!stored.profileId().equals(profileId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ключ загрузки уже использован");
         }
+
         return AttemptData.from(stored);
     }
 
-    private StoredAttempt requireAttempt(String owner, UUID profileId, UUID id) {
-        return attempts.find(owner, profileId, id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    private StoredAttempt requireAttempt(
+            String owner,
+            UUID profileId,
+            UUID id
+    ) {
+        return attempts.find(
+                owner,
+                profileId,
+                id
+        )
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     private void discardUnused(String key, UUID id) {
@@ -124,8 +213,14 @@ public class AttemptService {
 
     private static String displayName(String name) {
         if (name == null || name.isBlank()) return "video";
-        String clean = name.substring(Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\')) + 1)
-                .replaceAll("\\p{Cntrl}", "").strip();
+
+        String clean = name
+                .substring(
+                        Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\')) + 1
+                )
+                .replaceAll("\\p{Cntrl}", "")
+                .strip();
+
         return clean.isEmpty() ? "video" : clean.substring(0, Math.min(clean.length(), 255));
     }
 
@@ -134,8 +229,10 @@ public class AttemptService {
         if (contentType == null || contentType.isBlank() || contentType.equals("application/octet-stream")) {
             String extension = name.substring(name.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
             String type = PHONE_FORMATS.get(extension);
+
             if (type != null) return type;
         }
+
         throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Выбери видеофайл");
     }
 }
