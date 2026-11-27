@@ -4,10 +4,9 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
+import ru.betaclimb.exceptions.MediaNotFoundException;
 import ru.betaclimb.properties.StorageProperties;
 
 import java.io.IOException;
@@ -77,7 +76,7 @@ public class VideoStorage {
         Path target = resolve(key);
 
         if (!Files.isRegularFile(target)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            throw new MediaNotFoundException();
         }
 
         String contentType;
@@ -96,13 +95,13 @@ public class VideoStorage {
 
     private Path resolve(String key) {
         if (key == null || key.contains("..") || !KEY.matcher(key).matches()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            throw new MediaNotFoundException();
         }
 
         Path path = properties.dir().resolve(key).normalize();
 
         if (!path.startsWith(properties.dir())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            throw new MediaNotFoundException();
         }
 
         return path;

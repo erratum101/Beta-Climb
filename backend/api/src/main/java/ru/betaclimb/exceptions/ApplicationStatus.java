@@ -1,0 +1,15 @@
+package ru.betaclimb.exceptions;
+
+public enum ApplicationStatus {
+    ATTEMPT_NOT_FOUND,
+    EMPTY_VIDEO,
+    MEDIA_NOT_FOUND,
+    PROFILE_NOT_FOUND,
+    UNKNOWN_DISCIPLINE,
+    UNSUPPORTED_VIDEO_FORMAT,
+    UPLOAD_KEY_ALREADY_USED,
+    INVALID_REQUEST,
+    UPLOAD_TOO_LARGE,
+    HTTP_ERROR,
+    INTERNAL_ERROR
+}

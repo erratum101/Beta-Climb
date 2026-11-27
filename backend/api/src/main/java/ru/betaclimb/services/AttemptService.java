@@ -3,10 +3,15 @@ package ru.betaclimb.services;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
+import ru.betaclimb.exceptions.AttemptNotFoundException;
+import ru.betaclimb.exceptions.EmptyVideoException;
+import ru.betaclimb.exceptions.MediaNotFoundException;
+import ru.betaclimb.exceptions.ProfileNotFoundException;
+import ru.betaclimb.exceptions.UnknownDisciplineException;
+import ru.betaclimb.exceptions.UnsupportedVideoFormatException;
+import ru.betaclimb.exceptions.UploadKeyAlreadyUsedException;
 import ru.betaclimb.repositories.AttemptRepository;
 import ru.betaclimb.repositories.AttemptRepository.StoredAttempt;
 import tools.jackson.databind.ObjectMapper;
@@ -81,7 +86,7 @@ public class AttemptService {
                 .asString(attempt.sourceKey());
 
         if (!key.startsWith("betaclimb/" + id + "/") || key.contains("..")) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            throw new MediaNotFoundException();
         }
 
         return storage.open(key);
@@ -98,7 +103,7 @@ public class AttemptService {
                 id
         )
                 .thumbnailKey()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(MediaNotFoundException::new);
 
         return storage.open(key);
     }
@@ -119,19 +124,18 @@ public class AttemptService {
             return resultForProfile(existing.get(), profileId);
         }
         if (file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Видео пустое");
+            throw new EmptyVideoException();
         }
 
         ProfileData profile = profiles.find(profileId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Профиль не найден"))
+                .orElseThrow(ProfileNotFoundException::new)
                 .profile();
 
         if (discipline == null) {
             discipline = profile.disciplines().getFirst();
         }
         if (!DISCIPLINES.contains(discipline)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неизвестная дисциплина");
+            throw new UnknownDisciplineException();
         }
 
         String fileName = displayName(file.getOriginalFilename());
@@ -184,7 +188,7 @@ public class AttemptService {
 
     private static AttemptData resultForProfile(StoredAttempt stored, UUID profileId) {
         if (!stored.profileId().equals(profileId)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ключ загрузки уже использован");
+            throw new UploadKeyAlreadyUsedException();
         }
 
         return AttemptData.from(stored);
@@ -200,7 +204,7 @@ public class AttemptService {
                 profileId,
                 id
         )
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(AttemptNotFoundException::new);
     }
 
     private void discardUnused(String key, UUID id) {
@@ -233,6 +237,6 @@ public class AttemptService {
             if (type != null) return type;
         }
 
-        throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Выбери видеофайл");
+        throw new UnsupportedVideoFormatException();
     }
 }

@@ -130,7 +130,8 @@ class ApiApplicationTests {
         mvc.perform(post("/api/profiles")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(profile))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("INVALID_REQUEST"));
         assertThat(repository.count()).isZero();
     }
 
