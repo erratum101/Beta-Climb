@@ -1,7 +1,8 @@
 import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
-import { attemptHref, attemptStatusLabel, dayKey, formatSeconds, plural } from '../entities/attempt'
+import { attemptCount, attemptHref, attemptStatusLabel, dayKey, formatSeconds } from '../entities/attempt'
+import { useLang, useUi } from '../shared/i18n'
 import { HomeGuideContext } from '../features/capture/CaptureGuide'
 import { sharedNavigate } from '../shared/ui/motion'
 import { SvgIcon } from '../shared/ui/SvgIcon'
@@ -10,6 +11,8 @@ import { Wordmark } from '../shared/ui/Wordmark'
 export function HomePage() {
   const navigate = useNavigate()
   const { profile, attempts } = useSession()
+  const lang = useLang()
+  const t = useUi()
   const recent = [...attempts].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 4)
   const todayKey = dayKey(new Date().toISOString())
   const today = attempts.filter((attempt) => dayKey(attempt.createdAt) === todayKey)
@@ -24,7 +27,7 @@ export function HomePage() {
             <path d="M27.5 5V50M5 27.5H50" stroke="currentColor" strokeWidth="10" strokeLinecap="round" />
           </svg>
           <Wordmark />
-          <span className="visually-hidden">Добавить запись</span>
+          <span className="visually-hidden">{t.addClimb}</span>
         </span>
       </button>
     )
@@ -32,13 +35,13 @@ export function HomePage() {
 
   return (
     <div className="screen with-nav">
-      <p className="hello">Привет, {profile?.nickname}</p>
+      <p className="hello">{t.hello(profile?.nickname ?? '')}</p>
       {today.length > 0 ? (
         <p className="summary">
-          {plural(today.length, 'попытка', 'попытки', 'попыток')}
+          {attemptCount(today.length, lang)}
         </p>
       ) : (
-        <p className="summary">Сними попытку и получи разбор по моментам</p>
+        <p className="summary">{t.filmPrompt}</p>
       )}
       <div className="list stagger">
         {recent.map((attempt) => (
@@ -56,10 +59,10 @@ export function HomePage() {
                 {attempt.fileName}
               </strong>
               <em>
-                {attemptStatusLabel(attempt)}
+                {attemptStatusLabel(attempt, lang)}
               </em>
             </span>
-            {attempt.durationSec > 0 ? <small>{formatSeconds(attempt.durationSec)}</small> : null}
+            {attempt.durationSec > 0 ? <small>{formatSeconds(attempt.durationSec, lang)}</small> : null}
           </button>
         ))}
       </div>

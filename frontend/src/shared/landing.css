@@ -41,8 +41,8 @@ html.is-night {
   --sheet-top-radius: 0px;
   --menu-top: 0;
   --menu-bottom: 0;
-  --chrome-move: 0.34s;
-  --chrome-ease: var(--ease-out);
+  --chrome-move: 0.86s;
+  --chrome-ease: cubic-bezier(0.33, 0, 0.18, 1);
   position: relative;
   overflow: hidden;
   background: var(--landing-menu);
@@ -387,7 +387,7 @@ html.is-landing-menu #root {
 
 .screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button,
 .screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-theme {
-  animation: landing-nav-in 0.34s var(--ease-out) both;
+  animation: landing-nav-in 0.62s var(--chrome-ease) both;
 }
 
 .screen.landing.is-lowered.is-closing .landing-nav.is-top .landing-nav-track > button,
@@ -395,11 +395,11 @@ html.is-landing-menu #root {
   animation: landing-nav-out 0.24s var(--ease-out) both;
 }
 
-.screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button:nth-child(1) { animation-delay: 0.02s; }
-.screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button:nth-child(2) { animation-delay: 0.1s; }
-.screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button:nth-child(3) { animation-delay: 0.18s; }
-.screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button:nth-child(4) { animation-delay: 0.26s; }
-.screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-theme { animation-delay: 0.34s; }
+.screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button:nth-child(1) { animation-delay: 0.06s; }
+.screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button:nth-child(2) { animation-delay: 0.16s; }
+.screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button:nth-child(3) { animation-delay: 0.26s; }
+.screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-track > button:nth-child(4) { animation-delay: 0.36s; }
+.screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-theme { animation-delay: 0.46s; }
 
 .screen.landing.is-lowered.is-closing .landing-nav.is-top .landing-nav-track > button:nth-child(1) { animation-delay: 0s; }
 .screen.landing.is-lowered.is-closing .landing-nav.is-top .landing-nav-track > button:nth-child(2) { animation-delay: 0.08s; }
@@ -408,7 +408,7 @@ html.is-landing-menu #root {
 .screen.landing.is-lowered.is-closing .landing-nav.is-top .landing-theme { animation-delay: 0.32s; }
 
 .screen.landing.is-lowered:not(.is-closing) .landing-nav.is-top .landing-nav-bar {
-  animation: landing-nav-bar-in 0.3s var(--ease-out) 0.12s both;
+  animation: landing-nav-bar-in 0.5s var(--chrome-ease) 0.22s both;
 }
 
 .screen.landing.is-lowered.is-closing .landing-nav.is-top .landing-nav-bar {
@@ -418,7 +418,7 @@ html.is-landing-menu #root {
 .screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-brand,
 .screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button,
 .screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-theme {
-  animation: landing-nav-in-bottom 0.34s var(--ease-out) both;
+  animation: landing-nav-in-bottom 0.62s var(--chrome-ease) both;
 }
 
 .screen.landing.is-raised.is-closing .landing-nav:not(.is-top) .landing-brand,
@@ -427,12 +427,12 @@ html.is-landing-menu #root {
   animation: landing-nav-out-bottom 0.24s var(--ease-out) both;
 }
 
-.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-brand { animation-delay: 0s; }
-.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(1) { animation-delay: 0.02s; }
-.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(2) { animation-delay: 0.1s; }
-.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(3) { animation-delay: 0.18s; }
-.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(4) { animation-delay: 0.26s; }
-.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-theme { animation-delay: 0.34s; }
+.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-brand { animation-delay: 0.04s; }
+.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(1) { animation-delay: 0.06s; }
+.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(2) { animation-delay: 0.16s; }
+.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(3) { animation-delay: 0.26s; }
+.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(4) { animation-delay: 0.36s; }
+.screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-theme { animation-delay: 0.46s; }
 
 .screen.landing.is-raised.is-closing .landing-nav:not(.is-top) .landing-brand { animation-delay: 0s; }
 .screen.landing.is-raised.is-closing .landing-nav:not(.is-top) .landing-nav-track > button:nth-child(1) { animation-delay: 0s; }
@@ -442,7 +442,7 @@ html.is-landing-menu #root {
 .screen.landing.is-raised.is-closing .landing-nav:not(.is-top) .landing-theme { animation-delay: 0.32s; }
 
 .screen.landing.is-raised:not(.is-closing) .landing-nav:not(.is-top) .landing-nav-bar {
-  animation: landing-nav-bar-in 0.3s var(--ease-out) 0.12s both;
+  animation: landing-nav-bar-in 0.5s var(--chrome-ease) 0.22s both;
 }
 
 .screen.landing.is-raised.is-closing .landing-nav:not(.is-top) .landing-nav-bar {
@@ -806,8 +806,8 @@ html.is-landing-menu #root {
   text-align: left;
   transition:
     color var(--theme-fade) var(--ease-in-out),
-    opacity 0.4s var(--ease-out),
-    visibility 0.4s var(--ease-out);
+    opacity var(--chrome-move) var(--chrome-ease),
+    visibility var(--chrome-move) var(--chrome-ease);
 }
 
 html.is-night .landing-logo {
@@ -849,8 +849,8 @@ html:not(.is-night) .screen.landing:not(.is-desktop).is-lowered:not(.is-closing)
   right: calc(16px + var(--landing-corner) * 0.28);
   height: var(--landing-nav);
   transition:
-    opacity 0.4s var(--ease-out),
-    visibility 0.4s var(--ease-out);
+    opacity var(--chrome-move) var(--chrome-ease),
+    visibility var(--chrome-move) var(--chrome-ease);
 }
 
 .screen.landing:not(.is-desktop) .landing-theme.is-pin {
@@ -1300,16 +1300,33 @@ html:not(.is-night) .screen.landing:not(.is-desktop).is-lowered:not(.is-closing)
   object-fit: contain;
 }
 
+/* Light and dark screenshots share one slot and dissolve into each other. */
+.apple-step-shot:has(> img.is-light) {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.apple-step-shot:has(> img.is-light) > img {
+  grid-area: 1 / 1;
+}
+
+.apple-step-shot img.is-light,
+.apple-step-shot img.is-dark {
+  opacity: 1;
+  transition: opacity 0.65s var(--ease-in-out);
+}
+
 html.is-night .apple-step-shot img.is-light,
 html:not(.is-night) .apple-step-shot img.is-dark {
-  display: none;
+  opacity: 0;
 }
 
 /* Scroll morph draws one flying copy. The page images stay in flow but hide
-   so the same screenshot is not seen twice. */
+   so the same screenshot is not seen twice. Visibility only: opacity keeps
+   the theme crossfade, so the picture does not fade again when the flight ends. */
 .apple-step-shot.is-shot-ghost img {
   visibility: hidden;
-  opacity: 0;
 }
 
 .install-shot-morph {
@@ -1341,6 +1358,11 @@ html:not(.is-night) .apple-step-shot img.is-dark {
 @media (prefers-reduced-motion: reduce) {
   .install-shot-morph {
     display: none;
+  }
+
+  .apple-step-shot img.is-light,
+  .apple-step-shot img.is-dark {
+    transition: none;
   }
 }
 
@@ -1693,12 +1715,6 @@ html:not(.is-night) .screen.landing.is-desktop.is-raised .landing-nav .landing-t
   gap: 20px;
   box-sizing: border-box;
   padding-top: clamp(32px, 10svh, 88px);
-}
-
-.screen.landing.is-hint-closed:not(.is-desktop) .install-page.has-shot.is-shot-left,
-.screen.landing.is-hint-closed:not(.is-desktop) .install-page.has-shot.is-shot-right {
-  align-content: center;
-  padding-top: 0;
 }
 
 .screen.landing:not(.is-desktop) .install-page .apple-step-shot,
@@ -2580,6 +2596,41 @@ button.site-intro-hit:active {
 @keyframes intro-ch {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.site-intro.is-rise .site-intro-lockup,
+.site-intro.is-rise.is-words .site-intro-lockup {
+  flex-direction: column;
+  gap: 0.12em;
+}
+
+.site-intro.is-rise .site-intro-name,
+.site-intro.is-rise.is-words .site-intro-name {
+  width: max-content;
+  max-width: none;
+  height: 0;
+  overflow: hidden;
+  transition: height 0.62s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.site-intro.is-rise.is-words .site-intro-name {
+  height: 2.05em;
+}
+
+.site-intro.is-rise .site-intro-lines {
+  align-items: center;
+  transform: translateY(110%);
+  transition: transform 0.62s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.site-intro.is-rise.is-words .site-intro-lines {
+  transform: none;
+}
+
+.site-intro.is-rise .site-intro-ch,
+.site-intro.is-rise.is-words .site-intro-ch {
+  opacity: 1;
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

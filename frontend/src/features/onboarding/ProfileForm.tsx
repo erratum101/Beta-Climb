@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { AthleteProfile } from '../../shared/api'
 import { ConsentField, GenderField, MultiSelectField, NumberField, SelectField } from '../../shared/ui/Fields'
-import { DISCIPLINE_OPTIONS, EXPERIENCE_OPTIONS, GRADE_OPTIONS } from '../../entities/profile'
+import { disciplineOptions, experienceOptions, gradeOptions } from '../../entities/profile'
+import { useLang, useUi } from '../../shared/i18n'
+import type { Ui } from '../../shared/copy'
 
 const EMPTY: AthleteProfile = {
   nickname: '',
@@ -16,36 +18,24 @@ const EMPTY: AthleteProfile = {
   consentAccepted: false,
 }
 
-const FIELD_ERRORS = {
-  nickname: 'Введи имя или ник',
-  heightCm: 'Рост',
-  weightKg: 'Вес',
-  ageYears: 'Лет',
-  experience: 'Выбери опыт',
-  disciplines: 'Выбери тип трасс',
-  maxGrade: 'Выбери категорию',
-  gender: 'Укажи пол',
-  consent: 'Нужно согласие на обработку персональных данных',
-} as const
+type FieldKey = 'nickname' | 'heightCm' | 'weightKg' | 'ageYears' | 'experience' | 'disciplines' | 'maxGrade' | 'gender' | 'consent'
 
-type FieldKey = keyof typeof FIELD_ERRORS
-
-function collectErrors(profile: AthleteProfile): Partial<Record<FieldKey, string>> {
+function collectErrors(profile: AthleteProfile, copy: Ui): Partial<Record<FieldKey, string>> {
   const errors: Partial<Record<FieldKey, string>> = {}
-  if (!profile.nickname.trim()) errors.nickname = FIELD_ERRORS.nickname
-  if (profile.heightCm == null) errors.heightCm = FIELD_ERRORS.heightCm
-  if (profile.weightKg == null) errors.weightKg = FIELD_ERRORS.weightKg
-  if (profile.ageYears == null) errors.ageYears = FIELD_ERRORS.ageYears
-  if (!profile.experience) errors.experience = FIELD_ERRORS.experience
-  if (profile.disciplines.length === 0) errors.disciplines = FIELD_ERRORS.disciplines
-  if (!profile.maxGrade) errors.maxGrade = FIELD_ERRORS.maxGrade
-  if (!profile.gender) errors.gender = FIELD_ERRORS.gender
-  if (!profile.consentAccepted) errors.consent = FIELD_ERRORS.consent
+  if (!profile.nickname.trim()) errors.nickname = copy.errNickname
+  if (profile.heightCm == null) errors.heightCm = copy.height
+  if (profile.weightKg == null) errors.weightKg = copy.weight
+  if (profile.ageYears == null) errors.ageYears = copy.years
+  if (!profile.experience) errors.experience = copy.errExperience
+  if (profile.disciplines.length === 0) errors.disciplines = copy.errDisciplines
+  if (!profile.maxGrade) errors.maxGrade = copy.errGrade
+  if (!profile.gender) errors.gender = copy.errGender
+  if (!profile.consentAccepted) errors.consent = copy.errConsent
   return errors
 }
 
-function isComplete(profile: AthleteProfile): boolean {
-  return Object.keys(collectErrors(profile)).length === 0
+function isComplete(profile: AthleteProfile, copy: Ui): boolean {
+  return Object.keys(collectErrors(profile, copy)).length === 0
 }
 
 function themeMeta(): HTMLMetaElement | null {
@@ -83,6 +73,8 @@ export function ProfileForm({
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({})
   const [saving, setSaving] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const lang = useLang()
+  const copy = useUi()
   useFormChrome()
 
   function patch(next: Partial<AthleteProfile>) {
@@ -105,7 +97,7 @@ export function ProfileForm({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (saving) return
-    const nextErrors = collectErrors(profile)
+    const nextErrors = collectErrors(profile, copy)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
     setSaving(true)
@@ -119,7 +111,7 @@ export function ProfileForm({
         ageYears: clamp(profile.ageYears, 4, 101),
       })
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Не удалось сохранить профиль.')
+      setSubmitError(error instanceof Error ? error.message : copy.saveProfileFailed)
     } finally {
       setSaving(false)
     }
@@ -128,10 +120,10 @@ export function ProfileForm({
   return (
     <form className="profile-form stagger" onSubmit={handleSubmit} aria-busy={saving}>
       <label className="field">
-        <span className="visually-hidden">Имя или ник</span>
+        <span className="visually-hidden">{copy.nameOrNick}</span>
         <input
           className={errors.nickname ? 'field-control is-invalid' : 'field-control'}
-          placeholder={errors.nickname ?? 'Введи свое имя/никнейм'}
+          placeholder={errors.nickname ?? copy.namePlaceholder}
           maxLength={24}
           autoComplete="nickname"
           value={errors.nickname ? profile.nickname.trim() : profile.nickname}
@@ -142,19 +134,19 @@ export function ProfileForm({
       <div className="field-row">
         <NumberField
           value={profile.heightCm}
-          placeholder="Рост"
+          placeholder={copy.height}
           invalid={Boolean(errors.heightCm)}
           onChange={(heightCm) => patch({ heightCm })}
         />
         <NumberField
           value={profile.weightKg}
-          placeholder="Вес"
+          placeholder={copy.weight}
           invalid={Boolean(errors.weightKg)}
           onChange={(weightKg) => patch({ weightKg })}
         />
         <NumberField
           value={profile.ageYears}
-          placeholder="Лет"
+          placeholder={copy.years}
           invalid={Boolean(errors.ageYears)}
           onChange={(ageYears) => patch({ ageYears })}
         />
@@ -162,23 +154,23 @@ export function ProfileForm({
 
       <SelectField
         value={profile.experience}
-        placeholder="Опыт"
+        placeholder={copy.experience}
         error={errors.experience}
-        options={EXPERIENCE_OPTIONS}
+        options={experienceOptions(lang)}
         onChange={(experience) => patch({ experience })}
       />
       <MultiSelectField
         value={profile.disciplines}
-        placeholder="Тип трасс"
+        placeholder={copy.routeTypes}
         error={errors.disciplines}
-        options={DISCIPLINE_OPTIONS}
+        options={disciplineOptions(lang)}
         onChange={(disciplines) => patch({ disciplines })}
       />
       <SelectField
         value={profile.maxGrade}
-        placeholder="Макс. категория трасс"
+        placeholder={copy.maxRouteGrade}
         error={errors.maxGrade}
-        options={GRADE_OPTIONS}
+        options={gradeOptions(lang)}
         onChange={(maxGrade) => patch({ maxGrade })}
       />
       <GenderField value={profile.gender} error={errors.gender} onChange={(gender) => patch({ gender })} />
@@ -188,8 +180,8 @@ export function ProfileForm({
         onChange={(consentAccepted) => patch({ consentAccepted })}
       />
       {submitError && <p role="alert">{submitError}</p>}
-      <button className={isComplete(profile) ? 'btn btn-light is-ready' : 'btn btn-light'} type="submit" disabled={saving}>
-        {saving ? 'Сохраняем…' : submitLabel}
+      <button className={isComplete(profile, copy) ? 'btn btn-light is-ready' : 'btn btn-light'} type="submit" disabled={saving}>
+        {saving ? copy.saving : submitLabel}
       </button>
     </form>
   )

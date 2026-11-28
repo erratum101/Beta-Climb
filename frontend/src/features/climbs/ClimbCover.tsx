@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useUi } from '../../shared/i18n'
 
 const frameCache = new Map<string, string>()
 const decodeQueue: Array<() => void> = []
@@ -29,6 +30,7 @@ function finishDecode() {
 }
 
 function VideoCover({ src, onFrame }: { src: string; onFrame: (url: string) => void }) {
+  const t = useUi()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const onFrameRef = useRef(onFrame)
   onFrameRef.current = onFrame
@@ -119,11 +121,12 @@ function VideoCover({ src, onFrame }: { src: string; onFrame: (url: string) => v
   }, [src])
 
   return failed
-    ? <span className="climb-cover-message">Кадр недоступен</span>
+    ? <span className="climb-cover-message">{t.frameUnavailable}</span>
     : <canvas className="climb-cover" ref={canvasRef} aria-hidden="true" />
 }
 
 export function ClimbCover({ thumbnailUrl, mediaUrl }: { thumbnailUrl?: string; mediaUrl?: string }) {
+  const t = useUi()
   const [failedUrl, setFailedUrl] = useState<string>()
   const [captured, setCaptured] = useState(() => mediaUrl ? frameCache.get(mediaUrl) : undefined)
   const poster = thumbnailUrl && thumbnailUrl !== failedUrl ? thumbnailUrl : captured
@@ -144,5 +147,5 @@ export function ClimbCover({ thumbnailUrl, mediaUrl }: { thumbnailUrl?: string; 
   if (mediaUrl) {
     return <VideoCover src={mediaUrl} onFrame={(url) => setCaptured(url)} />
   }
-  return <span className="climb-cover-message">Кадр недоступен</span>
+  return <span className="climb-cover-message">{t.frameUnavailable}</span>
 }

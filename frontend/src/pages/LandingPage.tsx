@@ -8,6 +8,7 @@ import { SvgIcon } from '../shared/ui/SvgIcon'
 import Magnet from '../shared/ui/Magnet'
 import ScrollFloat from '../shared/ui/ScrollFloat'
 import VariableProximity from '../shared/ui/VariableProximity'
+import { useLang } from '../shared/i18n'
 import { SiteIntro } from './SiteIntro'
 
 const INSTALL_PAGES = {
@@ -141,11 +142,6 @@ function copyLang(russian: boolean): CopyLang {
   return russian ? 'ru' : 'en'
 }
 
-function isRussianLanguage() {
-  const tag = (navigator.languages?.[0] || navigator.language || '').toLowerCase()
-  return tag.startsWith('ru')
-}
-
 const SHEET_SHIFT = 70
 const CHROME_CLOSE_MS = 640
 
@@ -210,14 +206,14 @@ function paintNavFill(buttons: HTMLButtonElement[], from: number, to: number, fo
   })
 }
 
-function ThemeToggle({ night, onNight }: { night: boolean; onNight: (next: boolean) => void }) {
+function ThemeToggle({ night, onNight, russian }: { night: boolean; onNight: (next: boolean) => void; russian: boolean }) {
   return (
     <button
       type="button"
       className="landing-switch landing-theme-switch"
       data-theme={night ? 'night' : 'day'}
       aria-pressed={night}
-      aria-label="Переключить тему"
+      aria-label={russian ? 'Переключить тему' : 'Switch theme'}
       onClick={() => onNight(!night)}
     >
       <span className="landing-switch-thumb" aria-hidden="true" />
@@ -329,7 +325,7 @@ function SectionNav({
         <span className="landing-nav-bar" aria-hidden="true" />
       </div>
       <div className="landing-theme">
-        <ThemeToggle night={night} onNight={onNight} />
+        <ThemeToggle night={night} onNight={onNight} russian={russian} />
       </div>
       </div>
     </nav>
@@ -377,7 +373,8 @@ function IosShareHint({ russian, onClose }: { russian: boolean; onClose: () => v
           type="button"
           className="ios-share-hint-close"
           aria-label={copy.close}
-          onClick={() => {
+          onClick={(event) => {
+            event.currentTarget.blur()
             onClose()
             setOpen(false)
           }}
@@ -460,13 +457,15 @@ function PhoneInstall({
 
 function PlatformSwitch({
   platform,
+  russian,
   onPlatform,
 }: {
   platform: GuideId
+  russian: boolean
   onPlatform: (platform: GuideId) => void
 }) {
   return (
-    <div className="landing-switch" role="tablist" aria-label="Платформа" data-platform={platform}>
+    <div className="landing-switch" role="tablist" aria-label={russian ? 'Платформа' : 'Platform'} data-platform={platform}>
       <span className="landing-switch-thumb" aria-hidden="true" />
       <button
         type="button"
@@ -621,7 +620,7 @@ function InstallSteps({
   return (
     <div className="install-steps">
       <div className="install-step-top">
-        <PlatformSwitch platform={platform} onPlatform={onPlatform} />
+        <PlatformSwitch platform={platform} russian={russian} onPlatform={onPlatform} />
       </div>
       {pages.slice(start).map((page, index) => (
         <InstallStep
@@ -919,7 +918,11 @@ function containedShot(img: HTMLImageElement): ShotBox | null {
 }
 
 function visibleShot(figure: HTMLElement) {
-  return [...figure.querySelectorAll('img')].find((img) => getComputedStyle(img).display !== 'none') ?? null
+  const imgs = [...figure.querySelectorAll('img')]
+  const themed = imgs.filter((img) => img.classList.contains('is-light') || img.classList.contains('is-dark'))
+  if (themed.length === 0) return imgs[0] ?? null
+  const night = document.documentElement.classList.contains('is-night')
+  return themed.find((img) => img.classList.contains(night ? 'is-dark' : 'is-light')) ?? themed[0]
 }
 
 /**
@@ -1154,7 +1157,7 @@ function shouldPlayIntro() {
 }
 
 export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
-  const russian = isRussianLanguage()
+  const russian = useLang() === 'ru'
   const phone = usePhoneLayout(mode)
   const { night, setNight } = useSession()
 
@@ -1192,54 +1195,47 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
   const [active, setActive] = useState<SectionId>('home')
   const [guidePlatform, setGuidePlatform] = useState<GuideId>(readPhonePlatform)
   const [hintClosed, setHintClosed] = useState(false)
-  const hintShiftRef = useRef<number[] | null>(null)
 
   function closeShareHint() {
     const stage = stageRef.current
     if (!stage || hintClosed) return
-    hintShiftRef.current = [...stage.querySelectorAll<HTMLElement>('.install-page.has-shot')].map(
-      (page) => page.querySelector('.apple-step-shot')?.getBoundingClientRect().top ?? 0,
-    )
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const viewport = window.visualViewport
+    const visible = viewport?.height || window.innerHeight
+    const pages = [...stage.querySelectorAll<HTMLElement>('.install-page.has-shot')]
+    const shifts = pages.map((page) => {
+      const step = page.closest('.install-step-page')
+      const shot = page.querySelector('.apple-step-shot')
+      const copy = page.querySelector('.install-page-copy')
+      if (!step || !shot || !copy) return 0
+      const shotBox = shot.getBoundingClientRect()
+      const copyBox = copy.getBoundingClientRect()
+      const center = (Math.min(shotBox.top, copyBox.top) + Math.max(shotBox.bottom, copyBox.bottom)) / 2
+      const pageTop = step.getBoundingClientRect().top
+      return visible / 2 - (center - pageTop)
+    })
     setHintClosed(true)
-  }
-
-  useLayoutEffect(() => {
-    if (!hintClosed) return
-    const before = hintShiftRef.current
-    if (!before?.length) return
-    hintShiftRef.current = null
-    const stage = stageRef.current
-    if (!stage || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const pending: HTMLElement[] = []
-    stage.querySelectorAll<HTMLElement>('.install-page.has-shot').forEach((page, index) => {
-      const nodes = [...page.querySelectorAll<HTMLElement>('.apple-step-shot, .install-page-copy')]
-      const after = nodes[0]?.getBoundingClientRect().top ?? before[index] ?? 0
-      const dy = (before[index] ?? after) - after
-      if (Math.abs(dy) < 0.5) return
-      for (const node of nodes) {
-        node.style.transition = 'none'
-        node.style.transform = `translateY(${dy}px)`
-        pending.push(node)
-      }
-    })
-    if (!pending.length) return
-    const release = (event: TransitionEvent) => {
-      const node = event.currentTarget
-      if (!(node instanceof HTMLElement) || event.propertyName !== 'transform') return
-      node.style.transition = ''
-      node.style.transform = ''
-      node.removeEventListener('transitionend', release)
-    }
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        for (const node of pending) {
-          node.style.transition = 'transform 0.55s cubic-bezier(0.23, 1, 0.32, 1)'
-          node.style.transform = 'translateY(0)'
-          node.addEventListener('transitionend', release)
-        }
+    const ease = 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)'
+    const apply = (animate: boolean) => {
+      pages.forEach((page, index) => {
+        const dy = shifts[index] ?? 0
+        if (Math.abs(dy) < 0.5) return
+        page.style.transition = animate ? ease : 'none'
+        page.style.transform = `translateY(${dy}px)`
       })
+    }
+    if (reduce) {
+      apply(false)
+      return
+    }
+    pages.forEach((page) => {
+      page.style.transition = 'none'
+      page.style.transform = 'translateY(0)'
     })
-  }, [hintClosed])
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => apply(true))
+    })
+  }
 
   useEffect(() => {
     const stage = stageRef.current
@@ -1916,7 +1912,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
     <div className={screenClass} ref={stageRef}>
       <div className="landing-reveal is-top" aria-hidden="true" />
       <div className="landing-reveal is-bottom" aria-hidden="true" />
-      <button type="button" className="landing-logo" aria-label="Открыть меню" onClick={() => chromeRef.current?.open()}>
+      <button type="button" className="landing-logo" aria-label={russian ? 'Открыть меню' : 'Open menu'} onClick={() => chromeRef.current?.open()}>
         <SvgIcon src="/logo.svg" size={26} />
         <span>
           Beta
@@ -1925,7 +1921,7 @@ export function LandingPage({ mode }: { mode: 'mobile' | 'desktop' }) {
         </span>
       </button>
       <div className="landing-theme is-pin">
-        <ThemeToggle night={night} onNight={setNight} />
+        <ThemeToggle night={night} onNight={setNight} russian={russian} />
       </div>
       <div className="landing-sheet">
       <div className="landing-scroll" ref={scrollRef}>

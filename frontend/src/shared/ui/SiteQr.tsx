@@ -1,12 +1,14 @@
 import { useMemo } from 'react'
+import { useUi } from '../i18n'
 import { SITE_QR_URL, siteQrGraphic } from './siteQrGraphic'
 
 export function SiteQr() {
   const graphic = useMemo(() => siteQrGraphic(SITE_QR_URL), [])
+  const t = useUi()
 
   return (
     <figure className="landing-qr">
-      <svg viewBox={graphic.viewBox} role="img" aria-label="QR-код: https://www.betaclimb.ru/">
+      <svg viewBox={graphic.viewBox} role="img" aria-label={t.qrLabel}>
         <path d={graphic.dots} fill="#1c1c1e" />
         {graphic.finders.map((finder) => (
           <g key={finder.key}>

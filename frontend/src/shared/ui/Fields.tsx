@@ -3,6 +3,7 @@ import type { ReactNode, RefObject } from 'react'
 import { IconChevron } from './icons'
 import { SvgIcon } from './SvgIcon'
 import type { GenderId } from '../api'
+import { useUi } from '../i18n'
 
 interface Option<T extends string> {
   value: T
@@ -224,12 +225,13 @@ export function GenderField({
   onChange: (value: GenderId) => void
 }) {
   const invalid = Boolean(error) && value == null
+  const t = useUi()
   return (
-    <div className="gender-row" role="radiogroup" aria-label="Пол">
-      <GenderCard label={invalid ? error ?? 'Укажи пол' : 'Мужской'} invalid={invalid} pressed={value === 'male'} onClick={() => onChange('male')}>
+    <div className="gender-row" role="radiogroup" aria-label={t.gender}>
+      <GenderCard label={invalid ? error ?? t.errGender : t.male} invalid={invalid} pressed={value === 'male'} onClick={() => onChange('male')}>
         <SvgIcon src="/male.svg" size={78} />
       </GenderCard>
-      <GenderCard label={invalid ? error ?? 'Укажи пол' : 'Женский'} invalid={invalid} pressed={value === 'female'} onClick={() => onChange('female')}>
+      <GenderCard label={invalid ? error ?? t.errGender : t.female} invalid={invalid} pressed={value === 'female'} onClick={() => onChange('female')}>
         <SvgIcon src="/female.svg" size={78} />
       </GenderCard>
     </div>
@@ -296,6 +298,7 @@ export function ConsentField({
   const rootRef = useRef<HTMLLabelElement>(null)
   const textRef = useRef<HTMLSpanElement>(null)
   const invalid = Boolean(error) && !checked
+  const t = useUi()
 
   useEffect(() => {
     const root = rootRef.current
@@ -346,11 +349,11 @@ export function ConsentField({
       />
       <span className="consent-box">
         <span className="consent-prompt" aria-hidden={invalid ? undefined : true}>
-          Согласитесь
+          {t.agreePrompt}
         </span>
       </span>
       <span ref={textRef} className="consent-text">
-        Согласен на обработку персональных данных
+        {t.agreeText}
       </span>
     </label>
   )

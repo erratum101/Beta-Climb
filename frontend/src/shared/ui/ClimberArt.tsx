@@ -1,3 +1,5 @@
+import { useUi } from '../i18n'
+
 function Hold({ x, y, r = 20 }: { x: number; y: number; r?: number }) {
   return (
     <g>
@@ -22,8 +24,9 @@ function Figure({ color, reach }: { color: string; reach: number }) {
 }
 
 export function ClimberArt() {
+  const t = useUi()
   return (
-    <svg className="climber-art" viewBox="0 0 360 420" role="img" aria-label="Скалолаз тянется к следующей зацепке">
+    <svg className="climber-art" viewBox="0 0 360 420" role="img" aria-label={t.climberArt}>
       <Hold x={118} y={312} />
       <Hold x={214} y={286} r={18} />
       <Hold x={122} y={228} r={16} />

@@ -2,7 +2,8 @@ import { createContext, useCallback, useEffect, useRef, useState, type ChangeEve
 import { useNavigate } from 'react-router-dom'
 import { syncDocumentChrome, useSession } from '../../app/session'
 import { attemptHref } from '../../entities/attempt'
-import { GRADE_OPTIONS } from '../../entities/profile'
+import { gradeOptions } from '../../entities/profile'
+import { useLang, useUi } from '../../shared/i18n'
 import type { CreateAttemptInput, GradeBandId } from '../../shared/api'
 import { SvgIcon } from '../../shared/ui/SvgIcon'
 
@@ -71,13 +72,7 @@ async function captureFrame(file: File, atSec?: number): Promise<{ frame?: Blob;
   }
 }
 
-export const CAPTURE_GUIDE_STEPS = [
-  'Камера стоит неподвижно',
-  'Один спортсмен в кадре',
-  'Цвета трасс хорошо различимы',
-  'Вся трасса в кадре',
-  'Картинка четкая',
-]
+export const CAPTURE_GUIDE_STEP_COUNT = 5
 
 export type HomeGuideControls = {
   open: boolean
@@ -88,8 +83,6 @@ export type HomeGuideControls = {
 }
 
 export const HomeGuideContext = createContext<HomeGuideControls | null>(null)
-
-const STEPS = CAPTURE_GUIDE_STEPS
 
 const GUIDE_MARKS = [
   { n: 1, x: 52.29, y: 89.68 },
@@ -227,6 +220,8 @@ function seekVideo(video: HTMLVideoElement, time: number, fast = false) {
 
 export function CaptureSource({ onBack }: { onBack: () => void }) {
   const navigate = useNavigate()
+  const lang = useLang()
+  const t = useUi()
   const { startAttempt } = useSession()
   const [entered, setEntered] = useState(false)
   const galleryRef = useRef<HTMLInputElement>(null)
@@ -385,7 +380,7 @@ export function CaptureSource({ onBack }: { onBack: () => void }) {
     event.target.value = ''
     if (!file) return
     if (file.type && !file.type.startsWith('video/') && file.type !== 'application/octet-stream') {
-      setError('Выбери видео попытки.')
+      setError(t.chooseAttemptVideo)
       return
     }
     setError('')
@@ -628,7 +623,7 @@ export function CaptureSource({ onBack }: { onBack: () => void }) {
     })
       if (mounted.current) navigate(attemptHref(attempt), { replace: true })
     } catch (reason) {
-      if (mounted.current) setError(reason instanceof Error ? reason.message : 'Не удалось загрузить видео.')
+      if (mounted.current) setError(reason instanceof Error ? reason.message : t.loadVideoFailed)
     } finally {
       inFlight.current = false
       if (mounted.current) setUploading(false)
@@ -699,17 +694,17 @@ export function CaptureSource({ onBack }: { onBack: () => void }) {
             <div className="flow-film-shade flow-film-shade-right" style={{ width: `${clip.duration > 0 ? 100 - (clip.end / clip.duration) * 100 : 0}%` }} />
             <div className="flow-film-window" style={{ left: `${clip.duration > 0 ? (clip.start / clip.duration) * 100 : 0}%`, right: `${clip.duration > 0 ? 100 - (clip.end / clip.duration) * 100 : 0}%` }} />
             <div className="flow-film-playhead" style={{ left: `${clip.duration > 0 ? (playhead / clip.duration) * 100 : 0}%` }} />
-            <button type="button" className="flow-film-handle" data-handle="start" style={{ left: `${clip.duration > 0 ? (clip.start / clip.duration) * 100 : 0}%` }} aria-label="Начало обрезки" />
-            <button type="button" className="flow-film-handle" data-handle="end" style={{ left: `${clip.duration > 0 ? (clip.end / clip.duration) * 100 : 100}%` }} aria-label="Конец обрезки" />
+            <button type="button" className="flow-film-handle" data-handle="start" style={{ left: `${clip.duration > 0 ? (clip.start / clip.duration) * 100 : 0}%` }} aria-label={t.trimStart} />
+            <button type="button" className="flow-film-handle" data-handle="end" style={{ left: `${clip.duration > 0 ? (clip.end / clip.duration) * 100 : 100}%` }} aria-label={t.trimEnd} />
           </div>
           <div className="flow-trimbar">
-            <button type="button" className="flow-round" aria-label="Отменить" onClick={() => { clearStrip(); setSelected(null); setError('') }}>
+            <button type="button" className="flow-round" aria-label={t.cancel} onClick={() => { clearStrip(); setSelected(null); setError('') }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
                 <path d="M6 6l12 12M18 6L6 18" />
               </svg>
             </button>
             <div className="flow-time-tab" aria-live="polite">{clock(playhead)}</div>
-            <button type="button" className="flow-round" aria-label="Принять" disabled={clip.duration <= 0} onClick={() => void acceptClip()}>
+            <button type="button" className="flow-round" aria-label={t.accept} disabled={clip.duration <= 0} onClick={() => void acceptClip()}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
                 <path d="M5 12.5l4.5 4.5L19 7" />
               </svg>
@@ -719,34 +714,34 @@ export function CaptureSource({ onBack }: { onBack: () => void }) {
       ) : null}
       {selected && step === 'route' ? (
         <div className="flow-route">
-          <h1>Трасса</h1>
+          <h1>{t.route}</h1>
           <p>
-            <span>Выберите категорию сложности трассы</span>
-            <span>и проверьте правильность выделения зацепок</span>
+            <span>{t.chooseGrade}</span>
+            <span>{t.checkHolds}</span>
           </p>
           <label className="flow-grade-wrap">
             <select
               className={grade ? 'is-set' : undefined}
               value={grade}
-              aria-label="Категория трассы"
+              aria-label={t.routeGrade}
               onChange={(event) => setGrade(event.target.value as GradeBandId | '')}
             >
-              <option value="">Категория трассы</option>
-              {GRADE_OPTIONS.map((option) => (
+              <option value="">{t.routeGrade}</option>
+              {gradeOptions(lang).map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
           </label>
           <div className="flow-shot-frame">
-            {posterUrl ? <img className="flow-shot" src={posterUrl} alt="Кадр попытки" /> : <div className="flow-shot" />}
-            <div className="flow-verdict" role="group" aria-label="Выделение зацепок">
-              <button type="button" aria-label="Не правильно" className={verdict === 'no' ? 'is-on' : undefined} onClick={() => { setVerdict('no'); setConfirmFor('fix'); setStep('confirm') }}>
+            {posterUrl ? <img className="flow-shot" src={posterUrl} alt={t.attemptFrame} /> : <div className="flow-shot" />}
+            <div className="flow-verdict" role="group" aria-label={t.holdMarks}>
+              <button type="button" aria-label={t.marksWrong} className={verdict === 'no' ? 'is-on' : undefined} onClick={() => { setVerdict('no'); setConfirmFor('fix'); setStep('confirm') }}>
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M14.5 5.2a1.85 1.85 0 0 1 2.6 2.6L8.2 16.7l-3.1.8.8-3.1L14.5 5.2z" />
                     <path d="M13.5 17.1h7" />
                   </svg>
               </button>
-              <button type="button" aria-label="Правильно" className={verdict === 'yes' ? 'is-on' : undefined} onClick={() => setVerdict('yes')}>
+              <button type="button" aria-label={t.marksRight} className={verdict === 'yes' ? 'is-on' : undefined} onClick={() => setVerdict('yes')}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M5.5 12.2l5.2 5.2L19.2 8.2" />
                 </svg>
@@ -755,21 +750,21 @@ export function CaptureSource({ onBack }: { onBack: () => void }) {
           </div>
           {error ? <p role="alert">{error}</p> : null}
           <button type="button" className="flow-analyze" disabled={!grade || !verdict || uploading} onClick={() => { setConfirmFor('send'); setStep('confirm') }}>
-            Проанализировать
+            {t.analyze}
           </button>
         </div>
       ) : null}
       {selected && step === 'confirm' ? (
         <div className="flow-confirm">
-          {posterUrl ? <img src={posterUrl} alt="Кадр для разбора" /> : null}
-          <button type="button" className="flow-close" aria-label="Закрыть" onClick={() => setStep('route')}>
+          {posterUrl ? <img src={posterUrl} alt={t.reviewFrame} /> : null}
+          <button type="button" className="flow-close" aria-label={t.close} onClick={() => setStep('route')}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
           {error ? <p className="flow-confirm-error" role="alert">{error}</p> : null}
           <div className="flow-confirm-bar">
-            <button type="button" className="flow-photo" aria-label="Другое видео" disabled={uploading} onClick={() => galleryRef.current?.click()}>
+            <button type="button" className="flow-photo" aria-label={t.anotherVideo} disabled={uploading} onClick={() => galleryRef.current?.click()}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                 <rect x="4" y="5" width="16" height="14" rx="2" />
                 <circle cx="9" cy="10" r="1.4" />
@@ -777,7 +772,7 @@ export function CaptureSource({ onBack }: { onBack: () => void }) {
               </svg>
             </button>
             <button type="button" className="flow-ok" disabled={uploading} onClick={() => { if (confirmFor === 'send') void upload(); else setStep('route') }}>
-              {uploading ? 'Ждём…' : 'Подтвердить'}
+              {uploading ? t.waiting : t.confirm}
             </button>
           </div>
         </div>
@@ -786,11 +781,11 @@ export function CaptureSource({ onBack }: { onBack: () => void }) {
         {error ? <p role="alert" className="capture-file-error">{error}</p> : null}
         <button type="button" className="capture-source-gallery" onClick={() => galleryRef.current?.click()}>
           <SvgIcon src="/gallery.svg" size={100} />
-          <span>Из галереи</span>
+          <span>{t.fromGallery}</span>
         </button>
         <button type="button" className="capture-source-camera" onClick={() => cameraRef.current?.click()}>
           <SvgIcon src="/Camera.svg" size={100} />
-          <span>Снять новое</span>
+          <span>{t.recordNew}</span>
         </button>
       </>}
       <input
@@ -806,16 +801,18 @@ export function CaptureSource({ onBack }: { onBack: () => void }) {
 }
 
 export function CaptureGuideBody({ step }: { step: number }) {
+  const t = useUi()
+  const steps = t.guideSteps
   return (
     <div className="screen capture-guide">
       <div className="capture-guide-dots" aria-hidden="true">
-        {STEPS.map((label, index) => (
+        {steps.map((label, index) => (
           <span key={label} className={index === step ? 'is-on' : undefined} />
         ))}
       </div>
-      <p className="capture-guide-lead">Перед началом записи убедись, что:</p>
+      <p className="capture-guide-lead">{t.guideLead}</p>
       <h1 key={step} className="capture-guide-title">
-        {step + 1}. {STEPS[step]}
+        {step + 1}. {steps[step]}
       </h1>
       <div className="capture-guide-art">
         <div className="capture-guide-frame">
@@ -839,8 +836,9 @@ export function CaptureGuideBody({ step }: { step: number }) {
 }
 
 export function CaptureGuide({ onLeave }: { onDone: () => void; onLeave: () => void }) {
+  const t = useUi()
   const [step, setStep] = useState(0)
-  const last = step === STEPS.length - 1
+  const last = step === t.guideSteps.length - 1
   const handoff = useSourceHandoff()
   const shellClass = ['app-shell', handoff.leaving ? 'is-leaving' : ''].filter(Boolean).join(' ')
 
@@ -849,9 +847,9 @@ export function CaptureGuide({ onLeave }: { onDone: () => void; onLeave: () => v
       <div className="app-field" inert={handoff.leaving}>
         <CaptureGuideBody step={step} />
       </div>
-      <nav className="bottom-nav capture-guide-nav" aria-label="Инструкция" inert={handoff.leaving}>
+      <nav className="bottom-nav capture-guide-nav" aria-label={t.guide} inert={handoff.leaving}>
         <button type="button" className="btn capture-guide-back" onClick={() => (step === 0 ? onLeave() : setStep(step - 1))}>
-          Назад
+          {t.back}
         </button>
         <button
           type="button"
@@ -861,7 +859,7 @@ export function CaptureGuide({ onLeave }: { onDone: () => void; onLeave: () => v
             else setStep(step + 1)
           }}
         >
-          Далее
+          {t.next}
         </button>
       </nav>
       {handoff.source ? <CaptureSource onBack={handoff.reset} /> : null}

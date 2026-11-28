@@ -1,25 +1,36 @@
 import type { Discipline, ExperienceId, GradeBandId } from '../shared/api'
+import { ui } from '../shared/copy'
+import type { Lang } from '../shared/lang'
 
-export const EXPERIENCE_OPTIONS: { value: ExperienceId; label: string }[] = [
-  { value: 'lt1m', label: 'Меньше месяца' },
-  { value: 'm1to3', label: '1–3 месяца' },
-  { value: 'm3to6', label: '3–6 месяцев' },
-  { value: 'm6to12', label: '6–12 месяцев' },
-  { value: 'gt1y', label: 'Больше года' },
-]
+export function experienceOptions(lang: Lang): { value: ExperienceId; label: string }[] {
+  const copy = ui(lang)
+  return [
+    { value: 'lt1m', label: copy.expLt1m },
+    { value: 'm1to3', label: copy.exp1to3 },
+    { value: 'm3to6', label: copy.exp3to6 },
+    { value: 'm6to12', label: copy.exp6to12 },
+    { value: 'gt1y', label: copy.expGt1y },
+  ]
+}
 
-export const DISCIPLINE_OPTIONS: { value: Discipline; label: string }[] = [
-  { value: 'bouldering', label: 'Болдеринг' },
-  { value: 'lead', label: 'Трудность' },
-  { value: 'speed', label: 'Скорость' },
-]
+export function disciplineOptions(lang: Lang): { value: Discipline; label: string }[] {
+  const copy = ui(lang)
+  return [
+    { value: 'bouldering', label: copy.boulder },
+    { value: 'lead', label: copy.lead },
+    { value: 'speed', label: copy.speed },
+  ]
+}
 
-export const GRADE_OPTIONS: { value: GradeBandId; label: string }[] = [
-  { value: 'novice', label: 'Новичок (5a–5c)' },
-  { value: 'amateur', label: 'Любитель (6a–6c)' },
-  { value: 'advanced', label: 'Продвинутый (7a–8a)' },
-  { value: 'expert', label: 'Опытный (8a+)' },
-]
+export function gradeOptions(lang: Lang): { value: GradeBandId; label: string }[] {
+  const copy = ui(lang)
+  return [
+    { value: 'novice', label: copy.gradeNovice },
+    { value: 'amateur', label: copy.gradeAmateur },
+    { value: 'advanced', label: copy.gradeAdvanced },
+    { value: 'expert', label: copy.gradeExpert },
+  ]
+}
 
 const GRADE_LABEL: Record<GradeBandId, string> = {
   novice: '5c',
@@ -33,19 +44,19 @@ export function gradeLabelFromBand(band: GradeBandId | null): string {
   return GRADE_LABEL[band]
 }
 
-const EXPERIENCE_SHORT: Record<ExperienceId, string> = {
-  lt1m: '<1м.',
-  m1to3: '3м.',
-  m3to6: '6м.',
-  m6to12: '1г.',
-  gt1y: '>1г.',
-}
-
-export function experienceShort(experience: ExperienceId | null): string {
+export function experienceShort(experience: ExperienceId | null, lang: Lang): string {
   if (!experience) return '—'
-  return EXPERIENCE_SHORT[experience]
+  const copy = ui(lang)
+  const labels: Record<ExperienceId, string> = {
+    lt1m: copy.expShortLt1m,
+    m1to3: copy.expShort1to3,
+    m3to6: copy.expShort3to6,
+    m6to12: copy.expShort6to12,
+    gt1y: copy.expShortGt1y,
+  }
+  return labels[experience]
 }
 
-export function experienceLabel(experience: ExperienceId | null): string {
-  return EXPERIENCE_OPTIONS.find((item) => item.value === experience)?.label ?? 'Опыт не указан'
+export function experienceLabel(experience: ExperienceId | null, lang: Lang): string {
+  return experienceOptions(lang).find((item) => item.value === experience)?.label ?? ui(lang).expMissing
 }

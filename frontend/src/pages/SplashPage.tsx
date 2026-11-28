@@ -2,60 +2,59 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '../app/session'
 import { isResumeEntry, readRememberedRoute } from '../shared/routeMemory'
-import { SvgIcon } from '../shared/ui/SvgIcon'
+import { SiteIntro } from './SiteIntro'
 
-const HOLD_MS = 760
-const EXIT_MS = 300
 export const SPLASH_ENTER_KEY = 'beta-climb.from-splash'
 
 export function SplashPage() {
   const navigate = useNavigate()
-  const { profile, ready, night } = useSession()
-  const [exiting, setExiting] = useState(false)
+  const { profile, ready } = useSession()
+  const [videoReady, setVideoReady] = useState(false)
 
   useEffect(() => {
-    if (!ready) return
-    const timer = window.setTimeout(() => setExiting(true), HOLD_MS)
-    return () => window.clearTimeout(timer)
-  }, [ready])
+    const video = document.createElement('video')
+    video.muted = true
+    video.defaultMuted = true
+    video.playsInline = true
+    video.preload = 'auto'
+    video.src = '/bg.mp4'
+    let settled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
+      setVideoReady(true)
+    }
+    video.addEventListener('loadeddata', finish)
+    video.addEventListener('error', finish)
+    const cap = window.setTimeout(finish, 12000)
+    const play = video.play()
+    if (play) play.catch(() => {})
+    return () => {
+      settled = true
+      window.clearTimeout(cap)
+      video.pause()
+      video.removeAttribute('src')
+      video.load()
+    }
+  }, [])
 
-  useEffect(() => {
-    if (!exiting) return
-    const timer = window.setTimeout(() => {
-      const saved = readRememberedRoute()
-      if (saved && isResumeEntry(window.location.pathname)) {
-        navigate(saved, { replace: true })
-        return
-      }
-      if (profile) {
-        sessionStorage.setItem(SPLASH_ENTER_KEY, '1')
-        navigate('/climbs', { replace: true })
-      } else {
-        navigate('/onboarding', { replace: true })
-      }
-    }, EXIT_MS)
-    return () => window.clearTimeout(timer)
-  }, [exiting, navigate, profile])
-
-  function continueNow() {
-    if (!ready || exiting) return
-    setExiting(true)
+  function openApp() {
+    const saved = readRememberedRoute()
+    if (saved && isResumeEntry(window.location.pathname)) {
+      navigate(saved, { replace: true })
+      return
+    }
+    if (profile) {
+      sessionStorage.setItem(SPLASH_ENTER_KEY, '1')
+      navigate('/climbs', { replace: true })
+      return
+    }
+    navigate('/auth', { replace: true })
   }
 
   return (
-    <div
-      className={[
-        'screen screen-center splash-screen',
-        night ? 'is-dark' : '',
-        exiting ? 'is-exiting' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
-      <h1 className="visually-hidden">Beta Climb</h1>
-      <button type="button" className="splash-hit" onClick={continueNow} aria-label="Продолжить">
-        <SvgIcon src="/logo.svg" size={128} />
-      </button>
+    <div className="screen splash-screen">
+      <SiteIntro ready={ready && videoReady} rise onExit={() => {}} onDone={openApp} />
     </div>
   )
 }

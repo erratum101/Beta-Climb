@@ -5,7 +5,7 @@ export const ROUTE_MEMORY_KEY = 'beta-climb.route'
 
 // Keep in sync with the boot script in index.html.
 const SAVED_PATH =
-  /^\/(welcome|onboarding|home|climbs|history|profile|attempt\/new|attempt\/(?!new\/)[^/]+\/processing|attempt\/(?!new$)[^/]+|compare\/[^/]+)$/
+  /^\/(auth|welcome|onboarding|home|climbs|history|profile|attempt\/new|attempt\/(?!new\/)[^/]+\/processing|attempt\/(?!new$)[^/]+|compare\/[^/]+)$/
 
 export function rememberedHref(pathname: string, search = '', hash = ''): string | null {
   if (!SAVED_PATH.test(pathname)) return null

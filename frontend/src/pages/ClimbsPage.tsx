@@ -4,6 +4,7 @@ import { useSession } from '../app/session'
 import { HomeGuideContext } from '../features/capture/CaptureGuide'
 import { ClimbCover } from '../features/climbs/ClimbCover'
 import { attemptHref, attemptStatusLabel, gradeGroup } from '../entities/attempt'
+import { useLang, useUi } from '../shared/i18n'
 import { attemptMediaUrl } from '../shared/api'
 import { IconFilter } from '../shared/ui/icons'
 import { sharedNavigate } from '../shared/ui/motion'
@@ -11,16 +12,14 @@ import { Wordmark } from '../shared/ui/Wordmark'
 import { ChipButton } from '../shared/ui/ChipButton'
 
 const FILTERS = [
-  { id: 'all', label: 'Все' },
-  { id: '5', label: '5' },
-  { id: '6', label: '6' },
-  { id: '7', label: '7' },
-  { id: '8', label: '8' },
+  { id: 'all' },
+  { id: '5' },
+  { id: '6' },
+  { id: '7' },
+  { id: '8' },
 ] as const
 
 type FilterId = (typeof FILTERS)[number]['id']
-
-const climbDate = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long', timeStyle: 'short' })
 
 function gradeTone(label: string): string {
   const value = label.toLowerCase()
@@ -34,6 +33,12 @@ export function ClimbsPage() {
   const navigate = useNavigate()
   const guide = useContext(HomeGuideContext)
   const { attempts } = useSession()
+  const lang = useLang()
+  const t = useUi()
+  const climbDate = useMemo(
+    () => new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'en-US', { dateStyle: 'long', timeStyle: 'short' }),
+    [lang],
+  )
   const [filter, setFilter] = useState<FilterId>('all')
   const [open, setOpen] = useState(false)
   const sorted = useMemo(
@@ -50,7 +55,7 @@ export function ClimbsPage() {
             <path d="M27.5 5V50M5 27.5H50" stroke="currentColor" strokeWidth="10" strokeLinecap="round" />
           </svg>
           <Wordmark />
-          <span className="visually-hidden">Добавить запись</span>
+          <span className="visually-hidden">{t.addClimb}</span>
         </span>
       </button>
     )
@@ -59,18 +64,18 @@ export function ClimbsPage() {
   return (
     <div className="screen climbs-screen with-nav">
       <div className="climbs-head">
-        <h1>Все пролазы</h1>
+        <h1>{t.allClimbs}</h1>
         {sorted.some((attempt) => attempt.gradeLabel) ? <button
           type="button"
           className={filter === 'all' ? 'filter-btn' : 'filter-btn is-on'}
           aria-expanded={open}
-          aria-label="Фильтр по категории"
+          aria-label={t.filterGrade}
           onClick={() => setOpen((current) => !current)}
         >
           <IconFilter />
         </button> : null}
       </div>
-      <div className={open ? 'chip-row is-open' : 'chip-row'} role="listbox" aria-label="Категория" inert={open ? undefined : true}>
+      <div className={open ? 'chip-row is-open' : 'chip-row'} role="listbox" aria-label={t.grade} inert={open ? undefined : true}>
         {FILTERS.map((item) => (
           <ChipButton
             key={item.id}
@@ -80,14 +85,14 @@ export function ClimbsPage() {
               setOpen(false)
             }}
           >
-            {item.label}
+            {item.id === 'all' ? t.all : item.id}
           </ChipButton>
         ))}
       </div>
 
       {visible.length === 0 ? (
         <div className="empty-copy">
-          <p>Нет пролазов этой категории</p>
+          <p>{t.noClimbsInGrade}</p>
         </div>
       ) : (
         <div className="climbs-grid stagger">
@@ -98,10 +103,10 @@ export function ClimbsPage() {
               className="climb-card"
               onClick={(event) => sharedNavigate(navigate, attemptHref(attempt), event.currentTarget)}
             >
-              <span className="visually-hidden">Открыть пролаз от {climbDate.format(new Date(attempt.createdAt))}. </span>
+              <span className="visually-hidden">{t.openClimb(climbDate.format(new Date(attempt.createdAt)))} </span>
               <ClimbCover thumbnailUrl={attempt.thumbnailUrl} mediaUrl={attempt.mediaUrl || attemptMediaUrl(attempt.id)} />
               {attempt.gradeLabel && <span className={`climb-grade ${gradeTone(attempt.gradeLabel)}`}>{attempt.gradeLabel}</span>}
-              <span className="climb-status">{attemptStatusLabel(attempt)}</span>
+              <span className="climb-status">{attemptStatusLabel(attempt, lang)}</span>
             </button>
           ))}
         </div>

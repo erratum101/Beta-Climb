@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom'
 import { AppRouter } from './router'
 import { SessionProvider } from './session'
+import { LocaleProvider } from '../shared/i18n'
 import { isResumeEntry, readRememberedRoute, rememberRoute } from '../shared/routeMemory'
 import { AppCursor } from '../shared/ui/AppCursor'
 
@@ -42,40 +43,18 @@ function RememberRoute() {
     rememberRoute(location.pathname, location.search, location.hash)
   }, [location.pathname, location.search, location.hash])
 
-  useLayoutEffect(() => {
-    const saved = readRememberedRoute()
-    if (!saved || !isResumeEntry(location.pathname)) return
-    const here = `${location.pathname}${location.search}${location.hash}`
-    if (saved === here) return
-    navigate(saved, { replace: true })
-  }, [location.pathname, location.search, location.hash, navigate])
-
   useEffect(() => {
     const persist = () => {
       const current = locationRef.current
       rememberRoute(current.pathname, current.search, current.hash)
     }
-    const resume = () => {
-      if (document.visibilityState === 'hidden') {
-        persist()
-        return
-      }
-      const current = locationRef.current
-      const saved = readRememberedRoute()
-      if (!saved || !isResumeEntry(current.pathname)) return
-      const here = `${current.pathname}${current.search}${current.hash}`
-      if (saved === here) return
-      navigate(saved, { replace: true })
-    }
-    document.addEventListener('visibilitychange', resume)
+    document.addEventListener('visibilitychange', persist)
     window.addEventListener('pagehide', persist)
-    window.addEventListener('pageshow', resume)
     return () => {
-      document.removeEventListener('visibilitychange', resume)
+      document.removeEventListener('visibilitychange', persist)
       window.removeEventListener('pagehide', persist)
-      window.removeEventListener('pageshow', resume)
     }
-  }, [navigate])
+  }, [])
 
   return null
 }
@@ -83,12 +62,14 @@ function RememberRoute() {
 export function App() {
   return (
     <BrowserRouter>
+      <LocaleProvider>
       <SessionProvider>
         <BlockBrowserBack />
         <RememberRoute />
         <AppCursor />
         <AppRouter />
       </SessionProvider>
+      </LocaleProvider>
     </BrowserRouter>
   )
 }

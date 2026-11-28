@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useUi } from '../shared/i18n'
 
 type Phase = 'load' | 'logo' | 'words' | 'exit'
 
@@ -8,11 +9,15 @@ export function SiteIntro({
   onDone,
   onExit,
   ready,
+  rise = false,
 }: {
   onDone: () => void
   onExit: () => void
   ready: boolean
+  /** App intro: the name rises from below instead of opening sideways. */
+  rise?: boolean
 }) {
+  const t = useUi()
   const [phase, setPhase] = useState<Phase>('load')
   const [mainMark, setMainMark] = useState(false)
   const [shaking, setShaking] = useState(false)
@@ -119,6 +124,7 @@ export function SiteIntro({
 
   const className = [
     'site-intro',
+    rise ? 'is-rise' : '',
     phase === 'load' ? 'is-loading' : '',
     phase === 'load' && shaking ? 'is-shake' : '',
     phase === 'load' && shaking && reverse ? 'is-back' : '',
@@ -136,9 +142,9 @@ export function SiteIntro({
         type="button"
         className="site-intro-hit"
         onClick={skip}
-        aria-label={phase === 'load' ? 'Загрузка' : 'Beta Climb'}
+        aria-label={phase === 'load' ? t.loading : 'Beta Climb'}
       >
-        <span className="visually-hidden">{phase === 'load' ? 'Загрузка видео' : 'Beta Climb'}</span>
+        <span className="visually-hidden">{phase === 'load' ? t.loadingVideo : 'Beta Climb'}</span>
         <span className="site-intro-lockup" aria-hidden="true">
           <span className="site-intro-mark">
             <Mark src="/B.svg" className="mark-plain" />

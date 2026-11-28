@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { climbApi } from '../shared/api'
+import { useUi } from '../shared/i18n'
 import { readClientKind } from '../shared/clientKind'
 import type { AthleteProfile, Attempt, CreateAttemptInput } from '../shared/api'
 import { clipOf, rememberTrim } from '../entities/attempt'
@@ -140,6 +141,7 @@ function replaceMeta(name: string, content: string) {
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
+  const t = useUi()
   const [ready, setReady] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [profile, setProfile] = useState<AthleteProfile | null>(null)
@@ -182,7 +184,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setLoadError(null)
         setReady(true)
       } catch (error) {
-        if (alive) setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить данные.')
+        if (alive) setLoadError(error instanceof Error ? error.message : t.loadDataFailed)
       }
     }
     void refresh()
@@ -258,7 +260,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       {loadError ? (
         <div className="screen screen-center">
           <p role="alert">{loadError}</p>
-          <button className="btn btn-light" onClick={() => window.location.reload()}>Попробовать снова</button>
+          <button className="btn btn-light" onClick={() => window.location.reload()}>{t.tryAgain}</button>
         </div>
       ) : children}
     </SessionContext.Provider>
@@ -267,6 +269,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
 export function useSession(): SessionValue {
   const value = useContext(SessionContext)
-  if (!value) throw new Error('SessionProvider отсутствует')
+  if (!value) throw new Error('SessionProvider is missing')
   return value
 }

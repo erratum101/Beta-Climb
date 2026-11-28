@@ -1,10 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useSession } from '../../app/session'
 import type { HomeGuideControls } from '../../features/capture/CaptureGuide'
+import { useUi } from '../i18n'
 import { SvgIcon } from './SvgIcon'
 
 export function BottomNav({ guide = null }: { guide?: HomeGuideControls | null }) {
   const { profile, attempts } = useSession()
+  const t = useUi()
   const { pathname } = useLocation()
   const genderIcon = profile?.gender === 'male' ? '/male.svg' : '/female.svg'
   const pair =
@@ -18,7 +20,7 @@ export function BottomNav({ guide = null }: { guide?: HomeGuideControls | null }
       className={({ isActive }) => (isActive ? 'nav-btn is-active' : 'nav-btn')}
     >
       <SvgIcon src="/male-climbing-icon.svg" size={46} />
-      <span>Пролазы</span>
+      <span>{t.climbs}</span>
     </NavLink>
   )
   const profileLink = (
@@ -28,7 +30,7 @@ export function BottomNav({ guide = null }: { guide?: HomeGuideControls | null }
       className={({ isActive }) => (isActive ? 'nav-btn is-active' : 'nav-btn')}
     >
       <SvgIcon src={genderIcon} size={46} />
-      <span>Профиль</span>
+      <span>{t.profile}</span>
     </NavLink>
   )
 
@@ -37,7 +39,7 @@ export function BottomNav({ guide = null }: { guide?: HomeGuideControls | null }
     .join(' ')
 
   return (
-    <nav className={navClass} aria-label={guide?.open ? 'Инструкция' : 'Разделы'}>
+    <nav className={navClass} aria-label={guide?.open ? t.guide : t.sections}>
       <div className="nav-face" aria-hidden={guide?.open} inert={Boolean(guide?.open)}>
         {climbs}
         {pair ? null : (
@@ -51,7 +53,7 @@ export function BottomNav({ guide = null }: { guide?: HomeGuideControls | null }
                 />
               </svg>
             </span>
-            <span>Новая запись</span>
+            <span>{t.newClimb}</span>
           </button>
         )}
         {profileLink}
@@ -59,10 +61,10 @@ export function BottomNav({ guide = null }: { guide?: HomeGuideControls | null }
       {guide ? (
         <div className="nav-actions" aria-hidden={!guide.open} inert={!guide.open}>
           <button type="button" className="btn capture-guide-back" onClick={() => guide.back()}>
-            Назад
+            {t.back}
           </button>
           <button type="button" className="btn capture-guide-next" onClick={() => guide.next()}>
-            Далее
+            {t.next}
           </button>
         </div>
       ) : null}

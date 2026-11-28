@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation, useOutlet } from 'react-router-dom'
 import { useSession } from './session'
-import { CAPTURE_GUIDE_STEPS, CaptureGuideBody, CaptureSource, HomeGuideContext, useSourceHandoff } from '../features/capture/CaptureGuide'
+import { CAPTURE_GUIDE_STEP_COUNT, CaptureGuideBody, CaptureSource, HomeGuideContext, useSourceHandoff } from '../features/capture/CaptureGuide'
 import { BottomNav } from '../shared/ui/BottomNav'
 import { RouteTransition } from '../shared/ui/RouteTransition'
 import { useClientKind } from '../shared/clientKind'
 import { LandingPage } from '../pages/LandingPage'
 import { SplashPage, SPLASH_ENTER_KEY } from '../pages/SplashPage'
+import { AuthPage } from '../pages/AuthPage'
 import { WelcomePage } from '../pages/WelcomePage'
 import { OnboardingPage, ProfilePage } from '../pages/ProfilePage'
 import { HomePage } from '../pages/HomePage'
@@ -22,7 +23,7 @@ const TAB_PATHS = new Set(['/home', '/climbs', '/history', '/profile'])
 function RequireProfile() {
   const { profile, ready } = useSession()
   if (!ready) return null
-  if (!profile) return <Navigate to="/onboarding" replace />
+  if (!profile) return <Navigate to="/auth" replace />
   return <Outlet />
 }
 
@@ -71,7 +72,7 @@ function TabsLayout() {
         setGuideStep(guideStep - 1)
       },
       next() {
-        if (guideStep >= CAPTURE_GUIDE_STEPS.length - 1) {
+        if (guideStep >= CAPTURE_GUIDE_STEP_COUNT - 1) {
           sourceHandoff.openSource()
           return
         }
@@ -134,6 +135,7 @@ export function AppRouter() {
         <Route path="/" element={<SplashPage />} />
         <Route path="/app" element={<SplashPage />} />
         <Route path="/welcome" element={<WelcomePage />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route element={<RequireProfile />}>
           <Route element={<TabsLayout />}>

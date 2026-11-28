@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { syncDocumentChrome } from '../app/session'
 import { AttemptStage } from '../features/analysis/AttemptStage'
 import { attemptMediaUrl, climbApi, type AnalysisMoment, type Attempt } from '../shared/api'
+import { useUi } from '../shared/i18n'
 import '../features/analysis/review.css'
 
 const STRIP_FRAMES = 8
@@ -115,24 +116,25 @@ function AnalysisDetail({ id }: { id: string }) {
   const [attempt, setAttempt] = useState<Attempt | null>()
   const [error, setError] = useState('')
   const [retry, setRetry] = useState(0)
+  const t = useUi()
   useEffect(() => {
     let active = true
     setError('')
     void climbApi.getAttempt(id).then((data) => { if (active) setAttempt(data) }).catch((reason) => {
-      if (active) setError(reason instanceof Error ? reason.message : 'Не удалось загрузить разбор.')
+      if (active) setError(reason instanceof Error ? reason.message : t.loadReviewFailed)
     })
     return () => { active = false }
   }, [id, retry])
   if (error) return (
     <div className="screen screen-center">
       <p role="alert">{error}</p>
-      <button className="btn btn-light" onClick={() => setRetry((value) => value + 1)}>Попробовать снова</button>
+      <button className="btn btn-light" onClick={() => setRetry((value) => value + 1)}>{t.tryAgain}</button>
     </div>
   )
   if (attempt === undefined) return (
     <div className="screen screen-center review-loading" role="status">
       <span className="review-loading-dot" aria-hidden="true" />
-      Загружаем разбор…
+      {t.loadingReview}
     </div>
   )
   if (attempt === null) return <Navigate to="/climbs" replace />
@@ -142,6 +144,7 @@ function AnalysisDetail({ id }: { id: string }) {
 
 function Analysis({ attempt }: { attempt: Attempt }) {
   const navigate = useNavigate()
+  const t = useUi()
   const moments = [...attempt.moments].sort((a, b) => a.startSec - b.startSec)
   const initial = moments.find((moment) => moment.primary) ?? moments[0]
   const [selectedId, setSelectedId] = useState(initial?.id)
@@ -243,7 +246,7 @@ function Analysis({ attempt }: { attempt: Attempt }) {
   return (
     <main className="flow-analysis flow-edit">
       <div className="flow-stage">
-        <button type="button" className="flow-close" aria-label="Закрыть" onClick={() => navigate('/climbs')}>
+        <button type="button" className="flow-close" aria-label={t.close} onClick={() => navigate('/climbs')}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
@@ -255,10 +258,10 @@ function Analysis({ attempt }: { attempt: Attempt }) {
         </AttemptStage>
       </div>
       <p className="flow-advice">
-        {advice ? `${adviceIndex}. ${advice}` : 'На этой записи не удалось выделить совет.'}
+        {advice ? `${adviceIndex}. ${advice}` : t.noAdvice}
       </p>
       <div className="flow-trimbar">
-        <button type="button" className="flow-round" aria-label="Предыдущий совет" disabled={!moments.length} onClick={() => stepMoment(-1)}>
+        <button type="button" className="flow-round" aria-label={t.previousTip} disabled={!moments.length} onClick={() => stepMoment(-1)}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
             <path d="M14 6l-6 6 6 6" />
           </svg>
@@ -287,11 +290,11 @@ function Analysis({ attempt }: { attempt: Attempt }) {
             max={duration}
             step={0.1}
             value={Math.min(time, duration)}
-            aria-label="Позиция видео"
+            aria-label={t.videoPosition}
             onChange={(event) => scrub(event.currentTarget.valueAsNumber)}
           />
         </div>
-        <button type="button" className="flow-round" aria-label="Следующий совет" disabled={!moments.length} onClick={() => stepMoment(1)}>
+        <button type="button" className="flow-round" aria-label={t.nextTip} disabled={!moments.length} onClick={() => stepMoment(1)}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
             <path d="M10 6l6 6-6 6" />
           </svg>

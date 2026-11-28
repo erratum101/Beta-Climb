@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useState, type CSSProperties, type ReactNode
 import { type Attempt, attemptMediaUrl } from '../../shared/api'
 import { IconPlay, IconPause } from '../../shared/ui/icons'
 import { SHARED_ATTEMPT } from '../../shared/ui/motion'
+import { useUi } from '../../shared/i18n'
 import { useReviewFullscreen } from './useReviewFullscreen'
 
 export function videoTime(seconds: number) {
@@ -32,8 +33,9 @@ export function AttemptStage({ attempt, videoRef, episodeEnd, time, holdIds, onT
   const visibleHolds = attempt.holds.filter((hold) => holdIds.includes(hold.id))
   const liveId = attempt.moments.find((moment) => time >= moment.startSec && time < moment.endSec)?.id
   const value = Math.min(Math.max(0, time), duration)
-  const playLabel = playing ? 'Приостановить видео' : 'Воспроизвести видео'
-  const expandLabel = expanded ? 'Выйти из полноэкранного режима' : 'На весь экран'
+  const t = useUi()
+  const playLabel = playing ? t.pauseVideo : t.playVideo
+  const expandLabel = expanded ? t.exitFullscreen : t.enterFullscreen
 
   const origin = attempt.trimStartSec ?? 0
   const trimEnd = attempt.trimEndSec
@@ -76,7 +78,7 @@ export function AttemptStage({ attempt, videoRef, episodeEnd, time, holdIds, onT
 
   return (
     <div ref={workspaceRef} className={`review-workspace${expanded ? ' is-expanded' : ''}`}
-      role={expanded ? 'dialog' : 'region'} aria-modal={expanded || undefined} aria-label="Видео и разбор"
+      role={expanded ? 'dialog' : 'region'} aria-modal={expanded || undefined} aria-label={t.videoAndReview}
       style={{ viewTransitionName: SHARED_ATTEMPT }}>
       <div className="review-media">
         <div className="review-picture">
@@ -121,11 +123,11 @@ export function AttemptStage({ attempt, videoRef, episodeEnd, time, holdIds, onT
             </svg>
           )}
           {error && <div className="review-media-error" role="alert">
-            <p>Не удалось воспроизвести видео.</p>
-            <button type="button" onClick={() => videoRef.current?.load()}>Загрузить ещё раз</button>
+            <p>{t.videoFailed}</p>
+            <button type="button" onClick={() => videoRef.current?.load()}>{t.loadAgain}</button>
           </div>}
         </div>
-        <div className="review-controls" role="group" aria-label="Управление видео">
+        <div className="review-controls" role="group" aria-label={t.videoControls}>
           <button type="button" className="review-icon-button review-play" aria-label={playLabel} title={playLabel}
             disabled={!ready} onClick={togglePlayback}>
             <span className="review-play-glyph" key={playing ? 'pause' : 'play'}>
@@ -135,7 +137,7 @@ export function AttemptStage({ attempt, videoRef, episodeEnd, time, holdIds, onT
           <span className="review-clock">{videoTime(value)}</span>
           <div className="review-seek">
             <input type="range" className="review-scrubber" min="0" max={duration || 1} step="0.1" value={value}
-              disabled={!ready || duration <= 0} aria-label="Позиция видео" aria-valuetext={videoTime(value)}
+              disabled={!ready || duration <= 0} aria-label={t.videoPosition} aria-valuetext={videoTime(value)}
               style={{ '--played': `${duration > 0 ? value / duration * 100 : 0}%` } as CSSProperties}
               onChange={(event) => onScrub(event.currentTarget.valueAsNumber)} />
             {duration > 0 && <div className="review-ticks" aria-hidden="true">

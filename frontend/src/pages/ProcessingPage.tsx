@@ -2,14 +2,11 @@ import { useEffect } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useSession } from '../app/session'
 import type { AnalysisStage } from '../shared/api'
+import { useUi } from '../shared/i18n'
 import { ScreenHeader } from '../shared/ui/ScreenHeader'
 import { SvgIcon } from '../shared/ui/SvgIcon'
 
-const STEPS: { id: Exclude<AnalysisStage, 'done'>; title: string }[] = [
-  { id: 'holds', title: 'Определяем зацепки и трассу' },
-  { id: 'movement', title: 'Отслеживаем руки, ноги и корпус' },
-  { id: 'rules', title: 'Собираем рекомендации' },
-]
+const STEP_IDS = ['holds', 'movement', 'rules'] as const satisfies readonly Exclude<AnalysisStage, 'done'>[]
 
 function stageIndex(stage: AnalysisStage): number {
   if (stage === 'holds') return 0
@@ -22,6 +19,12 @@ export function ProcessingPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { attempts, ready, statusError } = useSession()
+  const t = useUi()
+  const steps = [
+    { id: STEP_IDS[0], title: t.stepHolds },
+    { id: STEP_IDS[1], title: t.stepMovement },
+    { id: STEP_IDS[2], title: t.stepRules },
+  ]
   const attempt = attempts.find((item) => item.id === id)
 
   useEffect(() => {
@@ -42,11 +45,11 @@ export function ProcessingPage() {
   return (
     <div className="screen">
       <ScreenHeader
-        title={stopped ? 'Разбор не получился' : 'Разбор'}
+        title={stopped ? t.reviewFailedTitle : t.review}
         onBack={() => navigate('/climbs')}
       />
-      {(!stopped || current < STEPS.length) && <ol className="step-list stagger">
-        {STEPS.map((step, index) => {
+      {(!stopped || current < steps.length) && <ol className="step-list stagger">
+        {steps.map((step, index) => {
           if (stopped && index !== current) return null
           const state = stopped ? 'failed' : index < current ? 'done' : index === current ? 'active' : 'pending'
           return (
@@ -64,14 +67,14 @@ export function ProcessingPage() {
           <div className="fail-art">
             <SvgIcon src="/male-falling.svg" size={72} />
           </div>
-          <p className="card-kicker">{rejected ? 'Данных для разбора недостаточно' : 'Ошибка обработки'}</p>
-          <p>{attempt.rejectReason || (rejected ? 'Попробуй снять трассу целиком с неподвижной камеры.' : 'Не удалось завершить обработку видео.')}</p>
+          <p className="card-kicker">{rejected ? t.notEnoughData : t.processingError}</p>
+          <p>{attempt.rejectReason || (rejected ? t.filmStill : t.processFailed)}</p>
           {attempt.limitations?.length ? <ul>{attempt.limitations.map((reason) => <li key={reason}>{reason}</li>)}</ul> : null}
           <button type="button" className="btn btn-orange" onClick={() => navigate('/attempt/new')}>
-            Добавить новое видео
+            {t.addAnotherVideo}
           </button>
         </article>
-      ) : <p className="template-note" role="status">{statusError ? 'Связь прервалась. Проверим статус снова.' : 'Можно закрыть приложение. Разбор сохранится в истории.'}</p>}
+      ) : <p className="template-note" role="status">{statusError ? t.connectionDropped : t.canClose}</p>}
     </div>
   )
 }

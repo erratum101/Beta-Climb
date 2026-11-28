@@ -1,5 +1,11 @@
+import { ui } from '../copy'
+import { detectLang } from '../lang'
 import { endpoints } from './endpoints'
 import type { AthleteProfile, ClimbApi } from './types'
+
+function say() {
+  return ui(detectLang())
+}
 
 const PROFILE_ID_KEY = 'beta-climb.profile-id'
 
@@ -12,7 +18,7 @@ async function request(url: string, options?: RequestInit): Promise<Response> {
   try {
     return await fetch(url, { credentials: 'same-origin', ...options })
   } catch {
-    throw new Error('Не удалось связаться с сервером. Проверь соединение и попробуй ещё раз.')
+    throw new Error(say().apiOffline)
   }
 }
 
@@ -34,7 +40,7 @@ export const climbApi: ClimbApi = {
       localStorage.removeItem(PROFILE_ID_KEY)
       return null
     }
-    if (!response.ok) throw new Error('Не удалось загрузить профиль. Попробуй ещё раз.')
+    if (!response.ok) throw new Error(say().apiProfileLoad)
     const saved: SavedProfile = await response.json()
     return saved.profile
   },
@@ -46,9 +52,7 @@ export const climbApi: ClimbApi = {
       body: JSON.stringify(profile),
     })
     if (!response.ok) {
-      throw new Error(response.status === 400
-        ? 'Проверь данные профиля и попробуй ещё раз.'
-        : 'Не удалось сохранить профиль. Попробуй ещё раз.')
+      throw new Error(response.status === 400 ? say().apiProfileCheck : say().apiProfileSave)
     }
     const saved: SavedProfile = await response.json()
     localStorage.setItem(PROFILE_ID_KEY, saved.id)
@@ -60,7 +64,7 @@ export const climbApi: ClimbApi = {
     const id = localStorage.getItem(PROFILE_ID_KEY)
     if (!id) return []
     const response = await request(forProfile(endpoints.attempts, id))
-    if (!response.ok) throw new Error('Не удалось загрузить историю попыток.')
+    if (!response.ok) throw new Error(say().apiHistory)
     return response.json()
   },
   async getAttempt(id) {
@@ -68,12 +72,12 @@ export const climbApi: ClimbApi = {
     if (!profileId) return null
     const response = await request(forProfile(endpoints.attempt(id), profileId))
     if (response.status === 404) return null
-    if (!response.ok) throw new Error('Не удалось обновить разбор.')
+    if (!response.ok) throw new Error(say().apiReview)
     return response.json()
   },
   async createAttempt({ file, idempotencyKey, frame, durationSec }) {
     const profileId = localStorage.getItem(PROFILE_ID_KEY)
-    if (!profileId) throw new Error('Для загрузки видео нужен профиль.')
+    if (!profileId) throw new Error(say().apiNeedProfile)
     const body = new FormData()
     body.append('profileId', profileId)
     body.append('file', file)
@@ -83,9 +87,9 @@ export const climbApi: ClimbApi = {
     const response = await request(endpoints.attempts, {
       method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body,
     })
-    if (response.status === 413) throw new Error('Видео слишком большое. Выбери более короткую запись.')
-    if ([400, 415, 422].includes(response.status)) throw new Error('Сервер не принял файл. Проверь, что выбрано видео попытки.')
-    if (!response.ok) throw new Error('Загрузить видео не удалось. Попробуй ещё раз.')
+    if (response.status === 413) throw new Error(say().apiTooBig)
+    if ([400, 415, 422].includes(response.status)) throw new Error(say().apiRejected)
+    if (!response.ok) throw new Error(say().apiUpload)
     return response.json()
   },
 }

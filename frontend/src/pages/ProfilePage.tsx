@@ -6,6 +6,7 @@ import { experienceLabel, experienceShort, gradeLabelFromBand } from '../entitie
 import type { Attempt } from '../shared/api'
 import { clearCaptureGuide } from '../features/capture/CaptureGuide'
 import { ProfileForm } from '../features/onboarding/ProfileForm'
+import { useLang, useUi } from '../shared/i18n'
 import { ScreenHeader } from '../shared/ui/ScreenHeader'
 import { IconPlus } from '../shared/ui/icons'
 import { SvgIcon } from '../shared/ui/SvgIcon'
@@ -13,12 +14,13 @@ import { SvgIcon } from '../shared/ui/SvgIcon'
 export function OnboardingPage() {
   const navigate = useNavigate()
   const { saveProfile } = useSession()
+  const t = useUi()
   return (
     <div className="screen profile-screen">
-      <h1 className="profile-title">Расскажи о себе</h1>
+      <h1 className="profile-title">{t.aboutYou}</h1>
       <ProfileForm
         initial={null}
-        submitLabel="Полезли!"
+        submitLabel={t.letsClimb}
         onSubmit={async (profile) => {
           await saveProfile(profile)
           navigate('/welcome', { replace: true })
@@ -92,6 +94,8 @@ function cropAvatar(file: File): Promise<string> {
 export function ProfilePage() {
   const navigate = useNavigate()
   const { profile, attempts, saveProfile, resetLocal, night, setNight } = useSession()
+  const lang = useLang()
+  const t = useUi()
   const [editing, setEditing] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [soundOn, setSoundOn] = useState(true)
@@ -111,10 +115,10 @@ export function ProfilePage() {
   if (!profile || editing) {
     return (
       <div className="screen profile-screen with-nav">
-        <ScreenHeader title="Профиль" onBack={profile ? () => setEditing(false) : undefined} />
+        <ScreenHeader title={t.profile} onBack={profile ? () => setEditing(false) : undefined} />
         <ProfileForm
           initial={profile}
-          submitLabel="Сохранить"
+          submitLabel={t.save}
           onSubmit={async (next) => {
             await saveProfile(next)
             setEditing(false)
@@ -131,10 +135,10 @@ export function ProfilePage() {
             clearCaptureGuide()
             storeAvatar(null)
             setAvatar(null)
-            void resetLocal().then(() => navigate('/onboarding', { replace: true }))
+            void resetLocal().then(() => navigate('/auth', { replace: true }))
           }}
         >
-          {confirmReset ? 'Точно сбросить данные' : 'Сбросить локальные данные'}
+          {confirmReset ? t.resetSure : t.resetLocal}
         </button>
       </div>
     )
@@ -145,25 +149,25 @@ export function ProfilePage() {
 
   return (
     <div className={night ? 'profile-view is-night' : 'profile-view'}>
-      <h1>Профиль</h1>
+      <h1>{t.profile}</h1>
       <div className="profile-cluster stagger">
-        <div className="profile-bubble profile-rate" aria-label={rate === null ? 'Пока нет попыток с известным результатом' : `Доля удачных пролазов ${rate}%`}>
+        <div className="profile-bubble profile-rate" aria-label={rate === null ? t.noKnownResult : t.sendRate(rate)}>
           <SvgIcon src="/male-climbing-icon.svg" size={28} />
           <span>{rate === null ? '—' : `${rate}%`}</span>
         </div>
-        <button type="button" className="profile-bubble profile-info" aria-label="Изменить профиль" onClick={() => setEditing(true)}>
+        <button type="button" className="profile-bubble profile-info" aria-label={t.editProfile} onClick={() => setEditing(true)}>
           <InfoMark />
         </button>
-        <div className="profile-bubble profile-grade" aria-label={`Максимальная категория ${grade}`}>
+        <div className="profile-bubble profile-grade" aria-label={t.maxGrade(grade)}>
           {grade}
         </div>
-        <div className="profile-bubble profile-height" aria-label={`Рост ${profile.heightCm ?? 'не указан'} сантиметров`}>
-          {withUnit(profile.heightCm, 'см.')}
+        <div className="profile-bubble profile-height" aria-label={t.heightAria(profile.heightCm == null ? t.notSet : String(profile.heightCm))}>
+          {withUnit(profile.heightCm, t.cm)}
         </div>
         <button
           type="button"
           className={avatar ? 'profile-avatar has-photo' : 'profile-avatar'}
-          aria-label={avatar ? 'Сменить фото профиля' : 'Добавить фото профиля'}
+          aria-label={avatar ? t.changePhoto : t.addPhoto}
           onClick={() => fileRef.current?.click()}
         >
           {avatar ? <img src={avatar} alt="" /> : <IconPlus />}
@@ -184,7 +188,7 @@ export function ProfilePage() {
           type="button"
           className={soundOn ? 'profile-bubble profile-sound' : 'profile-bubble profile-sound is-muted'}
           aria-pressed={soundOn}
-          aria-label={soundOn ? 'Выключить вибрацию' : 'Включить вибрацию'}
+          aria-label={soundOn ? t.vibrationOff : t.vibrationOn}
           onClick={() => setSoundOn((current) => !current)}
         >
           <span className="icon-swap">
@@ -200,7 +204,7 @@ export function ProfilePage() {
           type="button"
           className="profile-bubble profile-theme"
           aria-pressed={night}
-          aria-label={night ? 'Светлая тема' : 'Тёмная тема'}
+          aria-label={night ? t.lightTheme : t.darkTheme}
           onClick={() => setNight((current) => !current)}
         >
           <span className="icon-swap">
@@ -212,11 +216,11 @@ export function ProfilePage() {
             </span>
           </span>
         </button>
-        <div className="profile-bubble profile-experience" aria-label={`Опыт ${experienceLabel(profile.experience)}`}>
-          {experienceShort(profile.experience)}
+        <div className="profile-bubble profile-experience" aria-label={t.experienceAria(experienceLabel(profile.experience, lang))}>
+          {experienceShort(profile.experience, lang)}
         </div>
-        <div className="profile-bubble profile-weight" aria-label={`Вес ${profile.weightKg ?? 'не указан'} килограмм`}>
-          {withUnit(profile.weightKg, 'кг.')}
+        <div className="profile-bubble profile-weight" aria-label={t.weightAria(profile.weightKg == null ? t.notSet : String(profile.weightKg))}>
+          {withUnit(profile.weightKg, t.kg)}
         </div>
         <button type="button" className="profile-bubble profile-name" onClick={() => setEditing(true)}>
           {profile.nickname}

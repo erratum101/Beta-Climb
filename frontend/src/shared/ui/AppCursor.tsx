@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useSession } from '../../app/session'
 
 const CURSOR_LIGHT = '/cursor-shoe.png'
 const CURSOR_NIGHT = '/cursor-shoe-darck.png'
@@ -12,17 +11,17 @@ const SHIFT_X = -5
 const TILT_MS = 100
 
 export function AppCursor() {
-  const { night } = useSession()
   const rootRef = useRef<HTMLDivElement>(null)
   const glyphRef = useRef<HTMLImageElement>(null)
   const [on, setOn] = useState(false)
   const [pressed, setPressed] = useState(false)
-  const src = night ? CURSOR_NIGHT : CURSOR_LIGHT
 
   useEffect(() => {
-    const pending = new Image()
-    pending.src = night ? CURSOR_LIGHT : CURSOR_NIGHT
-  }, [night])
+    for (const src of [CURSOR_LIGHT, CURSOR_NIGHT]) {
+      const pending = new Image()
+      pending.src = src
+    }
+  }, [])
 
   useEffect(() => {
     const root = rootRef.current
@@ -131,8 +130,14 @@ export function AppCursor() {
     <div ref={rootRef} className={className} aria-hidden="true">
       <img
         ref={glyphRef}
-        className="app-cursor-glyph"
-        src={src}
+        className="app-cursor-glyph is-light"
+        src={CURSOR_LIGHT}
+        alt=""
+        draggable={false}
+      />
+      <img
+        className="app-cursor-glyph is-dark"
+        src={CURSOR_NIGHT}
         alt=""
         draggable={false}
       />
